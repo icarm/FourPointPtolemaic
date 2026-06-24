@@ -855,6 +855,22 @@ lemma ptolemy_apex_endpoint_det {q : ℝ} (hq1 : 1 ≤ q) (hq : q ≤ Real.logb 
     exact funext fun i => funext fun j => by rw [hE]; rw [hpm]; congr 1 <;> simp [Equiv.Perm.mul_apply]
   convert det_nonneg_of_negType hq0 d (fun i j => hsymm _ _) (fun i => hd _) hnegd using 1
 
+/-- Updating the `2`–`3` entry of a Ptolemaic metric to the upper Ptolemy bound value `t`
+(`t * d01 = d02*d13 + d03*d12`, with `t ≥ d23`) preserves Ptolemaicity.  Most of the `256`
+quadruples reduce to `hp` directly; only the few involving the `{2,3}` pair use the bound. -/
+lemma isPtolemaic4_update23 {d : Fin 4 → Fin 4 → ℝ} (hp : IsPtolemaic4 d)
+    (hsymm : ∀ i j, d i j = d j i) (hnn : ∀ i j, 0 ≤ d i j) (hd : ∀ i, d i i = 0)
+    (t : ℝ) (ht0 : 0 ≤ t) (ht : d 2 3 ≤ t) (htval : t * d 0 1 = d 0 2 * d 1 3 + d 0 3 * d 1 2) :
+    IsPtolemaic4 (fun i j => if (i = 2 ∧ j = 3) ∨ (i = 3 ∧ j = 2) then t else d i j) := by
+  intro x y z w
+  fin_cases x <;> fin_cases y <;> fin_cases z <;> fin_cases w <;> simp [hd] <;>
+    first
+    | exact hp _ _ _ _
+    | (try simp only [hsymm 1 0, hsymm 2 0, hsymm 2 1, hsymm 3 0, hsymm 3 1]
+       nlinarith [htval, ht, ht0, hp 0 1 2 3, hp 0 2 1 3, hp 0 3 1 2,
+         hnn 0 1, hnn 0 2, hnn 0 3, hnn 1 2, hnn 1 3, hnn 2 3,
+         mul_nonneg (hnn 0 3) (hnn 1 2), mul_nonneg (hnn 0 2) (hnn 1 3)])
+
 /-- **Geodesic-insertion face** (`lem:q5-radial`): the apex `3` lies on the geodesic
 between leaves `0` and `1` (`d 0 1 = d 0 3 + d 1 3`).  Since `schoenDet` is concave in
 the apex distance `d 2 3` (`schoenDet_concave_apex`), reduce `d 2 3` over its feasible
@@ -1131,7 +1147,9 @@ lemma geodesic_insertion_det {q : ℝ} (hq1 : 1 ≤ q) (hq : q ≤ Real.logb 2 3
           (line_negType hq0 hq2 _ x (fun _ _ => rfl))
         simp only [e01, e02, e03, e12, e13, e23] at key
         exact key
-      · -- `U = Ptolemy-hi`: Ptolemy equality ⇒ `geodesic_ptolemy_endpoint_det`.
+      · -- `U = Ptolemy-hi`: Ptolemy equality ⇒ `ptolemy_apex_endpoint_det` (needs `IsPtolemaic4`
+        -- of the boundary metric `dP = d with d23 ↦ Ptolemy-hi`; the 256-case proof is the
+        -- bottleneck — TODO: a fast single-entry-update Ptolemaic-preservation lemma).
         sorry
 
 /-- **The hard core: nonnegativity of the Schoenberg determinant.**
