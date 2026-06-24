@@ -830,7 +830,36 @@ lemma schoenberg_det_nonneg {q : ℝ} (hq1 : 1 ≤ q) (hq : q ≤ Real.logb 2 3)
       ((d 0 3 ^ q + d 2 3 ^ q - d 0 2 ^ q) / 2)
       ((d 1 3 ^ q + d 2 3 ^ q - d 1 2 ^ q) / 2) by
     unfold schoenDet at h; linarith
-  sorry
+  -- Reduce the leaves-{0,1} entry by varying `d 0 1` over its feasible interval.
+  -- The interval endpoints are the tightest of the triangle bounds (`{0,1,3}`,
+  -- `{0,1,2}`) and the Ptolemy bound; at each endpoint a constraint is tight, giving
+  -- a geodesic-insertion or Ptolemy-equality configuration.
+  apply schoenDet_reduce_dist hq0 (d 0 3 ^ q) (d 1 3 ^ q) (d 2 3 ^ q)
+      ((d 0 3 ^ q + d 2 3 ^ q - d 0 2 ^ q) / 2)
+      ((d 1 3 ^ q + d 2 3 ^ q - d 1 2 ^ q) / 2)
+      (Real.rpow_nonneg hC'.le _)
+      (d 0 1)
+      (max (max |d 0 3 - d 1 3| |d 0 2 - d 1 2|) (|d 0 2 * d 1 3 - d 0 3 * d 1 2| / d 2 3))
+      (min (min (d 0 3 + d 1 3) (d 0 2 + d 1 2)) ((d 0 2 * d 1 3 + d 0 3 * d 1 2) / d 2 3))
+  · -- `0 ≤ t1`
+    exact le_max_of_le_left (le_max_of_le_left (abs_nonneg _))
+  · -- `t1 ≤ d 0 1` : every lower bound is `≤ d 0 1`
+    refine max_le (max_le ?_ ?_) ?_
+    · rw [abs_le]; exact ⟨by linarith [htri 1 0 3, hsymm 1 0], by linarith [htri 0 1 3]⟩
+    · rw [abs_le]; exact ⟨by linarith [htri 1 0 2, hsymm 1 0], by linarith [htri 0 1 2]⟩
+    · rw [div_le_iff₀ hC', abs_le]
+      have ha := hp 0 3 1 2; rw [hsymm 3 2, hsymm 3 1] at ha
+      have hb := hp 0 2 1 3; rw [hsymm 2 1] at hb
+      exact ⟨by linarith [ha], by linarith [hb]⟩
+  · -- `d 0 1 ≤ t2` : `d 0 1` is below every upper bound
+    refine le_min (le_min ?_ ?_) ?_
+    · linarith [htri 0 3 1, hsymm 3 1]
+    · linarith [htri 0 2 1, hsymm 2 1]
+    · rw [le_div_iff₀ hC']; linarith [hp 0 1 2 3]
+  · -- endpoint `t1` (lower): a constraint is tight ⇒ geodesic/degenerate configuration
+    sorry
+  · -- endpoint `t2` (upper): a constraint is tight ⇒ geodesic / Ptolemy-equality
+    sorry
 
 /-
 **Negative type for `1 ≤ q ≤ log₂ 3`** via the positive semidefinite Schoenberg
