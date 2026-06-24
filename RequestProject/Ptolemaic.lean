@@ -569,6 +569,7 @@ lemma schoenDet_reduce_dist {q : ℝ} (hq0 : 0 < q) (A B C v w : ℝ) (hC : 0 �
   exact schoenDet_ge_of_endpoints A B C v w hC ((A + B - t ^ q) / 2)
     ((A + B - t2 ^ q) / 2) ((A + B - t1 ^ q) / 2) (by linarith) (by linarith) h2 h1
 
+
 /-
 The Schoenberg determinant (based at the apex `A`, with leaf lengths `y` to `A`,
 `r = PU`, `z = PV`) of the **star** endpoint `h = r + z` of an attached-ray
@@ -856,10 +857,34 @@ lemma schoenberg_det_nonneg {q : ℝ} (hq1 : 1 ≤ q) (hq : q ≤ Real.logb 2 3)
     · linarith [htri 0 3 1, hsymm 3 1]
     · linarith [htri 0 2 1, hsymm 2 1]
     · rw [le_div_iff₀ hC']; linarith [hp 0 1 2 3]
-  · -- endpoint `t1` (lower): a constraint is tight ⇒ geodesic/degenerate configuration
-    sorry
-  · -- endpoint `t2` (upper): a constraint is tight ⇒ geodesic / Ptolemy-equality
-    sorry
+  · -- endpoint `t1` (lower): the tightest lower bound is active.
+    rcases max_cases (max |d 0 3 - d 1 3| |d 0 2 - d 1 2|) (|d 0 2 * d 1 3 - d 0 3 * d 1 2| / d 2 3)
+      with ⟨he, _⟩ | ⟨he, _⟩
+    · rw [he]
+      rcases max_cases |d 0 3 - d 1 3| |d 0 2 - d 1 2| with ⟨he2, _⟩ | ⟨he2, _⟩
+      · rw [he2]
+        -- `d 0 1 = |d03 - d13|`: leaf 0 or apex 3 is collinear with the {0,1,3} triangle.
+        sorry
+      · rw [he2]
+        -- `d 0 1 = |d02 - d12|`: collinearity in the {0,1,2} triangle.
+        sorry
+    · rw [he]
+      -- `d 0 1` at the lower Ptolemy bound.
+      sorry
+  · -- endpoint `t2` (upper): the tightest upper bound is active.
+    rcases min_cases (min (d 0 3 + d 1 3) (d 0 2 + d 1 2)) ((d 0 2 * d 1 3 + d 0 3 * d 1 2) / d 2 3)
+      with ⟨he, _⟩ | ⟨he, _⟩
+    · rw [he]
+      rcases min_cases (d 0 3 + d 1 3) (d 0 2 + d 1 2) with ⟨he2, _⟩ | ⟨he2, _⟩
+      · rw [he2]
+        -- `d 0 1 = d03 + d13`: apex 3 lies between leaves 0 and 1 (geodesic insertion).
+        sorry
+      · rw [he2]
+        -- `d 0 1 = d02 + d12`: leaf 2 lies between leaves 0 and 1 (geodesic insertion).
+        sorry
+    · rw [he]
+      -- `d 0 1` at the upper Ptolemy bound: Ptolemy equality.
+      sorry
 
 /-
 **Negative type for `1 ≤ q ≤ log₂ 3`** via the positive semidefinite Schoenberg
