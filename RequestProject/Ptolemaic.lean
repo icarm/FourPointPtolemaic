@@ -530,6 +530,30 @@ lemma schoenDet_congr (D0 D1 D2 A B C u v w : ℝ) :
       = (D0 * D1 * D2) ^ 2 * schoenDet A B C u v w := by
   unfold schoenDet; ring;
 
+/-! ### Leaf-permutation symmetry of `schoenDet`
+
+`schoenDet` is the determinant of the symmetric `3×3` matrix
+`!![A, u, v; u, B, w; v, w, C]`, so it is invariant under simultaneously permuting
+the diagonal entries `(A,B,C)` (the leaf lengths) and the corresponding off-diagonal
+entries.  Each transposition is purely algebraic.  These let a boundary configuration
+arriving under a relabelling of the leaves be matched to the fixed-labelling endpoint
+lemmas (`endpoint_star_det`, `endpoint_line_det`, `geodesic_ptolemy_endpoint_det`). -/
+
+/-- Swapping leaves `0 ↔ 1`. -/
+lemma schoenDet_swap01 (A B C u v w : ℝ) :
+    schoenDet B A C u w v = schoenDet A B C u v w := by
+  unfold schoenDet; ring
+
+/-- Swapping leaves `1 ↔ 2`. -/
+lemma schoenDet_swap12 (A B C u v w : ℝ) :
+    schoenDet A C B v u w = schoenDet A B C u v w := by
+  unfold schoenDet; ring
+
+/-- Swapping leaves `0 ↔ 2`. -/
+lemma schoenDet_swap02 (A B C u v w : ℝ) :
+    schoenDet C B A w v u = schoenDet A B C u v w := by
+  unfold schoenDet; ring
+
 /-
 The Schoenberg determinant (based at the apex `A`, with leaf lengths `y` to `A`,
 `r = PU`, `z = PV`) of the **star** endpoint `h = r + z` of an attached-ray
@@ -754,6 +778,43 @@ lemma schoenberg_det_nonneg {q : ℝ} (hq1 : 1 ≤ q) (hq : q ≤ Real.logb 2 3)
         - d 0 3 ^ q * ((d 1 3 ^ q + d 2 3 ^ q - d 1 2 ^ q) / 2) ^ 2
         - d 1 3 ^ q * ((d 0 3 ^ q + d 2 3 ^ q - d 0 2 ^ q) / 2) ^ 2
         - d 2 3 ^ q * ((d 0 3 ^ q + d 1 3 ^ q - d 0 1 ^ q) / 2) ^ 2 := by
+  obtain ⟨hd, hsymm, hnn, htri⟩ := hm
+  have hq0 : (0 : ℝ) < q := by linarith
+  -- Degenerate cases: if any apex distance vanishes, the apex coincides (metrically)
+  -- with that leaf, the corresponding off-diagonal entries collapse, and the
+  -- determinant is identically `0`.
+  by_cases hA : d 0 3 = 0
+  · have e01 : d 0 1 = d 1 3 :=
+      le_antisymm (by linarith [htri 0 3 1, hsymm 3 1, hA]) (by linarith [htri 1 0 3, hsymm 1 0, hA])
+    have e02 : d 0 2 = d 2 3 :=
+      le_antisymm (by linarith [htri 0 3 2, hsymm 3 2, hA]) (by linarith [htri 2 0 3, hsymm 2 0, hA])
+    rw [hA, e01, e02, Real.zero_rpow hq0.ne']
+    nlinarith
+  by_cases hB : d 1 3 = 0
+  · have e01 : d 0 1 = d 0 3 :=
+      le_antisymm (by linarith [htri 0 3 1, hsymm 3 1, hB]) (by linarith [htri 0 1 3, hB])
+    have e12 : d 1 2 = d 2 3 :=
+      le_antisymm (by linarith [htri 1 3 2, hsymm 3 2, hB]) (by linarith [htri 2 1 3, hsymm 2 1, hB])
+    rw [hB, e01, e12, Real.zero_rpow hq0.ne']
+    nlinarith
+  by_cases hC : d 2 3 = 0
+  · have e02 : d 0 2 = d 0 3 :=
+      le_antisymm (by linarith [htri 0 3 2, hsymm 3 2, hC]) (by linarith [htri 0 2 3, hC])
+    have e12 : d 1 2 = d 1 3 :=
+      le_antisymm (by linarith [htri 1 3 2, hsymm 3 2, hC]) (by linarith [htri 1 2 3, hC])
+    rw [hC, e02, e12, Real.zero_rpow hq0.ne']
+    nlinarith
+  -- Main case: all three apex distances are strictly positive.
+  have hA' : 0 < d 0 3 := lt_of_le_of_ne (hnn 0 3) (Ne.symm hA)
+  have hB' : 0 < d 1 3 := lt_of_le_of_ne (hnn 1 3) (Ne.symm hB)
+  have hC' : 0 < d 2 3 := lt_of_le_of_ne (hnn 2 3) (Ne.symm hC)
+  -- Fold the goal into canonical `schoenDet` form, ready for the concavity
+  -- reduction (`schoenDet_ge_of_endpoints`) and leaf-permutation lemmas.
+  suffices h : 0 ≤ schoenDet (d 0 3 ^ q) (d 1 3 ^ q) (d 2 3 ^ q)
+      ((d 0 3 ^ q + d 1 3 ^ q - d 0 1 ^ q) / 2)
+      ((d 0 3 ^ q + d 2 3 ^ q - d 0 2 ^ q) / 2)
+      ((d 1 3 ^ q + d 2 3 ^ q - d 1 2 ^ q) / 2) by
+    unfold schoenDet at h; linarith
   sorry
 
 /-
