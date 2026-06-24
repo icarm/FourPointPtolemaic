@@ -770,6 +770,68 @@ lemma geodesic_ptolemy_endpoint_det {q : ℝ} (hq1 : 1 ≤ q) (hq : q ≤ Real.l
   · exact hdh_metric.2.1;
   · exact fun i => hdh_metric.1 i
 
+/-- **Geodesic-insertion face**: the apex `3` lies on the geodesic between leaves `0`
+and `1` (`d 0 1 = d 0 3 + d 1 3`).  Reducing the `0`–`2` entry over the `{0,2,3}`
+triangle interval `[|d03-d23|, d03+d23]`, the upper endpoint (`d02 = d03+d23`, so `3`
+is also between `0` and `2`) is an attached-ray configuration, and the lower endpoint
+is a line; both have nonnegative determinant. -/
+lemma geodesic_insertion_det {q : ℝ} (hq1 : 1 ≤ q) (hq : q ≤ Real.logb 2 3)
+    (d : Fin 4 → Fin 4 → ℝ) (hm : IsMetric4 d) (hp : IsPtolemaic4 d)
+    (hgeo : d 0 1 = d 0 3 + d 1 3) :
+    0 ≤ schoenDet (d 0 3 ^ q) (d 1 3 ^ q) (d 2 3 ^ q)
+        ((d 0 3 ^ q + d 1 3 ^ q - d 0 1 ^ q) / 2)
+        ((d 0 3 ^ q + d 2 3 ^ q - d 0 2 ^ q) / 2)
+        ((d 1 3 ^ q + d 2 3 ^ q - d 1 2 ^ q) / 2) := by
+  obtain ⟨hd, hsymm, hnn, htri⟩ := hm
+  have hq0 : (0 : ℝ) < q := by linarith
+  -- Put the `0`–`2` entry first, then reduce over `d 0 2` between its feasible floor
+  -- `max |d03-d23| |d01-d12|` (where the `{0,2,3}` or `{0,1,2}` triangle degenerates,
+  -- giving a line) and ceiling `d03+d23` (the attached-ray endpoint).
+  rw [← schoenDet_swap12]
+  refine schoenDet_reduce_dist hq0 (d 0 3 ^ q) (d 2 3 ^ q) (d 1 3 ^ q) _ _
+    (Real.rpow_nonneg (hnn 1 3) _) (d 0 2)
+    (max |d 0 3 - d 2 3| |d 0 1 - d 1 2|) (d 0 3 + d 2 3) ?_ ?_ ?_ ?_ ?_
+  · exact le_max_of_le_left (abs_nonneg _)
+  · refine max_le ?_ ?_
+    · rw [abs_le]
+      exact ⟨by linarith [htri 2 0 3, hsymm 2 0], by linarith [htri 0 2 3]⟩
+    · rw [abs_le]
+      exact ⟨by linarith [htri 1 0 2, hsymm 1 0], by linarith [htri 0 2 1, hsymm 2 1]⟩
+  · linarith [htri 0 3 2, hsymm 3 2]
+  · -- lower endpoint `d 0 2 = max |d03-d23| |d01-d12|`: line configuration.
+    sorry
+  · -- upper endpoint `d 0 2 = d03+d23`: attached-ray configuration.
+    -- Build the metric `dA` = `d` with the `0`–`2` distance pinned to `d03 + d23`.
+    set dA : Fin 4 → Fin 4 → ℝ :=
+      fun i j => if (i = 0 ∧ j = 2) ∨ (i = 2 ∧ j = 0) then d 0 3 + d 2 3 else d i j with hdA
+    have hmA : IsMetric4 dA := by
+      refine ⟨fun i => ?_, fun i j => ?_, fun i j => ?_, fun i j k => ?_⟩
+      · simp only [hdA]; fin_cases i <;> simp [hd]
+      · simp only [hdA]; fin_cases i <;> fin_cases j <;> simp <;> apply hsymm
+      · simp only [hdA]; fin_cases i <;> fin_cases j <;> simp <;>
+          first | positivity | exact hnn _ _ | linarith [hnn 0 3, hnn 2 3]
+      · simp only [hdA]; fin_cases i <;> fin_cases j <;> fin_cases k <;> simp +decide [hd] <;>
+          linarith [hgeo, hd 0, hd 1, hd 2, hd 3,
+            hsymm 0 1, hsymm 0 2, hsymm 0 3, hsymm 1 2, hsymm 1 3, hsymm 2 3,
+            htri 0 1 2, htri 0 2 1, htri 1 0 2, htri 1 2 0, htri 2 0 1, htri 2 1 0,
+            htri 0 1 3, htri 0 3 1, htri 1 0 3, htri 1 3 0, htri 3 0 1, htri 3 1 0,
+            htri 0 2 3, htri 0 3 2, htri 2 0 3, htri 2 3 0, htri 3 0 2, htri 3 2 0,
+            htri 1 2 3, htri 1 3 2, htri 2 1 3, htri 2 3 1, htri 3 1 2, htri 3 2 1]
+    have hneg : HasNegType q dA := by
+      have hAR : HasNegType q (fun i j => dA (Equiv.swap 0 3 i) (Equiv.swap 0 3 j)) := by
+        apply attached_ray_negType hq1 hq
+        · exact ⟨fun i => hmA.1 _, fun i j => hmA.2.1 _ _, fun i j => hmA.2.2.1 _ _,
+            fun i j k => hmA.2.2.2 _ _ _⟩
+        · simp +decide [hdA, Equiv.swap_apply_def]
+          linarith [hgeo, hsymm 1 0, hsymm 3 1, hsymm 3 0]
+        · simp +decide [hdA, Equiv.swap_apply_def]
+          linarith [hsymm 3 0, hsymm 3 2]
+      convert hasNegType_reindex (Equiv.swap 0 3)⁻¹ hAR using 1
+      exact funext fun i => funext fun j => by fin_cases i <;> fin_cases j <;> rfl
+    have hdet := det_nonneg_of_negType (show (0 : ℝ) < q by linarith) dA hmA.2.1 hmA.1 hneg
+    rw [schoenDet_swap12]
+    convert hdet using 3 <;> simp [hdA]
+
 /-- **The hard core: nonnegativity of the Schoenberg determinant.**
 For a four-point Ptolemaic metric and `1 ≤ q ≤ log₂ 3`, the determinant of the
 `3×3` Schoenberg matrix based at point `3` is nonnegative.
