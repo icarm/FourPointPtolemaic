@@ -837,8 +837,51 @@ lemma geodesic_insertion_det {q : ℝ} (hq1 : 1 ≤ q) (hq : q ≤ Real.logb 2 3
           (line_negType hq0 hq2 _ x (fun _ _ => rfl))
         simp only [e01, e02, e03, e12, e13, e23] at key
         exact key
-      · -- `d23 ≥ d03`: needs a `d12`-reduction.
-        sorry
+      · -- `d23 ≥ d03` (so `0` is between `2` and `3`); `d12` is not forced, so reduce
+        -- over `d12 ∈ [max |d13-d23| |2d03+d13-d23|, d13+d23]`, both ends fully collinear.
+        have habs : |d 0 3 - d 2 3| = d 2 3 - d 0 3 := by rw [abs_of_nonpos (by linarith)]; ring
+        have hb' : |d 0 1 - d 1 2| ≤ d 2 3 - d 0 3 := habs ▸ hb
+        rw [abs_le] at hb'
+        rw [habs, hgeo, ← schoenDet_swap02]
+        refine schoenDet_reduce_dist hq0 (d 1 3 ^ q) (d 2 3 ^ q) (d 0 3 ^ q) _ _
+          (Real.rpow_nonneg (hnn 0 3) _) (d 1 2)
+          (max |d 1 3 - d 2 3| (2 * d 0 3 + d 1 3 - d 2 3)) (d 1 3 + d 2 3) ?_ ?_ ?_ ?_ ?_
+        · exact le_max_of_le_left (abs_nonneg _)
+        · refine max_le ?_ ?_
+          · rw [abs_le]
+            exact ⟨by linarith [htri 2 1 3, hsymm 2 1], by linarith [htri 1 2 3]⟩
+          · linarith [hb'.2, hgeo]
+        · linarith [htri 1 3 2, hsymm 3 2]
+        · -- lower line vertex
+          sorry
+        · -- upper line vertex `d12 = d13+d23`: line `2,0,3,1`.
+          rw [schoenDet_swap02, schoenDet_swap12]
+          have hq2 : q ≤ 2 :=
+            le_trans hq (by linarith [show Real.logb 2 3 < 2 by rw [Real.logb_lt_iff_lt_rpow] <;> norm_num])
+          set x : Fin 4 → ℝ := fun i =>
+            if i = 0 then 0 else if i = 1 then d 0 3 + d 1 3 else if i = 2 then d 0 3 - d 2 3 else d 0 3
+            with hxdef
+          have hx0 : x 0 = 0 := by simp [hxdef]
+          have hx1 : x 1 = d 0 3 + d 1 3 := by simp [hxdef]
+          have hx2 : x 2 = d 0 3 - d 2 3 := by simp [hxdef]
+          have hx3 : x 3 = d 0 3 := by simp [hxdef]
+          have e01 : |x 0 - x 1| = d 0 3 + d 1 3 := by
+            rw [hx0, hx1, abs_of_nonpos (by linarith [hnn 0 3, hnn 1 3])]; ring
+          have e02 : |x 0 - x 2| = d 2 3 - d 0 3 := by
+            rw [hx0, hx2, abs_of_nonneg (by linarith)]; ring
+          have e03 : |x 0 - x 3| = d 0 3 := by
+            rw [hx0, hx3, abs_of_nonpos (by linarith [hnn 0 3])]; ring
+          have e12 : |x 1 - x 2| = d 1 3 + d 2 3 := by
+            rw [hx1, hx2, abs_of_nonneg (by linarith [hnn 1 3, hnn 2 3])]; ring
+          have e13 : |x 1 - x 3| = d 1 3 := by
+            rw [hx1, hx3, abs_of_nonneg (by linarith [hnn 1 3])]; ring
+          have e23 : |x 2 - x 3| = d 2 3 := by
+            rw [hx2, hx3, abs_of_nonpos (by linarith [hnn 2 3])]; ring
+          have key := det_nonneg_of_negType hq0 (fun i j => |x i - x j|)
+            (fun i j => abs_sub_comm _ _) (fun i => by simp)
+            (line_negType hq0 hq2 _ x (fun _ _ => rfl))
+          simp only [e01, e02, e03, e12, e13, e23] at key
+          exact key
     · -- `{0,1,2}` tight (`d02 = |d01-d12|`).
       sorry
   · -- upper endpoint `d 0 2 = d03+d23`: attached-ray configuration.
