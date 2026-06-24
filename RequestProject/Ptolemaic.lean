@@ -554,6 +554,21 @@ lemma schoenDet_swap02 (A B C u v w : ℝ) :
     schoenDet C B A w v u = schoenDet A B C u v w := by
   unfold schoenDet; ring
 
+/-- **Distance-parameterised concavity reduction** for the first off-diagonal slot.
+The entry `(A + B - t^q)/2` is a decreasing function of the distance `t` (since
+`t ↦ t^q` is increasing for `q > 0`), so as `t` ranges over `[t1, t2]` the entry
+ranges over an interval and `schoenDet` is concave there.  Hence if the determinant
+is nonnegative at the two distance-endpoints `t1, t2`, it is nonnegative at `t`. -/
+lemma schoenDet_reduce_dist {q : ℝ} (hq0 : 0 < q) (A B C v w : ℝ) (hC : 0 ≤ C)
+    (t t1 t2 : ℝ) (ht1 : 0 ≤ t1) (ht1' : t1 ≤ t) (ht2 : t ≤ t2)
+    (h1 : 0 ≤ schoenDet A B C ((A + B - t1 ^ q) / 2) v w)
+    (h2 : 0 ≤ schoenDet A B C ((A + B - t2 ^ q) / 2) v w) :
+    0 ≤ schoenDet A B C ((A + B - t ^ q) / 2) v w := by
+  have hmono1 : t1 ^ q ≤ t ^ q := Real.rpow_le_rpow ht1 ht1' hq0.le
+  have hmono2 : t ^ q ≤ t2 ^ q := Real.rpow_le_rpow (ht1.trans ht1') ht2 hq0.le
+  exact schoenDet_ge_of_endpoints A B C v w hC ((A + B - t ^ q) / 2)
+    ((A + B - t2 ^ q) / 2) ((A + B - t1 ^ q) / 2) (by linarith) (by linarith) h2 h1
+
 /-
 The Schoenberg determinant (based at the apex `A`, with leaf lengths `y` to `A`,
 `r = PU`, `z = PV`) of the **star** endpoint `h = r + z` of an attached-ray
