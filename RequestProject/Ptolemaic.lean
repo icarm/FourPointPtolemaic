@@ -836,9 +836,240 @@ lemma geodesic_insertion_det {q : ℝ} (hq1 : 1 ≤ q) (hq : q ≤ Real.logb 2 3
     (Real.rpow_le_rpow hLnn hLd hq0.le)
     (Real.rpow_le_rpow (hLnn.trans hLd) hdU hq0.le) ?_ ?_
   · -- lower endpoint `d 2 3 = L`: a triangle or Ptolemy bound is tight.
-    sorry
+    have hq2 : q ≤ 2 :=
+      le_trans hq (by linarith [show Real.logb 2 3 < 2 by rw [Real.logb_lt_iff_lt_rpow] <;> norm_num])
+    rw [hLdef]
+    rcases max_cases |d 0 3 - d 0 2| (max |d 1 3 - d 1 2| (|d 0 2 * d 1 3 - d 0 3 * d 1 2| / d 0 1))
+      with ⟨hLeq, hLge⟩ | ⟨hLeq, hLlt⟩
+    · -- `L = |d03 - d02|`, with the Ptolemy-lo bound `≤ |d03-d02|`.
+      rw [hLeq]
+      have hPt : |d 0 2 * d 1 3 - d 0 3 * d 1 2| ≤ |d 0 3 - d 0 2| * d 0 1 := by
+        rw [← div_le_iff₀ hd01]; exact le_trans (le_max_right _ _) hLge
+      rcases le_total (d 0 2) (d 0 3) with hcmp | hcmp
+      · -- `d03 ≥ d02`: `2` between `0,3`; Ptolemy forces `d12 = d01 - d02`, line `0,2,3,1`.
+        rw [abs_of_nonneg (by linarith : (0:ℝ) ≤ d 0 3 - d 0 2)] at hPt ⊢
+        have hd12 : d 1 2 = d 0 1 - d 0 2 := by
+          have hge : d 0 1 - d 0 2 ≤ d 1 2 := by linarith [htri 0 2 1, hsymm 2 1]
+          have hPt' : d 0 3 * d 1 2 - d 0 2 * d 1 3 ≤ (d 0 3 - d 0 2) * d 0 1 := by
+            have h1 := le_abs_self (d 0 3 * d 1 2 - d 0 2 * d 1 3)
+            rw [abs_sub_comm] at h1; linarith [h1, hPt]
+          have hmul : d 0 3 * d 1 2 ≤ d 0 3 * (d 0 1 - d 0 2) := by rw [hgeo] at hPt'; nlinarith [hPt']
+          have := le_of_mul_le_mul_left hmul hp03; linarith
+        rw [hd12, hgeo]
+        set x : Fin 4 → ℝ := fun i =>
+          if i = 0 then 0 else if i = 1 then d 0 3 + d 1 3 else if i = 2 then d 0 2 else d 0 3
+          with hxdef
+        have hx0 : x 0 = 0 := by simp [hxdef]
+        have hx1 : x 1 = d 0 3 + d 1 3 := by simp [hxdef]
+        have hx2 : x 2 = d 0 2 := by simp [hxdef]
+        have hx3 : x 3 = d 0 3 := by simp [hxdef]
+        have e01 : |x 0 - x 1| = d 0 3 + d 1 3 := by
+          rw [hx0, hx1, abs_of_nonpos (by linarith [hnn 0 3, hnn 1 3])]; ring
+        have e02 : |x 0 - x 2| = d 0 2 := by
+          rw [hx0, hx2, abs_of_nonpos (by linarith [hnn 0 2])]; ring
+        have e03 : |x 0 - x 3| = d 0 3 := by
+          rw [hx0, hx3, abs_of_nonpos (by linarith [hnn 0 3])]; ring
+        have e12 : |x 1 - x 2| = d 0 3 + d 1 3 - d 0 2 := by
+          rw [hx1, hx2, abs_of_nonneg (by linarith)] <;> ring
+        have e13 : |x 1 - x 3| = d 1 3 := by
+          rw [hx1, hx3, abs_of_nonneg (by linarith [hnn 1 3])]; ring
+        have e23 : |x 2 - x 3| = d 0 3 - d 0 2 := by
+          rw [hx2, hx3, abs_of_nonpos (by linarith)]; ring
+        have key := det_nonneg_of_negType hq0 (fun i j => |x i - x j|)
+          (fun i j => abs_sub_comm _ _) (fun i => by simp)
+          (line_negType hq0 hq2 _ x (fun _ _ => rfl))
+        simp only [e01, e02, e03, e12, e13, e23] at key
+        exact key
+      · -- `d02 ≥ d03`: `3` between `0,2`; attached-ray (apex `0`, junction `3`, leaves `1,2`).
+        have hLval : |d 0 3 - d 0 2| = d 0 2 - d 0 3 := by rw [abs_of_nonpos (by linarith)]; ring
+        rw [hLval]
+        have hLge' : |d 1 3 - d 1 2| ≤ d 0 2 - d 0 3 := by
+          have h := le_trans (le_max_left _ _) hLge; rwa [hLval] at h
+        obtain ⟨hge1, hge2⟩ := abs_le.mp hLge'
+        set dA : Fin 4 → Fin 4 → ℝ :=
+          fun i j => if (i = 2 ∧ j = 3) ∨ (i = 3 ∧ j = 2) then d 0 2 - d 0 3 else d i j with hdA
+        have hmA : IsMetric4 dA := by
+          refine ⟨fun i => ?_, fun i j => ?_, fun i j => ?_, fun i j k => ?_⟩
+          · simp only [hdA]; fin_cases i <;> simp [hd]
+          · simp only [hdA]; fin_cases i <;> fin_cases j <;> simp <;> apply hsymm
+          · simp only [hdA]; fin_cases i <;> fin_cases j <;> simp <;>
+              first | positivity | exact hnn _ _ | linarith [hnn 0 2, hnn 0 3]
+          · simp only [hdA]; fin_cases i <;> fin_cases j <;> fin_cases k <;> simp +decide [hd] <;>
+              linarith [hgeo, hge1, hge2, hsymm 0 1, hsymm 0 2, hsymm 0 3, hsymm 1 2, hsymm 1 3,
+                hsymm 2 3, htri 0 1 2, htri 0 2 1, htri 1 0 2, htri 1 2 0, htri 2 0 1, htri 2 1 0,
+                htri 0 1 3, htri 0 3 1, htri 1 0 3, htri 1 3 0, htri 3 0 1, htri 3 1 0,
+                htri 0 2 3, htri 0 3 2, htri 2 0 3, htri 2 3 0, htri 3 0 2, htri 3 2 0,
+                htri 1 2 3, htri 1 3 2, htri 2 1 3, htri 2 3 1, htri 3 1 2, htri 3 2 1]
+        have hneg : HasNegType q dA := by
+          have hAR : HasNegType q (fun i j => dA (Equiv.swap 0 3 i) (Equiv.swap 0 3 j)) := by
+            apply attached_ray_negType hq1 hq
+            · exact ⟨fun i => hmA.1 _, fun i j => hmA.2.1 _ _, fun i j => hmA.2.2.1 _ _,
+                fun i j k => hmA.2.2.2 _ _ _⟩
+            · simp +decide [hdA, Equiv.swap_apply_def]
+              linarith [hgeo, hsymm 1 0, hsymm 3 1, hsymm 3 0]
+            · simp +decide [hdA, Equiv.swap_apply_def]
+              linarith [hsymm 2 0, hsymm 3 0]
+          convert hasNegType_reindex (Equiv.swap 0 3)⁻¹ hAR using 1
+          exact funext fun i => funext fun j => by fin_cases i <;> fin_cases j <;> rfl
+        have hdet := det_nonneg_of_negType hq0 dA hmA.2.1 hmA.1 hneg
+        convert hdet using 3 <;> simp [hdA]
+    · -- `L = max |d13-d12| (Ptolemy-lo)`
+      rw [hLeq]
+      rcases max_cases |d 1 3 - d 1 2| (|d 0 2 * d 1 3 - d 0 3 * d 1 2| / d 0 1)
+        with ⟨hL2eq, hL2ge⟩ | ⟨hL2eq, _⟩
+      · -- `L = |d13 - d12|`, with Ptolemy-lo `≤ |d13-d12|`.
+        rw [hL2eq]
+        have hPt : |d 0 2 * d 1 3 - d 0 3 * d 1 2| ≤ |d 1 3 - d 1 2| * d 0 1 := by
+          rw [← div_le_iff₀ hd01]; exact hL2ge
+        rcases le_total (d 1 2) (d 1 3) with hcmp | hcmp
+        · -- `d13 ≥ d12`: `2` between `1,3`; Ptolemy forces `d02 = d01 - d12`, line `0,3,2,1`.
+          rw [abs_of_nonneg (by linarith : (0:ℝ) ≤ d 1 3 - d 1 2)] at hPt ⊢
+          have hd02 : d 0 2 = d 0 1 - d 1 2 := by
+            have hge : d 0 1 - d 1 2 ≤ d 0 2 := by linarith [htri 0 2 1, hsymm 2 1]
+            have hPt' : d 0 2 * d 1 3 - d 0 3 * d 1 2 ≤ (d 1 3 - d 1 2) * d 0 1 :=
+              le_trans (le_abs_self _) hPt
+            have hmul : d 1 3 * d 0 2 ≤ d 1 3 * (d 0 1 - d 1 2) := by rw [hgeo] at hPt'; nlinarith [hPt']
+            have := le_of_mul_le_mul_left hmul hp13; linarith
+          rw [hd02, hgeo]
+          set x : Fin 4 → ℝ := fun i =>
+            if i = 0 then 0 else if i = 1 then d 0 3 + d 1 3 else if i = 2 then d 0 3 + d 1 3 - d 1 2 else d 0 3
+            with hxdef
+          have hx0 : x 0 = 0 := by simp [hxdef]
+          have hx1 : x 1 = d 0 3 + d 1 3 := by simp [hxdef]
+          have hx2 : x 2 = d 0 3 + d 1 3 - d 1 2 := by simp [hxdef]
+          have hx3 : x 3 = d 0 3 := by simp [hxdef]
+          have e01 : |x 0 - x 1| = d 0 3 + d 1 3 := by
+            rw [hx0, hx1, abs_of_nonpos (by linarith [hnn 0 3, hnn 1 3])]; ring
+          have e02 : |x 0 - x 2| = d 0 3 + d 1 3 - d 1 2 := by
+            rw [hx0, hx2, abs_of_nonpos (by linarith [hnn 0 2])] <;> ring
+          have e03 : |x 0 - x 3| = d 0 3 := by
+            rw [hx0, hx3, abs_of_nonpos (by linarith [hnn 0 3])]; ring
+          have e12 : |x 1 - x 2| = d 1 2 := by
+            rw [hx1, hx2, abs_of_nonneg (by linarith [hnn 1 2])] <;> ring
+          have e13 : |x 1 - x 3| = d 1 3 := by
+            rw [hx1, hx3, abs_of_nonneg (by linarith [hnn 1 3])]; ring
+          have e23 : |x 2 - x 3| = d 1 3 - d 1 2 := by
+            rw [hx2, hx3, abs_of_nonneg (by linarith)] <;> ring
+          have key := det_nonneg_of_negType hq0 (fun i j => |x i - x j|)
+            (fun i j => abs_sub_comm _ _) (fun i => by simp)
+            (line_negType hq0 hq2 _ x (fun _ _ => rfl))
+          simp only [e01, e02, e03, e12, e13, e23] at key
+          exact key
+        · -- `d12 ≥ d13`: `3` between `1,2`; attached-ray (apex `1`, junction `3`, leaves `0,2`).
+          have hLval : |d 1 3 - d 1 2| = d 1 2 - d 1 3 := by rw [abs_of_nonpos (by linarith)]; ring
+          rw [hLval]
+          have hb02 : d 0 2 - d 0 3 ≤ d 1 2 - d 1 3 := by
+            have h1 : |d 0 3 - d 0 2| < |d 1 3 - d 1 2| := by rw [hL2eq] at hLlt; exact hLlt
+            have h2 : d 0 2 - d 0 3 ≤ |d 0 3 - d 0 2| := by rw [abs_sub_comm]; exact le_abs_self _
+            rw [hLval] at h1; linarith [h1, h2]
+          set dA : Fin 4 → Fin 4 → ℝ :=
+            fun i j => if (i = 2 ∧ j = 3) ∨ (i = 3 ∧ j = 2) then d 1 2 - d 1 3 else d i j with hdA
+          have hmA : IsMetric4 dA := by
+            refine ⟨fun i => ?_, fun i j => ?_, fun i j => ?_, fun i j k => ?_⟩
+            · simp only [hdA]; fin_cases i <;> simp [hd]
+            · simp only [hdA]; fin_cases i <;> fin_cases j <;> simp <;> apply hsymm
+            · simp only [hdA]; fin_cases i <;> fin_cases j <;> simp <;>
+                first | positivity | exact hnn _ _ | linarith [hnn 1 2, hnn 1 3]
+            · simp only [hdA]; fin_cases i <;> fin_cases j <;> fin_cases k <;> simp +decide [hd] <;>
+                linarith [hgeo, hb02, hcmp, hsymm 0 1, hsymm 0 2, hsymm 0 3, hsymm 1 2, hsymm 1 3,
+                  hsymm 2 3, htri 0 1 2, htri 0 2 1, htri 1 0 2, htri 1 2 0, htri 2 0 1, htri 2 1 0,
+                  htri 0 1 3, htri 0 3 1, htri 1 0 3, htri 1 3 0, htri 3 0 1, htri 3 1 0,
+                  htri 0 2 3, htri 0 3 2, htri 2 0 3, htri 2 3 0, htri 3 0 2, htri 3 2 0,
+                  htri 1 2 3, htri 1 3 2, htri 2 1 3, htri 2 3 1, htri 3 1 2, htri 3 2 1]
+          have hneg : HasNegType q dA := by
+            have hAR : HasNegType q (fun i j => dA (Equiv.swap 0 1 (Equiv.swap 0 3 i))
+                (Equiv.swap 0 1 (Equiv.swap 0 3 j))) := by
+              apply attached_ray_negType hq1 hq
+              · exact ⟨fun i => hmA.1 _, fun i j => hmA.2.1 _ _, fun i j => hmA.2.2.1 _ _,
+                  fun i j k => hmA.2.2.2 _ _ _⟩
+              · simp +decide [hdA, Equiv.swap_apply_def]
+                linarith [hgeo, hsymm 1 0, hsymm 3 1, hsymm 3 0]
+              · simp +decide [hdA, Equiv.swap_apply_def]
+                linarith [hsymm 2 1, hsymm 3 1]
+            convert hasNegType_reindex (Equiv.swap 0 1 * Equiv.swap 0 3)⁻¹ hAR using 1
+            exact funext fun i => funext fun j => by fin_cases i <;> fin_cases j <;> rfl
+          have hdet := det_nonneg_of_negType hq0 dA hmA.2.1 hmA.1 hneg
+          convert hdet using 3 <;> simp [hdA]
+      · -- `L = Ptolemy-lo`: Ptolemy equality (lower) ⇒ inversion.
+        sorry
   · -- upper endpoint `d 2 3 = U`: a triangle or Ptolemy bound is tight.
-    sorry
+    have hq2 : q ≤ 2 :=
+      le_trans hq (by linarith [show Real.logb 2 3 < 2 by rw [Real.logb_lt_iff_lt_rpow] <;> norm_num])
+    rw [hUdef]
+    rcases min_cases (d 0 3 + d 0 2) (min (d 1 3 + d 1 2) ((d 0 2 * d 1 3 + d 0 3 * d 1 2) / d 0 1))
+      with ⟨hUeq, hUle⟩ | ⟨hUeq, _⟩
+    · -- `U = d03 + d02`: Ptolemy forces `d12 = d01 + d02`, giving the line `2,0,3,1`.
+      rw [hUeq]
+      have hPt : (d 0 3 + d 0 2) * d 0 1 ≤ d 0 2 * d 1 3 + d 0 3 * d 1 2 := by
+        have h := le_trans hUle (min_le_right _ _); rwa [le_div_iff₀ hd01] at h
+      have hd12 : d 1 2 = d 0 1 + d 0 2 := by
+        have h012 : d 1 2 ≤ d 0 1 + d 0 2 := by linarith [htri 1 0 2, hsymm 1 0]
+        have hmul : d 0 3 * (d 0 1 + d 0 2) ≤ d 0 3 * d 1 2 := by rw [hgeo] at hPt; nlinarith [hPt]
+        have := le_of_mul_le_mul_left hmul hp03; linarith
+      rw [hd12, hgeo]
+      set x : Fin 4 → ℝ := fun i =>
+        if i = 0 then 0 else if i = 1 then d 0 3 + d 1 3 else if i = 2 then -d 0 2 else d 0 3
+        with hxdef
+      have hx0 : x 0 = 0 := by simp [hxdef]
+      have hx1 : x 1 = d 0 3 + d 1 3 := by simp [hxdef]
+      have hx2 : x 2 = -d 0 2 := by simp [hxdef]
+      have hx3 : x 3 = d 0 3 := by simp [hxdef]
+      have e01 : |x 0 - x 1| = d 0 3 + d 1 3 := by
+        rw [hx0, hx1, abs_of_nonpos (by linarith [hnn 0 3, hnn 1 3])]; ring
+      have e02 : |x 0 - x 2| = d 0 2 := by
+        rw [hx0, hx2, abs_of_nonneg (by linarith [hnn 0 2])]; ring
+      have e03 : |x 0 - x 3| = d 0 3 := by
+        rw [hx0, hx3, abs_of_nonpos (by linarith [hnn 0 3])]; ring
+      have e12 : |x 1 - x 2| = d 0 3 + d 1 3 + d 0 2 := by
+        rw [hx1, hx2, abs_of_nonneg (by linarith [hnn 0 3, hnn 1 3, hnn 0 2])]; ring
+      have e13 : |x 1 - x 3| = d 1 3 := by
+        rw [hx1, hx3, abs_of_nonneg (by linarith [hnn 1 3])]; ring
+      have e23 : |x 2 - x 3| = d 0 3 + d 0 2 := by
+        rw [hx2, hx3, abs_of_nonpos (by linarith [hnn 0 3, hnn 0 2])]; ring
+      have key := det_nonneg_of_negType hq0 (fun i j => |x i - x j|)
+        (fun i j => abs_sub_comm _ _) (fun i => by simp)
+        (line_negType hq0 hq2 _ x (fun _ _ => rfl))
+      simp only [e01, e02, e03, e12, e13, e23] at key
+      exact key
+    · -- `U = min (d13+d12) (Ptolemy-hi)`
+      rw [hUeq]
+      rcases min_cases (d 1 3 + d 1 2) ((d 0 2 * d 1 3 + d 0 3 * d 1 2) / d 0 1)
+        with ⟨hUeq2, hUle2⟩ | ⟨hUeq2, _⟩
+      · -- `U = d13 + d12`: Ptolemy forces `d02 = d01 + d12`, giving the line `2,1,3,0`.
+        rw [hUeq2]
+        have hPt : (d 1 3 + d 1 2) * d 0 1 ≤ d 0 2 * d 1 3 + d 0 3 * d 1 2 := by
+          rwa [le_div_iff₀ hd01] at hUle2
+        have hd02 : d 0 2 = d 0 1 + d 1 2 := by
+          have h021 : d 0 2 ≤ d 0 1 + d 1 2 := by linarith [htri 0 1 2]
+          have hmul : d 1 3 * (d 0 1 + d 1 2) ≤ d 1 3 * d 0 2 := by rw [hgeo] at hPt; nlinarith [hPt]
+          have := le_of_mul_le_mul_left hmul hp13; linarith
+        rw [hd02, hgeo]
+        set x : Fin 4 → ℝ := fun i =>
+          if i = 0 then d 1 2 + d 1 3 + d 0 3 else if i = 1 then d 1 2 else if i = 2 then 0 else d 1 2 + d 1 3
+          with hxdef
+        have hx0 : x 0 = d 1 2 + d 1 3 + d 0 3 := by simp [hxdef]
+        have hx1 : x 1 = d 1 2 := by simp [hxdef]
+        have hx2 : x 2 = 0 := by simp [hxdef]
+        have hx3 : x 3 = d 1 2 + d 1 3 := by simp [hxdef]
+        have e01 : |x 0 - x 1| = d 0 3 + d 1 3 := by
+          rw [hx0, hx1, abs_of_nonneg (by linarith [hnn 0 3, hnn 1 3])]; ring
+        have e02 : |x 0 - x 2| = d 0 3 + d 1 3 + d 1 2 := by
+          rw [hx0, hx2, abs_of_nonneg (by linarith [hnn 0 3, hnn 1 3, hnn 1 2])]; ring
+        have e03 : |x 0 - x 3| = d 0 3 := by
+          rw [hx0, hx3, abs_of_nonneg (by linarith [hnn 0 3])]; ring
+        have e12 : |x 1 - x 2| = d 1 2 := by
+          rw [hx1, hx2, abs_of_nonneg (by linarith [hnn 1 2])]; ring
+        have e13 : |x 1 - x 3| = d 1 3 := by
+          rw [hx1, hx3, abs_of_nonpos (by linarith [hnn 1 3])]; ring
+        have e23 : |x 2 - x 3| = d 1 3 + d 1 2 := by
+          rw [hx2, hx3, abs_of_nonpos (by linarith [hnn 1 3, hnn 1 2])]; ring
+        have key := det_nonneg_of_negType hq0 (fun i j => |x i - x j|)
+          (fun i j => abs_sub_comm _ _) (fun i => by simp)
+          (line_negType hq0 hq2 _ x (fun _ _ => rfl))
+        simp only [e01, e02, e03, e12, e13, e23] at key
+        exact key
+      · -- `U = Ptolemy-hi`: Ptolemy equality ⇒ `geodesic_ptolemy_endpoint_det`.
+        sorry
 
 /-- **The hard core: nonnegativity of the Schoenberg determinant.**
 For a four-point Ptolemaic metric and `1 ≤ q ≤ log₂ 3`, the determinant of the
