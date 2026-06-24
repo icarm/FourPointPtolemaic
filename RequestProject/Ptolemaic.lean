@@ -569,6 +569,28 @@ lemma schoenDet_reduce_dist {q : ℝ} (hq0 : 0 < q) (A B C v w : ℝ) (hC : 0 �
   exact schoenDet_ge_of_endpoints A B C v w hC ((A + B - t ^ q) / 2)
     ((A + B - t2 ^ q) / 2) ((A + B - t1 ^ q) / 2) (by linarith) (by linarith) h2 h1
 
+/-- **Concavity in the apex-distance entry.** When the apex distance `C` (between the
+base point and the third leaf) varies, it enters `schoenDet` through the diagonal entry
+`C` *and* the two off-diagonal entries `(A+C-p)/2`, `(B+C-r)/2`.  The result is a
+quadratic in `C` with leading coefficient `(2u - A - B)/4 ≤ 0` (since `u ≤ (A+B)/2`),
+hence concave.  So if the determinant is nonnegative at the endpoints `C1, C2` of a
+feasible interval, it is nonnegative throughout.  This lets the apex distance be reduced
+*without reindexing*, keeping the other (Ptolemaic) distances fixed. -/
+lemma schoenDet_concave_apex (A B p r u : ℝ) (hu : 2 * u ≤ A + B)
+    (C C1 C2 : ℝ) (h1 : C1 ≤ C) (h2 : C ≤ C2)
+    (he1 : 0 ≤ schoenDet A B C1 u ((A + C1 - p) / 2) ((B + C1 - r) / 2))
+    (he2 : 0 ≤ schoenDet A B C2 u ((A + C2 - p) / 2) ((B + C2 - r) / 2)) :
+    0 ≤ schoenDet A B C u ((A + C - p) / 2) ((B + C - r) / 2) := by
+  by_cases hC : C1 = C2
+  · have : C = C2 := le_antisymm h2 (hC ▸ h1)
+    rw [this]; exact he2
+  · have hlt : C1 < C2 := lt_of_le_of_ne (h1.trans h2) hC
+    unfold schoenDet at he1 he2 ⊢
+    nlinarith [mul_nonneg he1 (sub_nonneg.mpr h2), mul_nonneg he2 (sub_nonneg.mpr h1),
+      mul_nonneg (mul_nonneg (mul_nonneg (sub_nonneg.mpr h2) (sub_nonneg.mpr h1))
+        (by linarith : (0 : ℝ) ≤ A + B - 2 * u)) (le_of_lt (sub_pos.mpr hlt)),
+      sub_pos.mpr hlt]
+
 
 /-
 The Schoenberg determinant (based at the apex `A`, with leaf lengths `y` to `A`,
@@ -770,151 +792,53 @@ lemma geodesic_ptolemy_endpoint_det {q : ℝ} (hq1 : 1 ≤ q) (hq : q ≤ Real.l
   · exact hdh_metric.2.1;
   · exact fun i => hdh_metric.1 i
 
-/-- **Geodesic-insertion face**: the apex `3` lies on the geodesic between leaves `0`
-and `1` (`d 0 1 = d 0 3 + d 1 3`).  Reducing the `0`–`2` entry over the `{0,2,3}`
-triangle interval `[|d03-d23|, d03+d23]`, the upper endpoint (`d02 = d03+d23`, so `3`
-is also between `0` and `2`) is an attached-ray configuration, and the lower endpoint
-is a line; both have nonnegative determinant. -/
+/-- **Geodesic-insertion face** (`lem:q5-radial`): the apex `3` lies on the geodesic
+between leaves `0` and `1` (`d 0 1 = d 0 3 + d 1 3`).  Since `schoenDet` is concave in
+the apex distance `d 2 3` (`schoenDet_concave_apex`), reduce `d 2 3` over its feasible
+interval (triangle + Ptolemy bounds) keeping `d01, d02, d12` fixed; each endpoint is a
+valid Ptolemaic configuration (line / attached-ray / Ptolemy-equality). -/
 lemma geodesic_insertion_det {q : ℝ} (hq1 : 1 ≤ q) (hq : q ≤ Real.logb 2 3)
     (d : Fin 4 → Fin 4 → ℝ) (hm : IsMetric4 d) (hp : IsPtolemaic4 d)
-    (hgeo : d 0 1 = d 0 3 + d 1 3) :
+    (hp03 : 0 < d 0 3) (hp13 : 0 < d 1 3) (hgeo : d 0 1 = d 0 3 + d 1 3) :
     0 ≤ schoenDet (d 0 3 ^ q) (d 1 3 ^ q) (d 2 3 ^ q)
         ((d 0 3 ^ q + d 1 3 ^ q - d 0 1 ^ q) / 2)
         ((d 0 3 ^ q + d 2 3 ^ q - d 0 2 ^ q) / 2)
         ((d 1 3 ^ q + d 2 3 ^ q - d 1 2 ^ q) / 2) := by
   obtain ⟨hd, hsymm, hnn, htri⟩ := hm
   have hq0 : (0 : ℝ) < q := by linarith
-  -- Put the `0`–`2` entry first, then reduce over `d 0 2` between its feasible floor
-  -- `max |d03-d23| |d01-d12|` (where the `{0,2,3}` or `{0,1,2}` triangle degenerates,
-  -- giving a line) and ceiling `d03+d23` (the attached-ray endpoint).
-  rw [← schoenDet_swap12]
-  refine schoenDet_reduce_dist hq0 (d 0 3 ^ q) (d 2 3 ^ q) (d 1 3 ^ q) _ _
-    (Real.rpow_nonneg (hnn 1 3) _) (d 0 2)
-    (max |d 0 3 - d 2 3| |d 0 1 - d 1 2|) (d 0 3 + d 2 3) ?_ ?_ ?_ ?_ ?_
-  · exact le_max_of_le_left (abs_nonneg _)
-  · refine max_le ?_ ?_
-    · rw [abs_le]
-      exact ⟨by linarith [htri 2 0 3, hsymm 2 0], by linarith [htri 0 2 3]⟩
-    · rw [abs_le]
-      exact ⟨by linarith [htri 1 0 2, hsymm 1 0], by linarith [htri 0 2 1, hsymm 2 1]⟩
-  · linarith [htri 0 3 2, hsymm 3 2]
-  · -- lower endpoint `d 0 2 = max |d03-d23| |d01-d12|`: a triangle degenerates.
-    rcases max_cases |d 0 3 - d 2 3| |d 0 1 - d 1 2| with ⟨he, hb⟩ | ⟨he, hb⟩ <;> rw [he]
-    · -- `{0,2,3}` tight (`d02 = |d03-d23|`), with `hb : |d01-d12| ≤ |d03-d23|`.
-      rcases le_total (d 2 3) (d 0 3) with hle | hle
-      · -- `d03 ≥ d23`: `hb` forces `d12 = d13+d23`; the four points form a line `0,2,3,1`.
-        have habs : |d 0 3 - d 2 3| = d 0 3 - d 2 3 := abs_of_nonneg (by linarith)
-        have hd12 : d 1 2 = d 1 3 + d 2 3 := by
-          have hr : |d 0 1 - d 1 2| ≤ d 0 3 - d 2 3 := habs ▸ hb
-          rw [abs_le] at hr
-          obtain ⟨hr1, hr2⟩ := hr
-          linarith [htri 1 3 2, hsymm 3 2, hgeo]
-        rw [habs, hgeo, hd12, schoenDet_swap12]
-        -- The four points form the line `0,2,3,1`; realise them on `ℝ`.
-        have hq2 : q ≤ 2 :=
-          le_trans hq (by linarith [show Real.logb 2 3 < 2 by rw [Real.logb_lt_iff_lt_rpow] <;> norm_num])
-        set x : Fin 4 → ℝ := fun i =>
-          if i = 0 then 0 else if i = 1 then d 0 3 + d 1 3 else if i = 2 then d 0 3 - d 2 3 else d 0 3
-          with hxdef
-        have hx0 : x 0 = 0 := by simp [hxdef]
-        have hx1 : x 1 = d 0 3 + d 1 3 := by simp [hxdef]
-        have hx2 : x 2 = d 0 3 - d 2 3 := by simp [hxdef]
-        have hx3 : x 3 = d 0 3 := by simp [hxdef]
-        have e01 : |x 0 - x 1| = d 0 3 + d 1 3 := by
-          rw [hx0, hx1, abs_of_nonpos (by linarith [hnn 0 3, hnn 1 3])]; ring
-        have e02 : |x 0 - x 2| = d 0 3 - d 2 3 := by
-          rw [hx0, hx2, abs_of_nonpos (by linarith [hle])]; ring
-        have e03 : |x 0 - x 3| = d 0 3 := by
-          rw [hx0, hx3, abs_of_nonpos (by linarith [hnn 0 3])]; ring
-        have e12 : |x 1 - x 2| = d 1 3 + d 2 3 := by
-          rw [hx1, hx2, abs_of_nonneg (by linarith [hnn 1 3, hnn 2 3])]; ring
-        have e13 : |x 1 - x 3| = d 1 3 := by
-          rw [hx1, hx3, abs_of_nonneg (by linarith [hnn 1 3])]; ring
-        have e23 : |x 2 - x 3| = d 2 3 := by
-          rw [hx2, hx3, abs_of_nonpos (by linarith [hnn 2 3])]; ring
-        have key := det_nonneg_of_negType hq0 (fun i j => |x i - x j|)
-          (fun i j => abs_sub_comm _ _) (fun i => by simp)
-          (line_negType hq0 hq2 _ x (fun _ _ => rfl))
-        simp only [e01, e02, e03, e12, e13, e23] at key
-        exact key
-      · -- `d23 ≥ d03` (so `0` is between `2` and `3`); `d12` is not forced, so reduce
-        -- over `d12 ∈ [max |d13-d23| |2d03+d13-d23|, d13+d23]`, both ends fully collinear.
-        have habs : |d 0 3 - d 2 3| = d 2 3 - d 0 3 := by rw [abs_of_nonpos (by linarith)]; ring
-        have hb' : |d 0 1 - d 1 2| ≤ d 2 3 - d 0 3 := habs ▸ hb
-        rw [abs_le] at hb'
-        rw [habs, hgeo, ← schoenDet_swap02]
-        refine schoenDet_reduce_dist hq0 (d 1 3 ^ q) (d 2 3 ^ q) (d 0 3 ^ q) _ _
-          (Real.rpow_nonneg (hnn 0 3) _) (d 1 2)
-          (max |d 1 3 - d 2 3| (2 * d 0 3 + d 1 3 - d 2 3)) (d 1 3 + d 2 3) ?_ ?_ ?_ ?_ ?_
-        · exact le_max_of_le_left (abs_nonneg _)
-        · refine max_le ?_ ?_
-          · rw [abs_le]
-            exact ⟨by linarith [htri 2 1 3, hsymm 2 1], by linarith [htri 1 2 3]⟩
-          · linarith [hb'.2, hgeo]
-        · linarith [htri 1 3 2, hsymm 3 2]
-        · -- lower line vertex
-          sorry
-        · -- upper line vertex `d12 = d13+d23`: line `2,0,3,1`.
-          rw [schoenDet_swap02, schoenDet_swap12]
-          have hq2 : q ≤ 2 :=
-            le_trans hq (by linarith [show Real.logb 2 3 < 2 by rw [Real.logb_lt_iff_lt_rpow] <;> norm_num])
-          set x : Fin 4 → ℝ := fun i =>
-            if i = 0 then 0 else if i = 1 then d 0 3 + d 1 3 else if i = 2 then d 0 3 - d 2 3 else d 0 3
-            with hxdef
-          have hx0 : x 0 = 0 := by simp [hxdef]
-          have hx1 : x 1 = d 0 3 + d 1 3 := by simp [hxdef]
-          have hx2 : x 2 = d 0 3 - d 2 3 := by simp [hxdef]
-          have hx3 : x 3 = d 0 3 := by simp [hxdef]
-          have e01 : |x 0 - x 1| = d 0 3 + d 1 3 := by
-            rw [hx0, hx1, abs_of_nonpos (by linarith [hnn 0 3, hnn 1 3])]; ring
-          have e02 : |x 0 - x 2| = d 2 3 - d 0 3 := by
-            rw [hx0, hx2, abs_of_nonneg (by linarith)]; ring
-          have e03 : |x 0 - x 3| = d 0 3 := by
-            rw [hx0, hx3, abs_of_nonpos (by linarith [hnn 0 3])]; ring
-          have e12 : |x 1 - x 2| = d 1 3 + d 2 3 := by
-            rw [hx1, hx2, abs_of_nonneg (by linarith [hnn 1 3, hnn 2 3])]; ring
-          have e13 : |x 1 - x 3| = d 1 3 := by
-            rw [hx1, hx3, abs_of_nonneg (by linarith [hnn 1 3])]; ring
-          have e23 : |x 2 - x 3| = d 2 3 := by
-            rw [hx2, hx3, abs_of_nonpos (by linarith [hnn 2 3])]; ring
-          have key := det_nonneg_of_negType hq0 (fun i j => |x i - x j|)
-            (fun i j => abs_sub_comm _ _) (fun i => by simp)
-            (line_negType hq0 hq2 _ x (fun _ _ => rfl))
-          simp only [e01, e02, e03, e12, e13, e23] at key
-          exact key
-    · -- `{0,1,2}` tight (`d02 = |d01-d12|`).
-      sorry
-  · -- upper endpoint `d 0 2 = d03+d23`: attached-ray configuration.
-    -- Build the metric `dA` = `d` with the `0`–`2` distance pinned to `d03 + d23`.
-    set dA : Fin 4 → Fin 4 → ℝ :=
-      fun i j => if (i = 0 ∧ j = 2) ∨ (i = 2 ∧ j = 0) then d 0 3 + d 2 3 else d i j with hdA
-    have hmA : IsMetric4 dA := by
-      refine ⟨fun i => ?_, fun i j => ?_, fun i j => ?_, fun i j k => ?_⟩
-      · simp only [hdA]; fin_cases i <;> simp [hd]
-      · simp only [hdA]; fin_cases i <;> fin_cases j <;> simp <;> apply hsymm
-      · simp only [hdA]; fin_cases i <;> fin_cases j <;> simp <;>
-          first | positivity | exact hnn _ _ | linarith [hnn 0 3, hnn 2 3]
-      · simp only [hdA]; fin_cases i <;> fin_cases j <;> fin_cases k <;> simp +decide [hd] <;>
-          linarith [hgeo, hd 0, hd 1, hd 2, hd 3,
-            hsymm 0 1, hsymm 0 2, hsymm 0 3, hsymm 1 2, hsymm 1 3, hsymm 2 3,
-            htri 0 1 2, htri 0 2 1, htri 1 0 2, htri 1 2 0, htri 2 0 1, htri 2 1 0,
-            htri 0 1 3, htri 0 3 1, htri 1 0 3, htri 1 3 0, htri 3 0 1, htri 3 1 0,
-            htri 0 2 3, htri 0 3 2, htri 2 0 3, htri 2 3 0, htri 3 0 2, htri 3 2 0,
-            htri 1 2 3, htri 1 3 2, htri 2 1 3, htri 2 3 1, htri 3 1 2, htri 3 2 1]
-    have hneg : HasNegType q dA := by
-      have hAR : HasNegType q (fun i j => dA (Equiv.swap 0 3 i) (Equiv.swap 0 3 j)) := by
-        apply attached_ray_negType hq1 hq
-        · exact ⟨fun i => hmA.1 _, fun i j => hmA.2.1 _ _, fun i j => hmA.2.2.1 _ _,
-            fun i j k => hmA.2.2.2 _ _ _⟩
-        · simp +decide [hdA, Equiv.swap_apply_def]
-          linarith [hgeo, hsymm 1 0, hsymm 3 1, hsymm 3 0]
-        · simp +decide [hdA, Equiv.swap_apply_def]
-          linarith [hsymm 3 0, hsymm 3 2]
-      convert hasNegType_reindex (Equiv.swap 0 3)⁻¹ hAR using 1
-      exact funext fun i => funext fun j => by fin_cases i <;> fin_cases j <;> rfl
-    have hdet := det_nonneg_of_negType (show (0 : ℝ) < q by linarith) dA hmA.2.1 hmA.1 hneg
-    rw [schoenDet_swap12]
-    convert hdet using 3 <;> simp [hdA]
+  have hd01 : 0 < d 0 1 := by rw [hgeo]; linarith
+  set L := max |d 0 3 - d 0 2| (max |d 1 3 - d 1 2| (|d 0 2 * d 1 3 - d 0 3 * d 1 2| / d 0 1))
+    with hLdef
+  set U := min (d 0 3 + d 0 2) (min (d 1 3 + d 1 2) ((d 0 2 * d 1 3 + d 0 3 * d 1 2) / d 0 1))
+    with hUdef
+  have hLnn : 0 ≤ L := le_max_of_le_left (abs_nonneg _)
+  have hLd : L ≤ d 2 3 := by
+    rw [hLdef]
+    refine max_le ?_ (max_le ?_ ?_)
+    · rw [abs_le]; exact ⟨by linarith [htri 0 3 2, hsymm 3 2], by linarith [htri 0 2 3]⟩
+    · rw [abs_le]; exact ⟨by linarith [htri 1 3 2, hsymm 3 2], by linarith [htri 1 2 3]⟩
+    · rw [div_le_iff₀ hd01, abs_le]
+      have ha := hp 0 2 1 3; rw [hsymm 2 1] at ha
+      have hb := hp 0 3 1 2; rw [hsymm 3 2, hsymm 3 1] at hb
+      exact ⟨by nlinarith [ha], by nlinarith [hb]⟩
+  have hdU : d 2 3 ≤ U := by
+    rw [hUdef]
+    refine le_min ?_ (le_min ?_ ?_)
+    · linarith [htri 2 0 3, hsymm 2 0]
+    · linarith [htri 2 1 3, hsymm 2 1]
+    · rw [le_div_iff₀ hd01]
+      have hc := hp 2 3 0 1; rw [hsymm 2 0, hsymm 3 1, hsymm 2 1, hsymm 3 0] at hc
+      nlinarith [hc]
+  refine schoenDet_concave_apex (d 0 3 ^ q) (d 1 3 ^ q) (d 0 2 ^ q) (d 1 2 ^ q)
+    ((d 0 3 ^ q + d 1 3 ^ q - d 0 1 ^ q) / 2)
+    (by have := Real.rpow_nonneg (hnn 0 1) q; linarith)
+    (d 2 3 ^ q) (L ^ q) (U ^ q)
+    (Real.rpow_le_rpow hLnn hLd hq0.le)
+    (Real.rpow_le_rpow (hLnn.trans hLd) hdU hq0.le) ?_ ?_
+  · -- lower endpoint `d 2 3 = L`: a triangle or Ptolemy bound is tight.
+    sorry
+  · -- upper endpoint `d 2 3 = U`: a triangle or Ptolemy bound is tight.
+    sorry
 
 /-- **The hard core: nonnegativity of the Schoenberg determinant.**
 For a four-point Ptolemaic metric and `1 ≤ q ≤ log₂ 3`, the determinant of the
