@@ -798,8 +798,49 @@ lemma geodesic_insertion_det {q : ℝ} (hq1 : 1 ≤ q) (hq : q ≤ Real.logb 2 3
     · rw [abs_le]
       exact ⟨by linarith [htri 1 0 2, hsymm 1 0], by linarith [htri 0 2 1, hsymm 2 1]⟩
   · linarith [htri 0 3 2, hsymm 3 2]
-  · -- lower endpoint `d 0 2 = max |d03-d23| |d01-d12|`: line configuration.
-    sorry
+  · -- lower endpoint `d 0 2 = max |d03-d23| |d01-d12|`: a triangle degenerates.
+    rcases max_cases |d 0 3 - d 2 3| |d 0 1 - d 1 2| with ⟨he, hb⟩ | ⟨he, hb⟩ <;> rw [he]
+    · -- `{0,2,3}` tight (`d02 = |d03-d23|`), with `hb : |d01-d12| ≤ |d03-d23|`.
+      rcases le_total (d 2 3) (d 0 3) with hle | hle
+      · -- `d03 ≥ d23`: `hb` forces `d12 = d13+d23`; the four points form a line `0,2,3,1`.
+        have habs : |d 0 3 - d 2 3| = d 0 3 - d 2 3 := abs_of_nonneg (by linarith)
+        have hd12 : d 1 2 = d 1 3 + d 2 3 := by
+          have hr : |d 0 1 - d 1 2| ≤ d 0 3 - d 2 3 := habs ▸ hb
+          rw [abs_le] at hr
+          obtain ⟨hr1, hr2⟩ := hr
+          linarith [htri 1 3 2, hsymm 3 2, hgeo]
+        rw [habs, hgeo, hd12, schoenDet_swap12]
+        -- The four points form the line `0,2,3,1`; realise them on `ℝ`.
+        have hq2 : q ≤ 2 :=
+          le_trans hq (by linarith [show Real.logb 2 3 < 2 by rw [Real.logb_lt_iff_lt_rpow] <;> norm_num])
+        set x : Fin 4 → ℝ := fun i =>
+          if i = 0 then 0 else if i = 1 then d 0 3 + d 1 3 else if i = 2 then d 0 3 - d 2 3 else d 0 3
+          with hxdef
+        have hx0 : x 0 = 0 := by simp [hxdef]
+        have hx1 : x 1 = d 0 3 + d 1 3 := by simp [hxdef]
+        have hx2 : x 2 = d 0 3 - d 2 3 := by simp [hxdef]
+        have hx3 : x 3 = d 0 3 := by simp [hxdef]
+        have e01 : |x 0 - x 1| = d 0 3 + d 1 3 := by
+          rw [hx0, hx1, abs_of_nonpos (by linarith [hnn 0 3, hnn 1 3])]; ring
+        have e02 : |x 0 - x 2| = d 0 3 - d 2 3 := by
+          rw [hx0, hx2, abs_of_nonpos (by linarith [hle])]; ring
+        have e03 : |x 0 - x 3| = d 0 3 := by
+          rw [hx0, hx3, abs_of_nonpos (by linarith [hnn 0 3])]; ring
+        have e12 : |x 1 - x 2| = d 1 3 + d 2 3 := by
+          rw [hx1, hx2, abs_of_nonneg (by linarith [hnn 1 3, hnn 2 3])]; ring
+        have e13 : |x 1 - x 3| = d 1 3 := by
+          rw [hx1, hx3, abs_of_nonneg (by linarith [hnn 1 3])]; ring
+        have e23 : |x 2 - x 3| = d 2 3 := by
+          rw [hx2, hx3, abs_of_nonpos (by linarith [hnn 2 3])]; ring
+        have key := det_nonneg_of_negType hq0 (fun i j => |x i - x j|)
+          (fun i j => abs_sub_comm _ _) (fun i => by simp)
+          (line_negType hq0 hq2 _ x (fun _ _ => rfl))
+        simp only [e01, e02, e03, e12, e13, e23] at key
+        exact key
+      · -- `d23 ≥ d03`: needs a `d12`-reduction.
+        sorry
+    · -- `{0,1,2}` tight (`d02 = |d01-d12|`).
+      sorry
   · -- upper endpoint `d 0 2 = d03+d23`: attached-ray configuration.
     -- Build the metric `dA` = `d` with the `0`–`2` distance pinned to `d03 + d23`.
     set dA : Fin 4 → Fin 4 → ℝ :=
