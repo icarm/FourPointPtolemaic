@@ -44,7 +44,7 @@ lemma psd3_of_minors (A B C u v w : ℝ)
       + 2 * u * x * y + 2 * v * x * z + 2 * w * y * z := by
   intro x y z;
   by_cases hA' : A = 0;
-  · simp_all +decide [ sq_nonneg ];
+  · simp_all +decide;
     by_cases hB' : B = 0;
     · simp_all +decide [ show w = 0 by nlinarith ];
       positivity;
@@ -119,12 +119,12 @@ lemma theta_nonneg (v : ℝ) (hv0 : 0 ≤ v) (hv1 : v ≤ 1) :
     intro v hv
     have h_deriv : deriv (fun v => Real.log (1 + v / 2) - (1 - Real.logb 3 2) * Real.log (1 + v + v ^ 2)) v = (1 / (2 + v)) - (1 - Real.logb 3 2) * ((1 + 2 * v) / (1 + v + v ^ 2)) := by
       norm_num [ add_assoc, show v + 1 + v ^ 2 ≠ 0 from by nlinarith [ hv.1, hv.2, hv_star.1.1, hv_star.1.2 ], show 2 + v ≠ 0 from by nlinarith [ hv.1, hv.2, hv_star.1.1, hv_star.1.2 ] ];
-      norm_num [ show 1 + v / 2 ≠ 0 from by nlinarith [ hv.1, hv.2, hv_star.1.1, hv_star.1.2 ], show 1 + ( v + v ^ 2 ) ≠ 0 from by nlinarith [ hv.1, hv.2, hv_star.1.1, hv_star.1.2 ] ] ; ring;
+      norm_num [ show 1 + v / 2 ≠ 0 from by nlinarith [ hv.1, hv.2, hv_star.1.1, hv_star.1.2 ], show 1 + ( v + v ^ 2 ) ≠ 0 from by nlinarith [ hv.1, hv.2, hv_star.1.1, hv_star.1.2 ] ] ; ring_nf;
       rw [ show 2 + v = 2 * ( 1 + v * ( 1 / 2 ) ) by ring, mul_inv ] ; ring;
     have h_antitone : (1 + v + v ^ 2) / ((1 + 2 * v) * (2 + v)) ≤ (1 + v_star + v_star ^ 2) / ((1 + 2 * v_star) * (2 + v_star)) := by
       exact xi_antitoneOn ( show v_star ∈ Set.Icc 0 1 from hv_star.1 ) ( show v ∈ Set.Icc 0 1 from ⟨ by linarith [ hv.1, hv_star.1.1 ], by linarith [ hv.2, hv_star.1.2 ] ⟩ ) hv.1;
     simp_all +decide [ div_eq_mul_inv ];
-    convert mul_le_mul_of_nonneg_right h_antitone ( show 0 ≤ ( 1 + 2 * v ) * ( 1 + v + v ^ 2 ) ⁻¹ by exact mul_nonneg ( by linarith ) ( inv_nonneg.mpr ( by nlinarith ) ) ) using 1 ; ring;
+    convert mul_le_mul_of_nonneg_right h_antitone ( show 0 ≤ ( 1 + 2 * v ) * ( 1 + v + v ^ 2 ) ⁻¹ by exact mul_nonneg ( by linarith ) ( inv_nonneg.mpr ( by nlinarith ) ) ) using 1 ; ring_nf;
     field_simp;
     rw [ div_eq_div_iff ] <;> nlinarith only [ hv, hv_star.1.1, hv_star.1.2, pow_two_nonneg ( v - v_star ), pow_two_nonneg ( v + v_star ) ];
   -- Therefore, $\Theta(v)$ is monotone nondecreasing on $[0, v^*]$ and nonincreasing on $[v^*, 1]$.
@@ -145,7 +145,7 @@ lemma theta_nonneg (v : ℝ) (hv0 : 0 ≤ v) (hv1 : v ≤ 1) :
   by_cases hv : v ≤ v_star;
   · exact le_trans ( by norm_num ) ( h_monotone v ⟨ hv0, hv ⟩ );
   · refine le_trans ?_ ( h_antitone v ⟨ by linarith, by linarith ⟩ ) ; norm_num [ Real.logb ];
-    rw [ Real.log_div ] <;> ring <;> norm_num
+    rw [ Real.log_div ] <;> ring_nf <;> norm_num
 
 /-
 Key inequality behind `φ' ≥ 0`: for `t ≥ 1`,
@@ -156,7 +156,7 @@ lemma psi_key (t : ℝ) (ht : 1 ≤ t) :
       ≤ (2 * t + 1) * t ^ (1 - 2 * Real.logb 3 2) := by
   -- Apply the lemma `theta_nonneg` with $v = 1/t$ and $t = t$.
   have h_lemma : 0 ≤ Real.log (1 + 1 / (2 * t)) - (1 - Real.logb 3 2) * Real.log (1 + 1 / t + 1 / t^2) := by
-    convert theta_nonneg ( 1 / t ) ( by positivity ) ( by rw [ div_le_iff₀ ( by positivity ) ] ; linarith ) using 1 ; ring;
+    convert theta_nonneg ( 1 / t ) ( by positivity ) ( by rw [ div_le_iff₀ ( by positivity ) ] ; linarith ) using 1 ; ring_nf;
   rw [ ← Real.log_le_log_iff ( by positivity ) ( by positivity ), Real.log_mul ( by positivity ) ( by positivity ), Real.log_mul ( by positivity ) ( by positivity ), Real.log_rpow ( by positivity ), Real.log_rpow ( by positivity ) ];
   rw [ show ( t ^ 2 + t + 1 : ℝ ) = t ^ 2 * ( 1 + 1 / t + 1 / t ^ 2 ) by nlinarith [ one_div_mul_cancel ( show t ≠ 0 by linarith ), one_div_pow t 2 ], Real.log_mul ( by positivity ) ( by positivity ), Real.log_pow ] ; ring_nf at *;
   rw [ show ( 1 + t * 2 ) = 2 * ( 1 + t⁻¹ * ( 1 / 2 ) ) * t by nlinarith [ mul_inv_cancel₀ ( by linarith : t ≠ 0 ) ], Real.log_mul, Real.log_mul ] <;> first | positivity | ring_nf at * ; linarith [ Real.log_pos one_lt_two ] ;
@@ -174,7 +174,7 @@ lemma star_single_p0 (t : ℝ) (ht : 0 ≤ t) :
       have := psi_key t ht1;
       rw [ show ( 1 - Real.logb 3 2 ) = - ( Real.logb 3 2 - 1 ) by ring, Real.rpow_neg ( by positivity ), show ( 1 - 2 * Real.logb 3 2 ) = - ( 2 * Real.logb 3 2 - 1 ) by ring, Real.rpow_neg ( by positivity ) ] at this;
       field_simp at this;
-      convert mul_le_mul_of_nonneg_left this ( show 0 ≤ Real.logb 3 2 by exact Real.logb_nonneg ( by norm_num ) ( by norm_num ) ) using 1 <;> ring;
+      convert mul_le_mul_of_nonneg_left this ( show 0 ≤ Real.logb 3 2 by exact Real.logb_nonneg ( by norm_num ) ( by norm_num ) ) using 1 <;> ring_nf;
     -- Since $\phi(t)$ is non-decreasing for $t \geq 1$, we have $\phi(t) \geq \phi(1)$.
     have h_phi_ge_phi1 : ∀ t : ℝ, 1 ≤ t → (t^2 + t + 1) ^ (Real.logb 3 2) - t ^ (2 * Real.logb 3 2) - 1 ≥ (1^2 + 1 + 1) ^ (Real.logb 3 2) - 1 ^ (2 * Real.logb 3 2) - 1 := by
       intro t ht; by_contra h_contra; push_neg at h_contra; (
@@ -211,7 +211,7 @@ Monotonicity in the exponent: the single-variable star inequality for `p₀ = lo
 upgrades to all `p ∈ [log₃ 2, 1]`.
 For `t ≥ 0` and `log₃ 2 ≤ p ≤ 1`, `t ^ (2*p) + 1 ≤ (t^2 + t + 1) ^ p`.
 -/
-lemma star_single {p t : ℝ} (hp0 : Real.logb 3 2 ≤ p) (hp1 : p ≤ 1) (ht : 0 ≤ t) :
+lemma star_single {p t : ℝ} (hp0 : Real.logb 3 2 ≤ p) (_hp1 : p ≤ 1) (ht : 0 ≤ t) :
     t ^ (2 * p) + 1 ≤ (t ^ 2 + t + 1) ^ p := by
   by_cases ht1 : t ≤ 1;
   · have h_monotone : t ^ (2 * p) + 1 ≤ (t ^ 2 + t + 1) ^ (Real.logb 3 2) := by
@@ -232,7 +232,7 @@ lemma star_single {p t : ℝ} (hp0 : Real.logb 3 2 ≤ p) (hp1 : p ≤ 1) (ht : 
       intros x y hx hy; by_contra h_contra; push_neg at h_contra; (
       have := exists_deriv_eq_slope ( f := fun x => x ^ p - x ^ Real.logb 3 2 ) ( show x < y from hy.lt_of_ne ( by rintro rfl; linarith ) ) ; norm_num at *;
       exact absurd ( this ( by exact continuousOn_of_forall_continuousAt fun z hz => by exact ContinuousAt.sub ( ContinuousAt.rpow continuousAt_id continuousAt_const <| Or.inl <| by linarith [ hz.1 ] ) ( ContinuousAt.rpow continuousAt_id continuousAt_const <| Or.inl <| by linarith [ hz.1 ] ) ) ( by exact fun z hz => by exact DifferentiableAt.differentiableWithinAt <| by exact DifferentiableAt.sub ( DifferentiableAt.rpow ( differentiableAt_id ) ( by norm_num ) <| by linarith [ hz.1 ] ) ( DifferentiableAt.rpow ( differentiableAt_id ) ( by norm_num ) <| by linarith [ hz.1 ] ) ) ) ( by rintro ⟨ c, ⟨ hxc, hcy ⟩, hcd ⟩ ; rw [ eq_div_iff ] at hcd <;> nlinarith [ h_deriv c <| by linarith ] ));
-    have := h_mono ( t ^ 2 ) ( t ^ 2 + t + 1 ) ( by nlinarith ) ( by nlinarith ) ; simp_all +decide [ Real.rpow_add, Real.rpow_mul, mul_assoc ];
+    have := h_mono ( t ^ 2 ) ( t ^ 2 + t + 1 ) ( by nlinarith ) ( by nlinarith ) ; simp_all +decide [ Real.rpow_mul ];
     have := star_single_p0 t ht; norm_num [ Real.rpow_mul ht ] at *; linarith;
 
 /-
@@ -252,10 +252,10 @@ lemma star_uv {p : ℝ} (hp0 : Real.logb 3 2 ≤ p) (hp1 : p ≤ 1)
       exact ⟨ Real.sqrt ( u / v ), Real.sqrt_nonneg _, by rw [ Real.sq_sqrt ( div_nonneg hu hv ), mul_div_cancel₀ _ hv' ] ⟩;
     -- Then $u^p + v^p = v^p (t^{2p} + 1)$ and $(u + v + \sqrt{uv})^p = v^p (t^2 + t + 1)^p$.
     have h_exp : u ^ p + v ^ p = v ^ p * (t ^ (2 * p) + 1) ∧ (u + v + Real.sqrt (u * v)) ^ p = v ^ p * (t ^ 2 + t + 1) ^ p := by
-      constructor <;> ring;
-      · rw [ ht.2, Real.mul_rpow ( by positivity ) ( by positivity ), ← Real.rpow_natCast, ← Real.rpow_mul ( by linarith ) ] ; ring;
-      · rw [ ← Real.mul_rpow ( by positivity ) ( by nlinarith ) ] ; rw [ ht.2 ] ; ring;
-        rw [ Real.sqrt_mul ( by positivity ), Real.sqrt_sq ( by positivity ), Real.sqrt_sq ( by linarith ) ] ; ring;
+      constructor <;> ring_nf;
+      · rw [ ht.2, Real.mul_rpow ( by positivity ) ( by positivity ), ← Real.rpow_natCast, ← Real.rpow_mul ( by linarith ) ] ; ring_nf;
+      · rw [ ← Real.mul_rpow ( by positivity ) ( by nlinarith ) ] ; rw [ ht.2 ] ; ring_nf;
+        rw [ Real.sqrt_mul ( by positivity ), Real.sqrt_sq ( by positivity ), Real.sqrt_sq ( by linarith ) ] ; ring_nf;
     rw [ ← Real.sqrt_mul hu ] ; exact h_exp.1.symm ▸ h_exp.2.symm ▸ mul_le_mul_of_nonneg_left ( star_single hp0 hp1 ht.1 ) ( by positivity ) ;
 
 /-
@@ -279,7 +279,7 @@ lemma star_inequality {q : ℝ} (hq1 : 1 ≤ q) (hq : q ≤ Real.logb 2 3)
   convert Real.rpow_le_rpow _ h_star_uv ( show 0 ≤ q by positivity ) using 1;
   · rw [ ← Real.rpow_mul ( by positivity ), ← Real.rpow_mul ( by positivity ), mul_one_div_cancel ( by positivity ), Real.rpow_one, Real.rpow_one ];
   · rw [ ← Real.rpow_mul ( by positivity ), one_div_mul_cancel ( by positivity ), Real.rpow_one ];
-    rw [ ← Real.mul_rpow ( by positivity ) ( by positivity ), Real.sqrt_eq_rpow, ← Real.rpow_mul ( by positivity ) ] ; ring;
+    rw [ ← Real.mul_rpow ( by positivity ) ( by positivity ), Real.sqrt_eq_rpow, ← Real.rpow_mul ( by positivity ) ] ; ring_nf;
   · positivity
 
 /-! ## Schoenberg reduction and the supporting metric lemmas -/
@@ -316,11 +316,11 @@ lemma minor_nonneg {q : ℝ} (hq0 : 0 < q) (hq2 : q ≤ 2) (p r s : ℝ)
   set Z := s ^ (q / 2);
   -- Then $p^q = X^2$, $r^q = Y^2$, $s^q = Z^2$ (since $(p^{q/2})^2 = p^{(q/2)*2} = p^q$, using Real.rpow_natCast / Real.rpow_mul with $p \geq 0$).
   have hX : X^2 = p^q := by
-    rw [ ← Real.rpow_natCast, ← Real.rpow_mul hp ] ; ring
+    rw [ ← Real.rpow_natCast, ← Real.rpow_mul hp ] ; ring_nf
   have hY : Y^2 = r^q := by
-    rw [ ← Real.rpow_natCast, ← Real.rpow_mul hr ] ; ring
+    rw [ ← Real.rpow_natCast, ← Real.rpow_mul hr ] ; ring_nf
   have hZ : Z^2 = s^q := by
-    rw [ ← Real.rpow_natCast, ← Real.rpow_mul hs ] ; ring;
+    rw [ ← Real.rpow_natCast, ← Real.rpow_mul hs ] ; ring_nf;
   -- We show the snowflaked triangle inequalities, i.e. each factor ≥ 0:
   have hX_Y_Z : X + Y - Z ≥ 0 ∧ Z + X - Y ≥ 0 ∧ Z + Y - X ≥ 0 := by
     refine' ⟨ _, _, _ ⟩ <;> norm_num;
@@ -402,14 +402,14 @@ lemma star_negType {q : ℝ} (hq1 : 1 ≤ q) (hq : q ≤ Real.logb 2 3)
         · refine' div_le_one_of_le₀ _ ( Real.sqrt_nonneg _ );
           have := star_inequality hq1 hq ρ0 ρ1 hρ0 hρ1;
           rw [ Real.mul_rpow ( by positivity ) ( by positivity ) ] at this;
-          rw [ show ρ0 ^ q * ρ1 ^ q = ( ρ0 ^ ( q / 2 ) * ρ1 ^ ( q / 2 ) ) ^ 2 by rw [ mul_pow, ← Real.rpow_natCast, ← Real.rpow_mul hρ0, ← Real.rpow_natCast, ← Real.rpow_mul hρ1 ] ; ring, Real.sqrt_sq ( by positivity ) ] ; linarith;
+          rw [ show ρ0 ^ q * ρ1 ^ q = ( ρ0 ^ ( q / 2 ) * ρ1 ^ ( q / 2 ) ) ^ 2 by rw [ mul_pow, ← Real.rpow_natCast, ← Real.rpow_mul hρ0, ← Real.rpow_natCast, ← Real.rpow_mul hρ1 ] ; ring_nf, Real.sqrt_sq ( by positivity ) ] ; linarith;
         · refine' div_nonneg _ ( Real.sqrt_nonneg _ );
           have := @Real.add_rpow_le_rpow_add;
           linarith [ this hρ0 hρ2 hq1 ];
         · refine' div_le_one_of_le₀ _ ( Real.sqrt_nonneg _ );
           have := star_inequality hq1 hq ρ0 ρ2 hρ0 hρ2;
           convert sub_le_sub_right this ( ρ0 ^ q + ρ2 ^ q ) using 1 ; ring;
-          rw [ Real.sqrt_eq_rpow, ← Real.mul_rpow ( by positivity ) ( by positivity ) ] ; rw [ ← Real.rpow_mul ( by positivity ) ] ; ring;
+          rw [ Real.sqrt_eq_rpow, ← Real.mul_rpow ( by positivity ) ( by positivity ) ] ; rw [ ← Real.rpow_mul ( by positivity ) ] ; ring_nf;
         · refine' ⟨ _, _, _, _, _ ⟩;
           · refine' div_nonneg _ ( Real.sqrt_nonneg _ );
             have := @Real.add_rpow_le_rpow_add;
@@ -417,25 +417,25 @@ lemma star_negType {q : ℝ} (hq1 : 1 ≤ q) (hq : q ≤ Real.logb 2 3)
           · refine' div_le_one_of_le₀ _ ( Real.sqrt_nonneg _ );
             have := star_inequality hq1 hq ρ1 ρ2 hρ1 hρ2;
             rw [ Real.mul_rpow ( by positivity ) ( by positivity ) ] at this;
-            rw [ show ρ1 ^ q * ρ2 ^ q = ( ρ1 ^ ( q / 2 ) * ρ2 ^ ( q / 2 ) ) ^ 2 by rw [ mul_pow, ← Real.rpow_natCast, ← Real.rpow_mul ( by positivity ), ← Real.rpow_natCast, ← Real.rpow_mul ( by positivity ) ] ; ring ] ; rw [ Real.sqrt_sq ( by positivity ) ] ; linarith;
+            rw [ show ρ1 ^ q * ρ2 ^ q = ( ρ1 ^ ( q / 2 ) * ρ2 ^ ( q / 2 ) ) ^ 2 by rw [ mul_pow, ← Real.rpow_natCast, ← Real.rpow_mul ( by positivity ), ← Real.rpow_natCast, ← Real.rpow_mul ( by positivity ) ] ; ring_nf ] ; rw [ Real.sqrt_sq ( by positivity ) ] ; linarith;
           · by_cases h : Real.sqrt ( ρ0 ^ q * ρ1 ^ q ) = 0 <;> simp_all +decide [ sub_sub ];
-            cases eq_or_ne ρ0 0 <;> cases eq_or_ne ρ1 0 <;> simp_all +decide [ Real.sqrt_eq_zero', Real.rpow_nonneg ];
+            cases eq_or_ne ρ0 0 <;> cases eq_or_ne ρ1 0 <;> simp_all +decide [ Real.rpow_nonneg ];
             · rw [ Real.zero_rpow ( by positivity ) ];
             · rw [ Real.zero_rpow ( by positivity ) ];
             · exact absurd ( h.resolve_left ( by positivity ) ) ( by positivity );
           · by_cases h : Real.sqrt ( ρ0 ^ q * ρ2 ^ q ) = 0 <;> simp_all +decide [ sub_sub ];
-            cases eq_or_ne ρ0 0 <;> cases eq_or_ne ρ2 0 <;> simp_all +decide [ Real.sqrt_eq_zero', Real.rpow_nonneg ];
+            cases eq_or_ne ρ0 0 <;> cases eq_or_ne ρ2 0 <;> simp_all +decide [ Real.rpow_nonneg ];
             · rw [ Real.zero_rpow ( by positivity ) ];
             · rw [ Real.zero_rpow ( by positivity ) ];
             · exact absurd ( h.resolve_left ( by positivity ) ) ( by positivity );
           · by_cases h : Real.sqrt ( ρ1 ^ q * ρ2 ^ q ) = 0 <;> simp_all +decide [ sub_sub ];
-            · simp_all +decide [ Real.sqrt_eq_zero', Real.rpow_nonneg ];
+            · simp_all +decide [ Real.rpow_nonneg ];
               cases h <;> simp_all +decide [ Real.rpow_eq_zero_iff_of_nonneg ];
               · rw [ mul_pow, Real.sq_sqrt ( Real.rpow_nonneg hρ0 _ ), Real.sq_sqrt ( Real.rpow_nonneg hρ2 _ ) ];
               · rw [ mul_pow, Real.sq_sqrt ( Real.rpow_nonneg hρ0 _ ), Real.sq_sqrt ( Real.rpow_nonneg hρ1 _ ) ];
             · rw [ Real.sq_sqrt ( by positivity ), Real.sq_sqrt ( by positivity ), Real.sq_sqrt ( by positivity ) ];
-              rw [ ← Real.sqrt_mul <| by positivity, ← Real.sqrt_mul <| by positivity ] ; ring;
-              exact ⟨ trivial, trivial, trivial, by rw [ Real.sqrt_eq_iff_mul_self_eq ] <;> ring <;> positivity ⟩;
+              rw [ ← Real.sqrt_mul <| by positivity, ← Real.sqrt_mul <| by positivity ] ; ring_nf;
+              exact ⟨ trivial, trivial, trivial, by rw [ Real.sqrt_eq_iff_mul_self_eq ] <;> ring_nf <;> positivity ⟩;
     -- Apply psd3_of_minors with the given conditions.
     have h_psd : 0 ≤ ρ0 ^ q * ρ1 ^ q - (η01 * hη01 / 2) ^ 2 ∧ 0 ≤ ρ0 ^ q * ρ2 ^ q - (η02 * hη02 / 2) ^ 2 ∧ 0 ≤ ρ1 ^ q * ρ2 ^ q - (η12 * hη12 / 2) ^ 2 ∧ 0 ≤ ρ0 ^ q * ρ1 ^ q * ρ2 ^ q * (1 - (η01 ^ 2 + η02 ^ 2 + η12 ^ 2 + η01 * η02 * η12) / 4) := by
       refine' ⟨ _, _, _, _ ⟩;
@@ -446,11 +446,11 @@ lemma star_negType {q : ℝ} (hq1 : 1 ≤ q) (hq : q ≤ Real.logb 2 3)
         exact star_det_nonneg η01 η02 η12 hS01 hS02 hS12.1 hS12.2.1 hS12.2.2.1 hS12.2.2.2.1;
     rw [ h01, h02, h12 ];
     rw [ hS12.2.2.2.2.2.2.2.1, hS12.2.2.2.2.2.2.2.2.1, hS12.2.2.2.2.2.2.2.2.2.1 ];
-    convert psd3_of_minors ( ρ0 ^ q ) ( ρ1 ^ q ) ( ρ2 ^ q ) ( - ( η01 * hη01 / 2 ) ) ( - ( η02 * hη02 / 2 ) ) ( - ( η12 * hη12 / 2 ) ) ( by positivity ) ( by positivity ) ( by positivity ) _ _ _ _ a0 a1 a2 using 1 <;> ring;
+    convert psd3_of_minors ( ρ0 ^ q ) ( ρ1 ^ q ) ( ρ2 ^ q ) ( - ( η01 * hη01 / 2 ) ) ( - ( η02 * hη02 / 2 ) ) ( - ( η12 * hη12 / 2 ) ) ( by positivity ) ( by positivity ) ( by positivity ) _ _ _ _ a0 a1 a2 using 1 <;> ring_nf;
     · linarith;
     · linarith;
     · linarith;
-    · convert h_psd.2.2.2 using 1 ; ring;
+    · convert h_psd.2.2.2 using 1 ; ring_nf;
       grind
 
 /-- The Schoenberg determinant (based at `3`), as an explicit function of the
@@ -502,7 +502,7 @@ lemma det_nonneg_of_negType {q : ℝ} (hq0 : 0 < q) (d : Fin 4 → Fin 4 → ℝ
     constructor;
     · ext i j; fin_cases i <;> fin_cases j <;> rfl;
     · intro x; convert hM_posSemidef ( x 0 ) ( x 1 ) ( x 2 ) using 1; simp +decide [ Finsupp.sum_fintype, Fin.sum_univ_three ] ; ring;
-  convert hM_det_nonneg.det_nonneg using 1 ; norm_num [ Matrix.det_fin_three ] ; ring!;
+  convert hM_det_nonneg.det_nonneg using 1 ; norm_num [ Matrix.det_fin_three ] ; ring_nf!;
   simp +zetaDelta at *;
   unfold schoenDet; ring;
 
@@ -591,7 +591,7 @@ lemma attached_ray_negType {q : ℝ} (hq1 : 1 ≤ q) (hq : q ≤ Real.logb 2 3)
   any_goals linarith [ this a0 a1 a2 ];
   all_goals have := hm.2.2.1; simp_all +decide [ Real.rpow_nonneg ];
   any_goals exact Real.rpow_nonneg ( add_nonneg ( this _ _ ) ( this _ _ ) ) _;
-  · have := @minor_nonneg q ( by linarith ) ( by linarith [ show Real.logb 2 3 ≤ 2 by rw [ Real.logb_le_iff_le_rpow ] <;> norm_num ] ) ( d 0 3 ) ( d 1 3 ) ( d 0 1 ) ; simp_all +decide [ Real.rpow_nonneg ];
+  · have := @minor_nonneg q ( by linarith ) ( by linarith [ show Real.logb 2 3 ≤ 2 by rw [ Real.logb_le_iff_le_rpow ] <;> norm_num ] ) ( d 0 3 ) ( d 1 3 ) ( d 0 1 ) ; simp_all +decide;
     exact this ( by linarith [ ‹∀ i j, 0 ≤ d i j› 0 3, ‹∀ i j, 0 ≤ d i j› 0 1 ] ) ( by linarith [ ‹∀ i j, 0 ≤ d i j› 0 3, ‹∀ i j, 0 ≤ d i j› 0 1 ] ) ( by linarith [ ‹∀ i j, 0 ≤ d i j› 0 3, ‹∀ i j, 0 ≤ d i j› 0 1 ] ) ( by linarith [ ‹∀ i j, 0 ≤ d i j› 0 3, ‹∀ i j, 0 ≤ d i j› 0 1 ] );
   · have := @minor_nonneg q ( by linarith ) ( by linarith [ show Real.logb 2 3 ≤ 2 by rw [ Real.logb_le_iff_le_rpow ] <;> norm_num ] ) ( d 0 3 ) ( d 0 3 + d 0 2 ) ( d 0 2 ) ( this _ _ ) ( add_nonneg ( this _ _ ) ( this _ _ ) ) ( this _ _ ) ?_ ?_ ?_ <;> norm_num at *;
     · linarith;
@@ -622,11 +622,11 @@ lemma attached_ray_negType {q : ℝ} (hq1 : 1 ≤ q) (hq : q ≤ Real.logb 2 3)
         · exact this _ _;
         · linarith;
         · have := hm.2.2.2 0 1 2; ( have := hm.2.2.2 0 2 1; ( norm_num at *; cases abs_cases ( d 0 1 - d 0 2 ) <;> linarith! [ this, hm.2.1 0 1, hm.2.1 0 2, hm.2.1 1 2 ] ; ) );
-      · convert endpoint_star_det hq1 hq ( d 0 3 ) ( d 0 2 ) ( d 0 1 ) ( this _ _ ) ( this _ _ ) ( this _ _ ) using 1 ; ring;
-        unfold schoenDet; ring;
+      · convert endpoint_star_det hq1 hq ( d 0 3 ) ( d 0 2 ) ( d 0 1 ) ( this _ _ ) ( this _ _ ) ( this _ _ ) using 1 ; ring_nf;
+        unfold schoenDet; ring_nf;
         grind +qlia;
       · convert endpoint_line_det ( show 0 < q by linarith ) ( show q ≤ 2 by linarith [ show Real.logb 2 3 ≤ 2 by rw [ Real.logb_le_iff_le_rpow ] <;> norm_num ] ) ( d 0 3 ) ( d 0 1 ) ( d 0 2 ) ( this _ _ ) ( this _ _ ) ( this _ _ ) using 1;
-        unfold schoenDet; ring;
+        unfold schoenDet; ring_nf;
         rw [ hU, hV ] ; ring;
     unfold schoenDet at h_det_nonneg; rw [ hU, hV ] at h_det_nonneg; linarith;
 
@@ -661,7 +661,7 @@ lemma geodesic_ptolemy_endpoint_det {q : ℝ} (hq1 : 1 ≤ q) (hq : q ≤ Real.l
     · simp +decide [ dh, hm.2.1 ];
       grind;
     · intro i j; fin_cases i <;> fin_cases j <;> simp +decide [ * ] ;
-      all_goals simp +decide [ dh, hpos0, hpos1, hpos2, hm.2.2.1 ];
+      all_goals simp +decide [ dh, hm.2.2.1 ];
       all_goals exact div_nonneg ( hm.2.2.1 _ _ ) ( mul_nonneg ( hm.2.2.1 _ _ ) ( hm.2.2.1 _ _ ) ) ;
     · intro i j k;
       by_cases hi : i = 3 <;> by_cases hj : j = 3 <;> by_cases hk : k = 3 <;> simp +decide [ hi, hj, hk, dh ];
@@ -672,32 +672,32 @@ lemma geodesic_ptolemy_endpoint_det {q : ℝ} (hq1 : 1 ≤ q) (hq : q ≤ Real.l
         · rw [ add_mul, div_mul_cancel₀ ] <;> norm_num;
           · grind +locals;
           · fin_cases k <;> simp_all +decide [ IsMetric4 ]; all_goals linarith;
-        · fin_cases k <;> simp_all +decide [ hm.1, hm.2.1 ];
+        · fin_cases k <;> simp_all +decide [ hm.2.1 ];
         · grind;
       · split_ifs <;> simp_all +decide [ div_eq_mul_inv ];
         · exact hm.2.2.1 _ _;
         · have := hm.2.2.2 i 3 k;
           field_simp;
           rw [ div_add_div, div_le_div_iff₀ ];
-          · convert mul_le_mul_of_nonneg_right this ( mul_nonneg ( hm.2.2.1 i 3 ) ( hm.2.2.1 k 3 ) ) using 1 ; ring;
+          · convert mul_le_mul_of_nonneg_right this ( mul_nonneg ( hm.2.2.1 i 3 ) ( hm.2.2.1 k 3 ) ) using 1 ; ring_nf;
             rw [ hm.2.1 ] ; ring;
           · fin_cases i <;> fin_cases k <;> simp_all +decide;
           · fin_cases i <;> fin_cases k <;> simp_all +decide;
           · grind +splitIndPred;
           · grind;
-      · split_ifs <;> simp_all +decide [ div_eq_mul_inv, mul_assoc, mul_comm, mul_left_comm ];
+      · split_ifs <;> simp_all +decide [ div_eq_mul_inv, mul_comm ];
         field_simp;
         rw [ div_add_one, div_div, div_le_div_iff₀ ];
-        · have := hm.2.2.2 j i 3; simp_all +decide [ hm.1, hm.2.1 ] ;
+        · have := hm.2.2.2 j i 3; simp_all +decide [ hm.2.1 ] ;
           nlinarith [ hm.2.2.1 i 3, hm.2.2.1 j 3 ];
         · fin_cases i <;> fin_cases j <;> simp_all +decide;
         · fin_cases i <;> fin_cases j <;> simp +decide [ * ] at *;
         · grind +splitIndPred;
-      · split_ifs <;> simp_all +decide [ div_add_div, mul_assoc, mul_comm, mul_left_comm ];
+      · split_ifs <;> simp_all +decide [ mul_comm ];
         · exact add_nonneg ( div_nonneg ( hm.2.2.1 _ _ ) ( mul_nonneg ( hm.2.2.1 _ _ ) ( hm.2.2.1 _ _ ) ) ) ( div_nonneg ( hm.2.2.1 _ _ ) ( mul_nonneg ( hm.2.2.1 _ _ ) ( hm.2.2.1 _ _ ) ) );
         · rw [ div_add_div, div_le_div_iff₀ ];
           · have := hp i k j 3;
-            convert mul_le_mul_of_nonneg_right this ( show 0 ≤ d i 3 * d j 3 * d k 3 by exact mul_nonneg ( mul_nonneg ( hm.2.2.1 _ _ ) ( hm.2.2.1 _ _ ) ) ( hm.2.2.1 _ _ ) ) using 1 <;> ring;
+            convert mul_le_mul_of_nonneg_right this ( show 0 ≤ d i 3 * d j 3 * d k 3 by exact mul_nonneg ( mul_nonneg ( hm.2.2.1 _ _ ) ( hm.2.2.1 _ _ ) ) ( hm.2.2.1 _ _ ) ) using 1 <;> ring_nf;
             rw [ hm.2.1 j k ];
           · fin_cases i <;> fin_cases k <;> simp_all +decide;
           · fin_cases i <;> fin_cases j <;> fin_cases k <;> simp +decide at hi hj hk ‹¬_› ‹¬_› ‹¬_› ⊢ <;> positivity;
@@ -723,7 +723,7 @@ lemma geodesic_ptolemy_endpoint_det {q : ℝ} (hq1 : 1 ≤ q) (hq : q ≤ Real.l
     norm_num [ Real.rpow_neg hpos0.le, Real.rpow_neg hpos1.le, Real.rpow_neg hpos2.le, Real.div_rpow ( show 0 ≤ d 0 1 by exact hm.2.2.1 _ _ ) ( show 0 ≤ d 0 3 * d 1 3 by positivity ), Real.div_rpow ( show 0 ≤ d 0 2 by exact hm.2.2.1 _ _ ) ( show 0 ≤ d 0 3 * d 2 3 by positivity ), Real.div_rpow ( show 0 ≤ d 1 2 by exact hm.2.2.1 _ _ ) ( show 0 ≤ d 1 3 * d 2 3 by positivity ) ];
     norm_num [ Real.inv_rpow ( le_of_lt hpos0 ), Real.inv_rpow ( le_of_lt hpos1 ), Real.inv_rpow ( le_of_lt hpos2 ), Real.mul_rpow ( le_of_lt hpos0 ) ( le_of_lt hpos1 ), Real.mul_rpow ( le_of_lt hpos0 ) ( le_of_lt hpos2 ), Real.mul_rpow ( le_of_lt hpos1 ) ( le_of_lt hpos2 ) ];
     field_simp;
-    ring;
+    ring_nf;
   contrapose! h_det_eq;
   refine' ne_of_gt ( lt_of_lt_of_le _ ( det_nonneg_of_negType ( by positivity ) dh _ _ hdh_negType ) );
   · exact mul_neg_of_pos_of_neg ( sq_pos_of_pos ( mul_pos ( mul_pos ( Real.rpow_pos_of_pos hpos0 _ ) ( Real.rpow_pos_of_pos hpos1 _ ) ) ( Real.rpow_pos_of_pos hpos2 _ ) ) ) h_det_eq;
@@ -767,7 +767,7 @@ lemma negType_ge_one {q : ℝ} (hq1 : 1 ≤ q) (hq : q ≤ Real.logb 2 3)
   have := @psd3_of_minors ( d 0 3 ^ q ) ( d 1 3 ^ q ) ( d 2 3 ^ q ) ( ( d 0 3 ^ q + d 1 3 ^ q - d 0 1 ^ q ) / 2 ) ( ( d 0 3 ^ q + d 2 3 ^ q - d 0 2 ^ q ) / 2 ) ( ( d 1 3 ^ q + d 2 3 ^ q - d 1 2 ^ q ) / 2 ) ?_ ?_ ?_ ?_ ?_ ?_ ?_;
   any_goals exact Real.rpow_nonneg ( hm.2.2.1 _ _ ) _;
   · linarith [ this a0 a1 a2 ];
-  · convert minor_nonneg ( show 0 < q by positivity ) ( show q ≤ 2 by linarith [ show Real.logb 2 3 < 2 by rw [ Real.logb_lt_iff_lt_rpow ] <;> norm_num ] ) ( d 0 3 ) ( d 1 3 ) ( d 0 1 ) ( hm.2.2.1 _ _ ) ( hm.2.2.1 _ _ ) ( hm.2.2.1 _ _ ) _ _ _ using 1 <;> ring;
+  · convert minor_nonneg ( show 0 < q by positivity ) ( show q ≤ 2 by linarith [ show Real.logb 2 3 < 2 by rw [ Real.logb_lt_iff_lt_rpow ] <;> norm_num ] ) ( d 0 3 ) ( d 1 3 ) ( d 0 1 ) ( hm.2.2.1 _ _ ) ( hm.2.2.1 _ _ ) ( hm.2.2.1 _ _ ) _ _ _ using 1 <;> ring_nf;
     · simpa only [ hm.2.1 ] using hm.2.2.2 0 3 1;
     · exact hm.2.2.2 _ _ _;
     · linarith [ hm.2.2.2 1 0 3, hm.2.1 0 1 ];
@@ -775,7 +775,7 @@ lemma negType_ge_one {q : ℝ} (hq1 : 1 ≤ q) (hq : q ≤ Real.logb 2 3)
     · simpa only [ hm.2.1 _ 3 ] using hm.2.2.2 0 3 2;
     · exact hm.2.2.2 _ _ _;
     · simpa only [ hm.2.1 ] using hm.2.2.2 2 0 3;
-  · convert minor_nonneg ( show 0 < q by positivity ) ( show q ≤ 2 by linarith [ show Real.logb 2 3 < 2 by rw [ Real.logb_lt_iff_lt_rpow ] <;> norm_num ] ) ( d 1 3 ) ( d 2 3 ) ( d 1 2 ) ( hm.2.2.1 _ _ ) ( hm.2.2.1 _ _ ) ( hm.2.2.1 _ _ ) _ _ _ using 1 <;> ring;
+  · convert minor_nonneg ( show 0 < q by positivity ) ( show q ≤ 2 by linarith [ show Real.logb 2 3 < 2 by rw [ Real.logb_lt_iff_lt_rpow ] <;> norm_num ] ) ( d 1 3 ) ( d 2 3 ) ( d 1 2 ) ( hm.2.2.1 _ _ ) ( hm.2.2.1 _ _ ) ( hm.2.2.1 _ _ ) _ _ _ using 1 <;> ring_nf;
     · simpa only [ hm.2.1 ] using hm.2.2.2 1 3 2;
     · exact hm.2.2.2 _ _ _;
     · exact hm.2.2.2 2 1 3 |> le_trans <| by rw [ hm.2.1 ] ;

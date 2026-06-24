@@ -49,11 +49,11 @@ lemma integrable_kern {q : ℝ} (hq0 : 0 < q) (hq2 : q < 2) (t : ℝ) :
         have h_bound : ∀ s ∈ Set.Ioc 0 1, abs (1 - Real.cos (t * s)) ≤ (t^2 / 2) * s^2 := by
           -- Use the trigonometric identity $1 - \cos(ts) = 2 \sin^2(ts/2)$ and the fact that $|\sin(x)| \leq |x|$ for all $x$.
           have h_sin_bound : ∀ s ∈ Set.Ioc 0 1, |Real.sin (t * s / 2)| ≤ |t * s / 2| := by
-            exact?;
-          intro s hs; convert mul_le_mul_of_nonneg_left ( pow_le_pow_left₀ ( abs_nonneg _ ) ( h_sin_bound s hs ) 2 ) zero_le_two using 1 <;> ring; norm_num [ Real.sin_sq, Real.cos_sq ] ; ring;
+            exact fun s a => Real.abs_sin_le_abs;
+          intro s hs; convert mul_le_mul_of_nonneg_left ( pow_le_pow_left₀ ( abs_nonneg _ ) ( h_sin_bound s hs ) 2 ) zero_le_two using 1 <;> ring_nf; norm_num [ Real.sin_sq, Real.cos_sq ] ; ring_nf;
           · exact abs_of_nonneg ( sub_nonneg_of_le ( Real.cos_le_one _ ) );
           · norm_num [ mul_pow ] ; ring;
-        intro s hs; rw [ abs_div, abs_of_nonneg ( Real.rpow_nonneg hs.1.le _ ) ] ; convert div_le_div_of_nonneg_right ( h_bound s hs ) ( Real.rpow_nonneg hs.1.le _ ) using 1 ; ring;
+        intro s hs; rw [ abs_div, abs_of_nonneg ( Real.rpow_nonneg hs.1.le _ ) ] ; convert div_le_div_of_nonneg_right ( h_bound s hs ) ( Real.rpow_nonneg hs.1.le _ ) using 1 ; ring_nf;
         rw [ show 1 - q = 2 - ( 1 + q ) by ring, Real.rpow_sub hs.1 ] ; norm_cast ; norm_num ; ring;
       refine' MeasureTheory.Integrable.mono' _ _ _;
       refine' fun s => t ^ 2 / 2 * s ^ ( 1 - q );
@@ -88,11 +88,11 @@ lemma integral_kern_eq {q : ℝ} (hq0 : 0 < q) (t : ℝ) :
   · -- By substitution using $ u = |t| s $, we can transform the integral.
     have h_subst : ∫ (s : ℝ) in Ioi 0, (1 - Real.cos (|t| * s)) / s ^ (1 + q) = |t| ^ q * ∫ (u : ℝ) in Ioi 0, (1 - Real.cos u) / u ^ (1 + q) := by
       have h_subst : ∀ {f : ℝ → ℝ}, (∫ (s : ℝ) in Ioi 0, f s) = (∫ (u : ℝ) in Ioi 0, f (u / |t|) / |t|) := by
-        intro f; rw [ MeasureTheory.integral_div ] ; simp +decide [ div_eq_inv_mul, MeasureTheory.integral_const_mul, ht ] ;
+        intro f; rw [ MeasureTheory.integral_div ] ; simp +decide [ div_eq_inv_mul ] ;
         rw [ MeasureTheory.integral_comp_mul_left_Ioi ] <;> norm_num [ ht ];
       convert @h_subst ( fun s => ( 1 - Real.cos ( |t| * s ) ) / s ^ ( 1 + q ) ) using 1;
-      rw [ ← MeasureTheory.integral_const_mul ] ; refine' MeasureTheory.setIntegral_congr_fun measurableSet_Ioi fun u hu => _ ; rw [ mul_div_cancel₀ _ ( ne_of_gt ( abs_pos.mpr ht ) ) ] ; rw [ Real.div_rpow ( le_of_lt hu ) ( by positivity ) ] ; ring;
-      norm_num [ Real.rpow_add ( abs_pos.mpr ht ), Real.rpow_one ] ; ring;
+      rw [ ← MeasureTheory.integral_const_mul ] ; refine' MeasureTheory.setIntegral_congr_fun measurableSet_Ioi fun u hu => _ ; rw [ mul_div_cancel₀ _ ( ne_of_gt ( abs_pos.mpr ht ) ) ] ; rw [ Real.div_rpow ( le_of_lt hu ) ( by positivity ) ] ; ring_nf;
+      norm_num [ Real.rpow_add ( abs_pos.mpr ht ), Real.rpow_one ] ; ring_nf;
       norm_num [ ht ];
     convert h_subst using 3;
     cases abs_cases t <;> simp +decide [ * ]
@@ -125,8 +125,8 @@ lemma pointwise_nonpos (S : Finset ℝ) (c : ℝ → ℝ) (hc : ∑ x ∈ S, c x
     ∑ x ∈ S, ∑ y ∈ S, c x * c y * (1 - Real.cos ((x - y) * s)) ≤ 0 := by
   -- Since $\sum_{x \in S} c_x = 0$, the constant part vanishes.
   have h_const : ∑ x ∈ S, ∑ y ∈ S, c x * c y * (1 - Real.cos ((x - y) * s)) = - (∑ x ∈ S, c x * Real.cos (x * s))^2 - (∑ x ∈ S, c x * Real.sin (x * s))^2 := by
-    simp +decide [ sub_mul, Real.cos_sub, Real.sin_sub, mul_sub, pow_two, Finset.mul_sum _ _ _, Finset.sum_mul, mul_assoc, mul_comm, mul_left_comm, hc ] ; ring;
-    simp +decide [ mul_comm, Finset.sum_add_distrib, ← Finset.mul_sum _ _ _, ← Finset.sum_mul, hc ] ; ring;
+    simp +decide [ Real.cos_sub, mul_sub, pow_two, Finset.mul_sum _ _ _, mul_assoc, mul_comm, mul_left_comm ] ; ring_nf;
+    simp +decide [ Finset.sum_add_distrib, ← Finset.mul_sum _ _ _, hc ] ; ring;
   nlinarith
 
 /-

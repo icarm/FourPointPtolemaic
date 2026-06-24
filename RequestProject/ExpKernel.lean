@@ -31,7 +31,7 @@ def QPos (B : ι → ι → ℝ) : Prop :=
 lemma QPos.smul {B : ι → ι → ℝ} (hB : QPos B) {c : ℝ} (hc : 0 ≤ c) :
     QPos (fun i j => c * B i j) := by
   intro a;
-  convert mul_nonneg hc ( hB a ) using 1 ; ring;
+  convert mul_nonneg hc ( hB a ) using 1 ; ring_nf;
   simp +decide only [mul_assoc, mul_left_comm, Finset.mul_sum _ _ _]
 
 /-
@@ -39,7 +39,7 @@ The constant kernel `1` is `QPos` (its quadratic form is `(∑ a)^2`).
 -/
 lemma qpos_one : QPos (fun _ _ : ι => (1 : ℝ)) := by
   intro a
-  simp [QPos];
+  simp;
   simpa only [ ← Finset.mul_sum _ _ _, ← Finset.sum_mul ] using mul_self_nonneg _
 
 /-
@@ -52,24 +52,32 @@ lemma posSemidef_of_qpos {B : ι → ι → ℝ} (hsymm : ∀ i j, B i j = B j i
   · ext i j; simp +decide [ hsymm ] ;
   · intro x
     convert hB (fun i => x i) using 1
-    simp [Matrix.mulVec, dotProduct, Finset.mul_sum, Finset.sum_mul, mul_assoc, mul_comm, mul_left_comm];
-    simp +decide [ Finsupp.sum_fintype, mul_assoc, mul_comm, mul_left_comm, Finset.mul_sum _ _ _ ]
+    simp [mul_comm, mul_left_comm];
+    simp +decide [ Finsupp.sum_fintype, mul_comm, mul_left_comm ]
+
+open Matrix in
+open scoped MatrixOrder in
+/-- A matrix is positive semidefinite iff it has the form `Bᴴ * B`. Non-deprecated
+restatement of the former `Matrix.posSemidef_iff_eq_conjTranspose_mul_self`. -/
+private lemma posSemidef_iff_eq_conjTranspose_mul_self [DecidableEq ι] {A : Matrix ι ι ℝ} :
+    A.PosSemidef ↔ ∃ B : Matrix ι ι ℝ, A = Bᴴ * B :=
+  Matrix.nonneg_iff_posSemidef.symm.trans CStarAlgebra.nonneg_iff_eq_star_mul_self
 
 /-
 **Schur product theorem.** The entrywise product of two `QPos` kernels is `QPos`.
 -/
 lemma QPos.mul [DecidableEq ι] {B C : ι → ι → ℝ}
-    (hBsymm : ∀ i j, B i j = B j i) (hB : QPos B)
+    (_hBsymm : ∀ i j, B i j = B j i) (hB : QPos B)
     (hCsymm : ∀ i j, C i j = C j i) (hC : QPos C) :
     QPos (fun i j => B i j * C i j) := by
-  obtain ⟨ D, hD ⟩ := Matrix.posSemidef_iff_eq_conjTranspose_mul_self.mp ( posSemidef_of_qpos hCsymm hC );
+  obtain ⟨ D, hD ⟩ := posSemidef_iff_eq_conjTranspose_mul_self.mp ( posSemidef_of_qpos hCsymm hC );
   -- Substitute C i j = ∑ k, D k i * D k j into the quadratic form.
   intro a
-  simp [Matrix.mul_apply, hD] at *;
+  simp [hD] at *;
   have hD : ∃ D : Matrix ι ι ℝ, ∀ i j, C i j = ∑ k, D k i * D k j := by
-    have := Matrix.posSemidef_iff_eq_conjTranspose_mul_self.mp ( posSemidef_of_qpos hCsymm hC );
+    have := posSemidef_iff_eq_conjTranspose_mul_self.mp ( posSemidef_of_qpos hCsymm hC );
     obtain ⟨ D, hD ⟩ := this; use D; intro i j; simpa [ Matrix.mul_apply, mul_comm ] using congr_fun ( congr_fun hD i ) j;
-  obtain ⟨ D, hD ⟩ := hD; simp +decide only [hD] ; ring; (
+  obtain ⟨ D, hD ⟩ := hD; simp +decide only [hD] ; ring_nf; (
   -- By Fubini's theorem, we can interchange the order of summation.
   have h_fubini : ∑ x, ∑ x_1, a x * a x_1 * B x x_1 * ∑ x_2, D x_2 x * D x_2 x_1 = ∑ x_2, ∑ x, ∑ x_1, a x * a x_1 * B x x_1 * D x_2 x * D x_2 x_1 := by
     simp +decide only [mul_assoc, Finset.mul_sum _ _ _] ; exact Eq.symm ( Finset.sum_comm.trans ( Finset.sum_congr rfl fun _ _ => Finset.sum_comm ) ) ;
@@ -99,11 +107,11 @@ lemma QPos.exp [DecidableEq ι] {B : ι → ι → ℝ} (hsymm : ∀ i j, B i j 
     have h_fubini : ∀ {f : ℕ → ι → ι → ℝ}, (∀ i j, Summable (fun n => f n i j)) → ∑ i, ∑ j, ∑' n, f n i j = ∑' n, ∑ i, ∑ j, f n i j := by
       intro f hf;
       have h_fubini : ∀ {f : ℕ → ι → ℝ}, (∀ i, Summable (fun n => f n i)) → ∑ i, ∑' n, f n i = ∑' n, ∑ i, f n i := by
-        exact?;
+        exact fun {f} a => Eq.symm (Summable.tsum_finsetSum fun i a_1 => a i);
       rw [ Finset.sum_congr rfl fun i _ => h_fubini fun j => hf i j, h_fubini fun i => by exact summable_sum fun j _ => hf i j ];
     apply h_fubini;
     exact fun i j => by simpa only [ mul_div_assoc ] using Summable.mul_left _ ( Real.summable_pow_div_factorial _ ) ;
-  simp_all +decide [ div_eq_mul_inv, ← mul_assoc, ← Finset.mul_sum _ _ _, ← Finset.sum_mul ];
+  simp_all +decide [ div_eq_mul_inv, ← Finset.sum_mul ];
   exact tsum_nonneg fun n => mul_nonneg ( by simpa only [ mul_assoc, mul_comm, mul_left_comm ] using QPos.pow hsymm hB n a ) ( by positivity )
 
 /-
@@ -118,10 +126,10 @@ lemma qpos_exp_neg_dist [DecidableEq ι] {B d : ι → ι → ℝ}
   -- Define `a' i := a i * Real.exp (-(t * B i i))`.
   intro a
   have h_exp : ∀ i j, Real.exp (-(t * d i j)) = Real.exp (-(t * B i i)) * Real.exp (-(t * B j j)) * Real.exp ((2 * t) * B i j) := by
-    intro i j; rw [ hrel i j ] ; rw [ ← Real.exp_add, ← Real.exp_add ] ; ring;
+    intro i j; rw [ hrel i j ] ; rw [ ← Real.exp_add, ← Real.exp_add ] ; ring_nf;
   have h_exp_smul : QPos (fun i j => Real.exp ((2 * t) * B i j)) := by
     convert QPos.exp ( show ∀ i j, ( 2 * t * B i j ) = ( 2 * t * B j i ) by simp +decide [ hsymm ] ) ( QPos.smul hB ( show 0 ≤ 2 * t by positivity ) ) using 1;
-  convert h_exp_smul ( fun i => a i * Real.exp ( - ( t * B i i ) ) ) using 1 ; simp +decide [ h_exp, mul_assoc, mul_comm, mul_left_comm, Finset.mul_sum _ _ _ ]
+  convert h_exp_smul ( fun i => a i * Real.exp ( - ( t * B i i ) ) ) using 1 ; simp +decide [ h_exp, mul_assoc, mul_comm, mul_left_comm ]
 
 /-
 **The resolvent kernel.** Under the same hypotheses, for `t > 0` the kernel
@@ -147,7 +155,7 @@ lemma qpos_resolvent [DecidableEq ι] {B d : ι → ι → ℝ}
       convert qpos_exp_neg_dist hsymm hB hrel hs.out.le a using 1;
     convert mul_nonneg ( Real.exp_nonneg ( - ( t * s ) ) ) h_inner using 1;
     simp +decide only [Finset.mul_sum _ _ _, mul_left_comm];
-    exact Finset.sum_congr rfl fun i hi => Finset.sum_congr rfl fun j hj => by rw [ ← Real.exp_add ] ; ring;
+    exact Finset.sum_congr rfl fun i hi => Finset.sum_congr rfl fun j hj => by rw [ ← Real.exp_add ] ; ring_nf;
   convert h_fubini.symm ▸ MeasureTheory.setIntegral_nonneg measurableSet_Ioi h_inner_nonneg using 1;
   exact Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => by rw [ show ∫ s in Set.Ioi 0, Real.exp ( - ( t + d i j ) * s ) = 1 / ( t + d i j ) by have := integral_exp_neg_mul_rpow zero_lt_one ( show 0 < t + d i j by linarith [ hdnn i j ] ) ; norm_num [ Real.rpow_neg_one ] at this ⊢; linarith ] ;
 
@@ -192,7 +200,7 @@ theorem qpos_downward [DecidableEq ι] {B d : ι → ι → ℝ}
       simp +decide only [h_integrand_nonpos_step, Finset.mul_sum _ _ _, mul_left_comm];
     -- Using the fact that $\sum_{i} a_i = 0$, we can simplify the expression.
     have h_simplify : ∑ i, ∑ j, a i * a j * (1 - t * (1 / (t + d i j))) = -t * ∑ i, ∑ j, a i * a j * (1 / (t + d i j)) := by
-      simp +decide [ mul_sub, Finset.mul_sum _ _ _, Finset.sum_mul, mul_assoc, mul_left_comm ];
+      simp +decide [ mul_sub, Finset.mul_sum _ _ _, mul_assoc, mul_left_comm ];
       simp +decide [ ← Finset.mul_sum _ _ _, ha ];
     exact h_integrand_nonpos_step.symm ▸ mul_nonpos_of_nonneg_of_nonpos ( Real.rpow_nonneg ht.le _ ) ( h_simplify.symm ▸ mul_nonpos_of_nonpos_of_nonneg ( neg_nonpos.mpr ht.le ) ( qpos_resolvent hsymm hB hrel hdnn ht a ) );
   refine' hsum ▸ div_nonpos_of_nonpos_of_nonneg ( MeasureTheory.setIntegral_nonpos measurableSet_Ioi fun t ht => h_integrand_nonpos t ht ) ( MeasureTheory.setIntegral_nonneg measurableSet_Ioi fun t ht => _ );
