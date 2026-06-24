@@ -792,6 +792,69 @@ lemma geodesic_ptolemy_endpoint_det {q : ℝ} (hq1 : 1 ≤ q) (hq : q ≤ Real.l
   · exact hdh_metric.2.1;
   · exact fun i => hdh_metric.1 i
 
+/-- **Ptolemy-equality endpoint, apex-between labeling.** Here the apex `3` lies on the
+geodesic between leaves `0` and `1`, and the Ptolemy inequality for `d 2 3` holds with
+equality.  This is `geodesic_ptolemy_endpoint_det` under the relabelling `pm = (0 2 1 3)`,
+which sends our "apex 3 between 0,1" to its "leaf 1 between apex 3 and leaf 2"; the
+determinant is transported back through `negType` (which is base-independent). -/
+lemma ptolemy_apex_endpoint_det {q : ℝ} (hq1 : 1 ≤ q) (hq : q ≤ Real.logb 2 3)
+    (d : Fin 4 → Fin 4 → ℝ) (hm : IsMetric4 d) (hp : IsPtolemaic4 d)
+    (hp02 : 0 < d 0 2) (hp03 : 0 < d 0 3) (hp13 : 0 < d 1 3)
+    (hgeo : d 0 1 = d 0 3 + d 1 3)
+    (hPtEq : d 2 3 * d 0 1 = d 0 2 * d 1 3 + d 0 3 * d 1 2) :
+    0 ≤ schoenDet (d 0 3 ^ q) (d 1 3 ^ q) (d 2 3 ^ q)
+        ((d 0 3 ^ q + d 1 3 ^ q - d 0 1 ^ q) / 2)
+        ((d 0 3 ^ q + d 2 3 ^ q - d 0 2 ^ q) / 2)
+        ((d 1 3 ^ q + d 2 3 ^ q - d 1 2 ^ q) / 2) := by
+  obtain ⟨hd, hsymm, hnn, htri⟩ := hm
+  have hq0 : (0 : ℝ) < q := by linarith
+  have hq2 : q ≤ 2 :=
+    le_trans hq (by linarith [show Real.logb 2 3 < 2 by rw [Real.logb_lt_iff_lt_rpow] <;> norm_num])
+  have hd01 : 0 < d 0 1 := by rw [hgeo]; linarith
+  -- The reindexed metric `E = d ∘ pm`, `pm = (0 2 1 3)`.
+  set pm : Equiv.Perm (Fin 4) := Equiv.swap 0 3 * (Equiv.swap 0 1 * Equiv.swap 0 2) with hpm
+  set E : Fin 4 → Fin 4 → ℝ := fun i j => d (pm i) (pm j) with hE
+  have hpm0 : pm 0 = 2 := by rw [hpm]; decide
+  have hpm1 : pm 1 = 3 := by rw [hpm]; decide
+  have hpm2 : pm 2 = 1 := by rw [hpm]; decide
+  have hpm3 : pm 3 = 0 := by rw [hpm]; decide
+  have hmE : IsMetric4 E :=
+    ⟨fun i => hd _, fun i j => hsymm _ _, fun i j => hnn _ _, fun i j k => htri _ _ _⟩
+  have hpE : IsPtolemaic4 E := fun x y z w => hp _ _ _ _
+  -- `E` satisfies the hypotheses of `geodesic_ptolemy_endpoint_det`.
+  have hgeoE : E 3 2 = E 3 1 + E 1 2 := by
+    simp only [hE, hpm0, hpm1, hpm2, hpm3]; linarith [hgeo, hsymm 3 1]
+  have hPtEqE : (E 3 1 + E 1 2) * E 0 1 = E 1 2 * E 0 3 + E 3 1 * E 0 2 := by
+    simp only [hE, hpm0, hpm1, hpm2, hpm3]
+    rw [hsymm 3 1, hsymm 2 0, hsymm 2 1]; rw [hgeo] at hPtEq; nlinarith [hPtEq]
+  have hposE0 : 0 < E 0 3 := by simp only [hE, hpm0, hpm3]; rw [hsymm 2 0]; exact hp02
+  have hposE1 : 0 < E 1 3 := by simp only [hE, hpm1, hpm3]; rw [hsymm 3 0]; exact hp03
+  have hposE2 : 0 < E 2 3 := by simp only [hE, hpm2, hpm3]; rw [hsymm 1 0]; exact hd01
+  have hdetE := geodesic_ptolemy_endpoint_det hq1 hq E hmE hpE hposE0 hposE1 hposE2 hgeoE hPtEqE
+  -- Transport: `negType E`, reindex to `negType d`, then the base-3 determinant.
+  have hnegE : HasNegType q E := by
+    apply negType_of_schoenberg hq0 E (fun i j => hmE.2.1 _ _) (fun i => hmE.1 _)
+    intro a0 a1 a2
+    nlinarith [psd3_of_minors (E 0 3 ^ q) (E 1 3 ^ q) (E 2 3 ^ q)
+      ((E 0 3 ^ q + E 1 3 ^ q - E 0 1 ^ q) / 2) ((E 0 3 ^ q + E 2 3 ^ q - E 0 2 ^ q) / 2)
+      ((E 1 3 ^ q + E 2 3 ^ q - E 1 2 ^ q) / 2)
+      (Real.rpow_nonneg (hmE.2.2.1 _ _) _) (Real.rpow_nonneg (hmE.2.2.1 _ _) _)
+      (Real.rpow_nonneg (hmE.2.2.1 _ _) _)
+      (minor_nonneg hq0 hq2 (E 0 3) (E 1 3) (E 0 1) (hmE.2.2.1 _ _) (hmE.2.2.1 _ _) (hmE.2.2.1 _ _)
+        (by linarith [hmE.2.2.2 0 3 1, hmE.2.1 3 1]) (by linarith [hmE.2.2.2 0 1 3])
+        (by linarith [hmE.2.2.2 1 0 3, hmE.2.1 1 0]))
+      (minor_nonneg hq0 hq2 (E 0 3) (E 2 3) (E 0 2) (hmE.2.2.1 _ _) (hmE.2.2.1 _ _) (hmE.2.2.1 _ _)
+        (by linarith [hmE.2.2.2 0 3 2, hmE.2.1 3 2]) (by linarith [hmE.2.2.2 0 2 3])
+        (by linarith [hmE.2.2.2 2 0 3, hmE.2.1 2 0]))
+      (minor_nonneg hq0 hq2 (E 1 3) (E 2 3) (E 1 2) (hmE.2.2.1 _ _) (hmE.2.2.1 _ _) (hmE.2.2.1 _ _)
+        (by linarith [hmE.2.2.2 1 3 2, hmE.2.1 3 2]) (by linarith [hmE.2.2.2 1 2 3])
+        (by linarith [hmE.2.2.2 2 1 3, hmE.2.1 2 1]))
+      hdetE a0 a1 a2]
+  have hnegd : HasNegType q d := by
+    convert hasNegType_reindex pm⁻¹ hnegE using 1
+    exact funext fun i => funext fun j => by rw [hE]; rw [hpm]; congr 1 <;> simp [Equiv.Perm.mul_apply]
+  convert det_nonneg_of_negType hq0 d (fun i j => hsymm _ _) (fun i => hd _) hnegd using 1
+
 /-- **Geodesic-insertion face** (`lem:q5-radial`): the apex `3` lies on the geodesic
 between leaves `0` and `1` (`d 0 1 = d 0 3 + d 1 3`).  Since `schoenDet` is concave in
 the apex distance `d 2 3` (`schoenDet_concave_apex`), reduce `d 2 3` over its feasible
