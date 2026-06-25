@@ -44,10 +44,16 @@ lemma psd3_of_minors (A B C u v w : ℝ)
       + 2 * u * x * y + 2 * v * x * z + 2 * w * y * z := by
   intro x y z
   by_cases hA' : A = 0
-  · simp_all +decide
+  · subst A
+    have hu : u = 0 := by nlinarith [sq_nonneg u]
+    have hv : v = 0 := by nlinarith [sq_nonneg v]
+    subst u
+    subst v
     by_cases hB' : B = 0
-    · simp_all +decide [show w = 0 by nlinarith]
-      positivity
+    · subst B
+      have hw : w = 0 := by nlinarith [sq_nonneg w]
+      subst w
+      nlinarith [mul_nonneg hC (sq_nonneg z)]
     · cases lt_or_gt_of_ne hB' <;> nlinarith [sq_nonneg (B * y + w * z), sq_nonneg (C * z + w * y)]
   · -- Since $A > 0$, we can complete the square for the quadratic form.
     have hApos : 0 < A := lt_of_le_of_ne hA (Ne.symm hA')
@@ -80,6 +86,12 @@ private lemma sqrt_pair_product (a b c : ℝ) (ha : 0 ≤ a) (hb : 0 ≤ b) (hc 
     ← Real.sqrt_mul (mul_nonneg (mul_nonneg ha hb) (mul_nonneg ha hc))]
   rw [show a * b * (a * c) * (b * c) = (a * b * c) ^ 2 by ring]
   rw [Real.sqrt_sq (mul_nonneg (mul_nonneg ha hb) hc)]
+
+private lemma rpow_mul_eq_sq_half (x y q : ℝ) (hx : 0 ≤ x) (hy : 0 ≤ y) :
+    x ^ q * y ^ q = (x ^ (q / 2) * y ^ (q / 2)) ^ 2 := by
+  rw [mul_pow, ← Real.rpow_natCast, ← Real.rpow_mul hx,
+    ← Real.rpow_natCast, ← Real.rpow_mul hy]
+  ring_nf
 
 /-
 `3 ^ (log₃ 2) = 2`.
@@ -524,7 +536,7 @@ lemma star_negType {q : ℝ} (hq1 : 1 ≤ q) (hq : q ≤ Real.logb 2 3)
         · refine div_le_one_of_le₀ ?_ (Real.sqrt_nonneg _)
           have := star_inequality hq1 hq ρ0 ρ1 hρ0 hρ1
           rw [Real.mul_rpow (by positivity) (by positivity)] at this
-          rw [show ρ0 ^ q * ρ1 ^ q = (ρ0 ^ (q / 2) * ρ1 ^ (q / 2)) ^ 2 by rw [mul_pow, ← Real.rpow_natCast, ← Real.rpow_mul hρ0, ← Real.rpow_natCast, ← Real.rpow_mul hρ1]; ring_nf, Real.sqrt_sq (by positivity)]
+          rw [rpow_mul_eq_sq_half ρ0 ρ1 q hρ0 hρ1, Real.sqrt_sq (by positivity)]
           linarith
         · refine div_nonneg ?_ (Real.sqrt_nonneg _)
           have := @Real.add_rpow_le_rpow_add
@@ -532,11 +544,7 @@ lemma star_negType {q : ℝ} (hq1 : 1 ≤ q) (hq : q ≤ Real.logb 2 3)
         · refine div_le_one_of_le₀ ?_ (Real.sqrt_nonneg _)
           have := star_inequality hq1 hq ρ0 ρ2 hρ0 hρ2
           rw [Real.mul_rpow (by positivity) (by positivity)] at this
-          rw [show ρ0 ^ q * ρ2 ^ q = (ρ0 ^ (q / 2) * ρ2 ^ (q / 2)) ^ 2 by
-            rw [mul_pow, ← Real.rpow_natCast, ← Real.rpow_mul hρ0,
-              ← Real.rpow_natCast, ← Real.rpow_mul hρ2]
-            ring_nf]
-          rw [Real.sqrt_sq (by positivity)]
+          rw [rpow_mul_eq_sq_half ρ0 ρ2 q hρ0 hρ2, Real.sqrt_sq (by positivity)]
           linarith
         · refine ⟨?_, ?_, ?_, ?_, ?_⟩
           · refine div_nonneg ?_ (Real.sqrt_nonneg _)
@@ -545,8 +553,7 @@ lemma star_negType {q : ℝ} (hq1 : 1 ≤ q) (hq : q ≤ Real.logb 2 3)
           · refine div_le_one_of_le₀ ?_ (Real.sqrt_nonneg _)
             have := star_inequality hq1 hq ρ1 ρ2 hρ1 hρ2
             rw [Real.mul_rpow (by positivity) (by positivity)] at this
-            rw [show ρ1 ^ q * ρ2 ^ q = (ρ1 ^ (q / 2) * ρ2 ^ (q / 2)) ^ 2 by rw [mul_pow, ← Real.rpow_natCast, ← Real.rpow_mul (by positivity), ← Real.rpow_natCast, ← Real.rpow_mul (by positivity)]; ring_nf]
-            rw [Real.sqrt_sq (by positivity)]
+            rw [rpow_mul_eq_sq_half ρ1 ρ2 q hρ1 hρ2, Real.sqrt_sq (by positivity)]
             linarith
           · by_cases h : Real.sqrt (ρ0 ^ q * ρ1 ^ q) = 0 <;> simp_all +decide [sub_sub]
             cases eq_or_ne ρ0 0 <;> cases eq_or_ne ρ1 0 <;> simp_all +decide [Real.rpow_nonneg]
