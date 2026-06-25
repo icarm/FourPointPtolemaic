@@ -42,25 +42,26 @@ lemma psd3_of_minors (A B C u v w : ℝ)
     (hdet : 0 ≤ A * B * C + 2 * u * v * w - A * w ^ 2 - B * v ^ 2 - C * u ^ 2) :
     ∀ x y z : ℝ, 0 ≤ A * x ^ 2 + B * y ^ 2 + C * z ^ 2
       + 2 * u * x * y + 2 * v * x * z + 2 * w * y * z := by
-  intro x y z;
-  by_cases hA' : A = 0;
-  · simp_all +decide;
-    by_cases hB' : B = 0;
-    · simp_all +decide [ show w = 0 by nlinarith ];
-      positivity;
-    · cases lt_or_gt_of_ne hB' <;> nlinarith [ sq_nonneg ( B * y + w * z ), sq_nonneg ( C * z + w * y ) ];
+  intro x y z
+  by_cases hA' : A = 0
+  · simp_all +decide
+    by_cases hB' : B = 0
+    · simp_all +decide [show w = 0 by nlinarith]
+      positivity
+    · cases lt_or_gt_of_ne hB' <;> nlinarith [sq_nonneg (B * y + w * z), sq_nonneg (C * z + w * y)]
   · -- Since $A > 0$, we can complete the square for the quadratic form.
     have hApos : 0 < A := lt_of_le_of_ne hA (Ne.symm hA')
     have h_complete_square : A * (A * x ^ 2 + B * y ^ 2 + C * z ^ 2 + 2 * u * x * y + 2 * v * x * z + 2 * w * y * z) = (A * x + u * y + v * z) ^ 2 + (B * A - u ^ 2) * y ^ 2 + (C * A - v ^ 2) * z ^ 2 + 2 * (w * A - u * v) * y * z := by
-      ring;
+      ring
     have h_complete_square : (B * A - u ^ 2) * y ^ 2 + (C * A - v ^ 2) * z ^ 2 + 2 * (w * A - u * v) * y * z ≥ 0 := by
       have h_complete_square : (B * A - u ^ 2) * (C * A - v ^ 2) ≥ (w * A - u * v) ^ 2 := by
-        nlinarith [hApos];
-      by_cases h_case : B * A - u ^ 2 = 0;
-      · norm_num [ show w * A - u * v = 0 by nlinarith ] at * ; nlinarith [ mul_self_nonneg z ] ;
-      · by_cases h_case : B * A - u ^ 2 > 0;
-        · nlinarith [ sq_nonneg ( ( B * A - u ^ 2 ) * y + ( w * A - u * v ) * z ), mul_self_pos.2 ‹_› ];
-        · exact False.elim <| h_case <| lt_of_le_of_ne ( by linarith ) <| Ne.symm ‹_›;
+        nlinarith [hApos]
+      by_cases h_case : B * A - u ^ 2 = 0
+      · norm_num [show w * A - u * v = 0 by nlinarith] at *
+        nlinarith [mul_self_nonneg z]
+      · by_cases h_case : B * A - u ^ 2 > 0
+        · nlinarith [sq_nonneg ((B * A - u ^ 2) * y + (w * A - u * v) * z), mul_self_pos.2 ‹_›]
+        · exact False.elim <| h_case <| lt_of_le_of_ne (by linarith) <| Ne.symm ‹_›
     nlinarith [hApos]
 
 /-
@@ -71,28 +72,29 @@ lemma star_det_nonneg (a b c : ℝ)
     (ha0 : 0 ≤ a) (ha1 : a ≤ 1) (hb0 : 0 ≤ b) (hb1 : b ≤ 1)
     (hc0 : 0 ≤ c) (hc1 : c ≤ 1) :
     0 ≤ 1 - (a ^ 2 + b ^ 2 + c ^ 2 + a * b * c) / 4 := by
-  nlinarith [ mul_nonneg ha0 hb0 ]
+  nlinarith [mul_nonneg ha0 hb0]
 
 /-
 `3 ^ (log₃ 2) = 2`.
 -/
 lemma three_rpow_logb : (3 : ℝ) ^ (Real.logb 3 2) = 2 := by
-  rw [ Real.rpow_logb ] <;> norm_num
+  rw [Real.rpow_logb] <;> norm_num
 
 /-
 Numeric bounds: `1/2 < log₃ 2 < 2/3`.
 -/
 lemma logb32_bounds : 1 / 2 < Real.logb 3 2 ∧ Real.logb 3 2 < 2 / 3 := by
-  rw [ Real.logb ];
-  constructor <;> rw [ div_lt_div_iff₀ ( by positivity ) ( by positivity ) ]; all_goals norm_num [ mul_comm, ← Real.log_rpow, Real.log_lt_log ]
+  rw [Real.logb]
+  constructor <;> rw [div_lt_div_iff₀ (by positivity) (by positivity)]
+  all_goals norm_num [mul_comm, ← Real.log_rpow, Real.log_lt_log]
 
 /-
 The crossing function `Ξ(v) = (1+v+v²)/((1+2v)(2+v))` is antitone on `[0,1]`.
 -/
 lemma xi_antitoneOn :
     AntitoneOn (fun v : ℝ => (1 + v + v ^ 2) / ((1 + 2 * v) * (2 + v))) (Set.Icc (0 : ℝ) 1) := by
-  intros v hv w hw hvw;
-  rw [ div_le_div_iff₀ ] <;> nlinarith [ hv.1, hv.2, hw.1, hw.2, mul_le_mul_of_nonneg_left hvw hv.1 ]
+  intros v hv w hw hvw
+  rw [div_le_div_iff₀] <;> nlinarith [hv.1, hv.2, hw.1, hw.2, mul_le_mul_of_nonneg_left hvw hv.1]
 
 /-
 Core unimodality inequality: with `k₀ = 1 - log₃ 2 ∈ (1/3, 1/2)`,
@@ -103,50 +105,59 @@ lemma theta_nonneg (v : ℝ) (hv0 : 0 ≤ v) (hv1 : v ≤ 1) :
     0 ≤ Real.log (1 + v / 2) - (1 - Real.logb 3 2) * Real.log (1 + v + v ^ 2) := by
   -- By the intermediate value theorem, there exists $v^* \in [0, 1]$ such that $\Xi(v^*) = k₀$.
   obtain ⟨v_star, hv_star⟩ : ∃ v_star ∈ Set.Icc (0 : ℝ) 1, (1 + v_star + v_star ^ 2) / ((1 + 2 * v_star) * (2 + v_star)) = 1 - Real.logb 3 2 := by
-    apply_rules [ intermediate_value_Icc' ] <;> norm_num;
-    · exact ContinuousOn.div ( Continuous.continuousOn ( by continuity ) ) ( Continuous.continuousOn ( by continuity ) ) fun x hx => by nlinarith [ hx.1, hx.2 ] ;
-    · constructor <;> linarith [ logb32_bounds ];
+    apply_rules [intermediate_value_Icc'] <;> norm_num
+    · exact ContinuousOn.div (Continuous.continuousOn (by continuity)) (Continuous.continuousOn (by continuity)) fun x hx => by nlinarith [hx.1, hx.2]
+    · constructor <;> linarith [logb32_bounds]
   -- For $v \in [0, v^*]$, $\Xi(v) \geq \Xi(v^*) = k₀$ so $\Theta'(v) \geq 0$.
   have h_deriv_nonneg : ∀ v ∈ Set.Icc (0 : ℝ) v_star, 0 ≤ deriv (fun v => Real.log (1 + v / 2) - (1 - Real.logb 3 2) * Real.log (1 + v + v ^ 2)) v := by
-    intro v hv ;
+    intro v hv
     have h_deriv_nonneg : (1 + v + v ^ 2) / ((1 + 2 * v) * (2 + v)) ≥ 1 - Real.logb 3 2 := by
-      rw [ ← hv_star.2 ] ; exact xi_antitoneOn ( by constructor <;> linarith [ hv.1, hv.2, hv_star.1.1, hv_star.1.2 ] ) ( by constructor <;> linarith [ hv.1, hv.2, hv_star.1.1, hv_star.1.2 ] ) hv.2;
-    norm_num [ add_assoc, show ( 1 + v / 2 ) ≠ 0 from by linarith [ hv.1 ], show ( 1 + v + v ^ 2 ) ≠ 0 from by nlinarith [ hv.1 ] ];
-    norm_num [ show 1 + v / 2 ≠ 0 from by linarith [ hv.1 ], show 1 + ( v + v ^ 2 ) ≠ 0 from by nlinarith [ hv.1 ] ];
-    rw [ mul_div, div_le_div_iff₀ ] <;> try nlinarith [ hv.1, hv.2 ];
-    rw [ ge_iff_le, le_div_iff₀ ] at h_deriv_nonneg <;> nlinarith [ hv.1, hv.2, hv_star.1.1, hv_star.1.2 ];
+      rw [← hv_star.2]
+      exact xi_antitoneOn (by constructor <;> linarith [hv.1, hv.2, hv_star.1.1, hv_star.1.2]) (by constructor <;> linarith [hv.1, hv.2, hv_star.1.1, hv_star.1.2]) hv.2
+    norm_num [add_assoc, show (1 + v / 2) ≠ 0 from by linarith [hv.1], show (1 + v + v ^ 2) ≠ 0 from by nlinarith [hv.1]]
+    norm_num [show 1 + v / 2 ≠ 0 from by linarith [hv.1], show 1 + (v + v ^ 2) ≠ 0 from by nlinarith [hv.1]]
+    rw [mul_div, div_le_div_iff₀] <;> try nlinarith [hv.1, hv.2]
+    rw [ge_iff_le, le_div_iff₀] at h_deriv_nonneg <;> nlinarith [hv.1, hv.2, hv_star.1.1, hv_star.1.2]
   -- For $v \in [v^*, 1]$, $\Xi(v) \leq k₀$ so $\Theta'(v) \leq 0$.
   have h_deriv_nonpos : ∀ v ∈ Set.Icc v_star 1, deriv (fun v => Real.log (1 + v / 2) - (1 - Real.logb 3 2) * Real.log (1 + v + v ^ 2)) v ≤ 0 := by
     intro v hv
     have h_deriv : deriv (fun v => Real.log (1 + v / 2) - (1 - Real.logb 3 2) * Real.log (1 + v + v ^ 2)) v = (1 / (2 + v)) - (1 - Real.logb 3 2) * ((1 + 2 * v) / (1 + v + v ^ 2)) := by
-      norm_num [ add_assoc, show v + 1 + v ^ 2 ≠ 0 from by nlinarith [ hv.1, hv.2, hv_star.1.1, hv_star.1.2 ], show 2 + v ≠ 0 from by nlinarith [ hv.1, hv.2, hv_star.1.1, hv_star.1.2 ] ];
-      norm_num [ show 1 + v / 2 ≠ 0 from by nlinarith [ hv.1, hv.2, hv_star.1.1, hv_star.1.2 ], show 1 + ( v + v ^ 2 ) ≠ 0 from by nlinarith [ hv.1, hv.2, hv_star.1.1, hv_star.1.2 ] ] ; ring_nf;
-      rw [ show 2 + v = 2 * ( 1 + v * ( 1 / 2 ) ) by ring, mul_inv ] ; ring;
+      norm_num [add_assoc, show v + 1 + v ^ 2 ≠ 0 from by nlinarith [hv.1, hv.2, hv_star.1.1, hv_star.1.2], show 2 + v ≠ 0 from by nlinarith [hv.1, hv.2, hv_star.1.1, hv_star.1.2]]
+      norm_num [show 1 + v / 2 ≠ 0 from by nlinarith [hv.1, hv.2, hv_star.1.1, hv_star.1.2], show 1 + (v + v ^ 2) ≠ 0 from by nlinarith [hv.1, hv.2, hv_star.1.1, hv_star.1.2]]
+      ring_nf
+      rw [show 2 + v = 2 * (1 + v * (1 / 2)) by ring, mul_inv]
+      ring
     have h_antitone : (1 + v + v ^ 2) / ((1 + 2 * v) * (2 + v)) ≤ (1 + v_star + v_star ^ 2) / ((1 + 2 * v_star) * (2 + v_star)) := by
-      exact xi_antitoneOn ( show v_star ∈ Set.Icc 0 1 from hv_star.1 ) ( show v ∈ Set.Icc 0 1 from ⟨ by linarith [ hv.1, hv_star.1.1 ], by linarith [ hv.2, hv_star.1.2 ] ⟩ ) hv.1;
-    simp_all +decide [ div_eq_mul_inv ];
-    convert mul_le_mul_of_nonneg_right h_antitone ( show 0 ≤ ( 1 + 2 * v ) * ( 1 + v + v ^ 2 ) ⁻¹ by exact mul_nonneg ( by linarith ) ( inv_nonneg.mpr ( by nlinarith ) ) ) using 1 ; ring_nf;
-    field_simp;
-    rw [ div_eq_div_iff ] <;> nlinarith only [ hv, hv_star.1.1, hv_star.1.2, pow_two_nonneg ( v - v_star ), pow_two_nonneg ( v + v_star ) ];
+      exact xi_antitoneOn (show v_star ∈ Set.Icc 0 1 from hv_star.1) (show v ∈ Set.Icc 0 1 from ⟨by linarith [hv.1, hv_star.1.1], by linarith [hv.2, hv_star.1.2]⟩) hv.1
+    simp_all +decide [div_eq_mul_inv]
+    convert mul_le_mul_of_nonneg_right h_antitone (show 0 ≤ (1 + 2 * v) * (1 + v + v ^ 2) ⁻¹ by exact mul_nonneg (by linarith) (inv_nonneg.mpr (by nlinarith))) using 1
+    ring_nf
+    field_simp
+    rw [div_eq_div_iff] <;> nlinarith only [hv, hv_star.1.1, hv_star.1.2, pow_two_nonneg (v - v_star), pow_two_nonneg (v + v_star)]
   -- Therefore, $\Theta(v)$ is monotone nondecreasing on $[0, v^*]$ and nonincreasing on $[v^*, 1]$.
   have h_monotone : ∀ v ∈ Set.Icc (0 : ℝ) v_star, Real.log (1 + v / 2) - (1 - Real.logb 3 2) * Real.log (1 + v + v ^ 2) ≥ Real.log (1 + 0 / 2) - (1 - Real.logb 3 2) * Real.log (1 + 0 + 0 ^ 2) := by
-    intros v hv; by_contra h_contra; push_neg at h_contra; (
-    have := exists_deriv_eq_slope ( f := fun v => Real.log ( 1 + v / 2 ) - ( 1 - Real.logb 3 2 ) * Real.log ( 1 + v + v ^ 2 ) ) ( show v > 0 from hv.1.lt_of_ne ( by rintro rfl; norm_num at h_contra ) ) ; norm_num at *;
-    contrapose! this;
-    exact ⟨ continuousOn_of_forall_continuousAt fun x hx => by exact ContinuousAt.sub ( ContinuousAt.log ( continuousAt_const.add ( continuousAt_id.div_const _ ) ) ( by linarith [ hx.1 ] ) ) ( ContinuousAt.mul continuousAt_const ( ContinuousAt.log ( continuousAt_const.add continuousAt_id |> ContinuousAt.add <| continuousAt_id.pow 2 ) ( by nlinarith [ hx.1 ] ) ) ), fun x hx => DifferentiableAt.differentiableWithinAt <| by exact DifferentiableAt.sub ( DifferentiableAt.log ( by norm_num ) <| by linarith [ hx.1 ] ) <| DifferentiableAt.mul ( differentiableAt_const _ ) <| DifferentiableAt.log ( by norm_num [ add_assoc ] ) <| by nlinarith [ hx.1 ], fun c hc => by rw [ ne_eq, eq_div_iff ] <;> nlinarith [ h_deriv_nonneg c ( by linarith ) ( by linarith ) ] ⟩);
+    intros v hv
+    by_contra h_contra
+    push_neg at h_contra
+    have := exists_deriv_eq_slope (f := fun v => Real.log (1 + v / 2) - (1 - Real.logb 3 2) * Real.log (1 + v + v ^ 2)) (show v > 0 from hv.1.lt_of_ne (by rintro rfl; norm_num at h_contra))
+    norm_num at *
+    contrapose! this
+    exact ⟨continuousOn_of_forall_continuousAt fun x hx => by exact ContinuousAt.sub (ContinuousAt.log (continuousAt_const.add (continuousAt_id.div_const _)) (by linarith [hx.1])) (ContinuousAt.mul continuousAt_const (ContinuousAt.log (continuousAt_const.add continuousAt_id |> ContinuousAt.add <| continuousAt_id.pow 2) (by nlinarith [hx.1]))), fun x hx => DifferentiableAt.differentiableWithinAt <| by exact DifferentiableAt.sub (DifferentiableAt.log (by norm_num) <| by linarith [hx.1]) <| DifferentiableAt.mul (differentiableAt_const _) <| DifferentiableAt.log (by norm_num [add_assoc]) <| by nlinarith [hx.1], fun c hc => by rw [ne_eq, eq_div_iff] <;> nlinarith [h_deriv_nonneg c (by linarith) (by linarith)]⟩
   have h_antitone : ∀ v ∈ Set.Icc v_star 1, Real.log (1 + v / 2) - (1 - Real.logb 3 2) * Real.log (1 + v + v ^ 2) ≥ Real.log (1 + 1 / 2) - (1 - Real.logb 3 2) * Real.log (1 + 1 + 1 ^ 2) := by
     intros v hv
-    by_contra h_contra;
-    have := exists_deriv_eq_slope ( f := fun v => Real.log ( 1 + v / 2 ) - ( 1 - Real.logb 3 2 ) * Real.log ( 1 + v + v ^ 2 ) ) ( show v < 1 from hv.2.lt_of_ne ( by rintro rfl; norm_num at h_contra ) ) ; norm_num at *;
-    contrapose! this;
-    refine' ⟨ _, _, _ ⟩;
-    · exact continuousOn_of_forall_continuousAt fun x hx => by exact ContinuousAt.sub ( ContinuousAt.log ( continuousAt_const.add ( continuousAt_id.div_const _ ) ) ( by nlinarith [ hx.1, hx.2 ] ) ) ( ContinuousAt.mul continuousAt_const ( ContinuousAt.log ( continuousAt_const.add continuousAt_id |> ContinuousAt.add <| continuousAt_id.pow 2 ) ( by nlinarith [ hx.1, hx.2 ] ) ) ) ;
-    · exact fun x hx => DifferentiableAt.differentiableWithinAt ( by exact DifferentiableAt.sub ( DifferentiableAt.log ( by norm_num ) ( by linarith [ hx.1 ] ) ) ( DifferentiableAt.mul ( differentiableAt_const _ ) ( DifferentiableAt.log ( by norm_num [ add_assoc ] ) ( by nlinarith [ hx.1 ] ) ) ) );
-    · exact fun c hc => by rw [ ne_eq, eq_div_iff ] <;> nlinarith [ h_deriv_nonpos c ( by linarith ) ( by linarith ) ] ;
-  by_cases hv : v ≤ v_star;
-  · exact le_trans ( by norm_num ) ( h_monotone v ⟨ hv0, hv ⟩ );
-  · refine le_trans ?_ ( h_antitone v ⟨ by linarith, by linarith ⟩ ) ; norm_num [ Real.logb ];
-    rw [ Real.log_div ] <;> ring_nf <;> norm_num
+    by_contra h_contra
+    have := exists_deriv_eq_slope (f := fun v => Real.log (1 + v / 2) - (1 - Real.logb 3 2) * Real.log (1 + v + v ^ 2)) (show v < 1 from hv.2.lt_of_ne (by rintro rfl; norm_num at h_contra))
+    norm_num at *
+    contrapose! this
+    refine ⟨?_, ?_, ?_⟩
+    · exact continuousOn_of_forall_continuousAt fun x hx => by exact ContinuousAt.sub (ContinuousAt.log (continuousAt_const.add (continuousAt_id.div_const _)) (by nlinarith [hx.1, hx.2])) (ContinuousAt.mul continuousAt_const (ContinuousAt.log (continuousAt_const.add continuousAt_id |> ContinuousAt.add <| continuousAt_id.pow 2) (by nlinarith [hx.1, hx.2])))
+    · exact fun x hx => DifferentiableAt.differentiableWithinAt (by exact DifferentiableAt.sub (DifferentiableAt.log (by norm_num) (by linarith [hx.1])) (DifferentiableAt.mul (differentiableAt_const _) (DifferentiableAt.log (by norm_num [add_assoc]) (by nlinarith [hx.1]))))
+    · exact fun c hc => by rw [ne_eq, eq_div_iff] <;> nlinarith [h_deriv_nonpos c (by linarith) (by linarith)]
+  by_cases hv : v ≤ v_star
+  · exact le_trans (by norm_num) (h_monotone v ⟨hv0, hv⟩)
+  · refine le_trans ?_ (h_antitone v ⟨by linarith, by linarith⟩)
+    norm_num [Real.logb]
+    rw [Real.log_div] <;> ring_nf <;> norm_num
 
 /-
 Key inequality behind `φ' ≥ 0`: for `t ≥ 1`,
@@ -157,10 +168,13 @@ lemma psi_key (t : ℝ) (ht : 1 ≤ t) :
       ≤ (2 * t + 1) * t ^ (1 - 2 * Real.logb 3 2) := by
   -- Apply the lemma `theta_nonneg` with $v = 1/t$ and $t = t$.
   have h_lemma : 0 ≤ Real.log (1 + 1 / (2 * t)) - (1 - Real.logb 3 2) * Real.log (1 + 1 / t + 1 / t^2) := by
-    convert theta_nonneg ( 1 / t ) ( by positivity ) ( by rw [ div_le_iff₀ ( by positivity ) ] ; linarith ) using 1 ; ring_nf;
-  rw [ ← Real.log_le_log_iff ( by positivity ) ( by positivity ), Real.log_mul ( by positivity ) ( by positivity ), Real.log_mul ( by positivity ) ( by positivity ), Real.log_rpow ( by positivity ), Real.log_rpow ( by positivity ) ];
-  rw [ show ( t ^ 2 + t + 1 : ℝ ) = t ^ 2 * ( 1 + 1 / t + 1 / t ^ 2 ) by nlinarith [ one_div_mul_cancel ( show t ≠ 0 by linarith ), one_div_pow t 2 ], Real.log_mul ( by positivity ) ( by positivity ), Real.log_pow ] ; ring_nf at *;
-  rw [ show ( 1 + t * 2 ) = 2 * ( 1 + t⁻¹ * ( 1 / 2 ) ) * t by nlinarith [ mul_inv_cancel₀ ( by linarith : t ≠ 0 ) ], Real.log_mul, Real.log_mul ] <;> first | positivity | ring_nf at * ; linarith [ Real.log_pos one_lt_two ] ;
+    convert theta_nonneg (1 / t) (by positivity) (by rw [div_le_iff₀ (by positivity)]; linarith) using 1
+    ring_nf
+  rw [← Real.log_le_log_iff (by positivity) (by positivity), Real.log_mul (by positivity) (by positivity), Real.log_mul (by positivity) (by positivity), Real.log_rpow (by positivity), Real.log_rpow (by positivity)]
+  rw [show (t ^ 2 + t + 1 : ℝ) = t ^ 2 * (1 + 1 / t + 1 / t ^ 2) by nlinarith [one_div_mul_cancel (show t ≠ 0 by linarith), one_div_pow t 2], Real.log_mul (by positivity) (by positivity), Real.log_pow]
+  ring_nf at *
+  rw [show (1 + t * 2) = 2 * (1 + t⁻¹ * (1 / 2)) * t by nlinarith [mul_inv_cancel₀ (by linarith : t ≠ 0)], Real.log_mul, Real.log_mul] <;> first | positivity | ring_nf at *
+  linarith [Real.log_pos one_lt_two]
 
 /-
 The base case of the star inequality (single variable, exponent `p₀ = log₃ 2`).
@@ -168,44 +182,55 @@ For `t ≥ 0`, `t ^ (2 * log₃ 2) + 1 ≤ (t^2 + t + 1) ^ (log₃ 2)`.
 -/
 lemma star_single_p0 (t : ℝ) (ht : 0 ≤ t) :
     t ^ (2 * Real.logb 3 2) + 1 ≤ (t ^ 2 + t + 1) ^ (Real.logb 3 2) := by
-  by_cases ht1 : t ≥ 1;
+  by_cases ht1 : t ≥ 1
   · -- For $t \geq 1$, we use the fact that $\phi'(t) \geq 0$ to show that $\phi(t)$ is non-decreasing.
     have h_deriv_nonneg : ∀ t : ℝ, 1 ≤ t → deriv (fun t : ℝ => (t^2 + t + 1) ^ (Real.logb 3 2) - t ^ (2 * Real.logb 3 2) - 1) t ≥ 0 := by
-      intro t ht1; norm_num [ show t ^ 2 + t + 1 ≠ 0 by positivity, show t ≠ 0 by positivity ];
-      have := psi_key t ht1;
-      rw [ show ( 1 - Real.logb 3 2 ) = - ( Real.logb 3 2 - 1 ) by ring, Real.rpow_neg ( by positivity ), show ( 1 - 2 * Real.logb 3 2 ) = - ( 2 * Real.logb 3 2 - 1 ) by ring, Real.rpow_neg ( by positivity ) ] at this;
-      field_simp at this;
-      convert mul_le_mul_of_nonneg_left this ( show 0 ≤ Real.logb 3 2 by exact Real.logb_nonneg ( by norm_num ) ( by norm_num ) ) using 1 <;> ring_nf;
+      intro t ht1
+      norm_num [show t ^ 2 + t + 1 ≠ 0 by positivity, show t ≠ 0 by positivity]
+      have := psi_key t ht1
+      rw [show (1 - Real.logb 3 2) = - (Real.logb 3 2 - 1) by ring, Real.rpow_neg (by positivity), show (1 - 2 * Real.logb 3 2) = - (2 * Real.logb 3 2 - 1) by ring, Real.rpow_neg (by positivity)] at this
+      field_simp at this
+      convert mul_le_mul_of_nonneg_left this (show 0 ≤ Real.logb 3 2 by exact Real.logb_nonneg (by norm_num) (by norm_num)) using 1 <;> ring_nf
     -- Since $\phi(t)$ is non-decreasing for $t \geq 1$, we have $\phi(t) \geq \phi(1)$.
     have h_phi_ge_phi1 : ∀ t : ℝ, 1 ≤ t → (t^2 + t + 1) ^ (Real.logb 3 2) - t ^ (2 * Real.logb 3 2) - 1 ≥ (1^2 + 1 + 1) ^ (Real.logb 3 2) - 1 ^ (2 * Real.logb 3 2) - 1 := by
-      intro t ht; by_contra h_contra; push_neg at h_contra; (
-      have := exists_deriv_eq_slope ( f := fun t : ℝ => ( t^2 + t + 1 ) ^ Real.logb 3 2 - t ^ ( 2 * Real.logb 3 2 ) - 1 ) ( show t > 1 from lt_of_le_of_ne ht <| Ne.symm <| by rintro rfl; norm_num at h_contra ) ; norm_num at *;
-      contrapose! this;
-      exact ⟨ ContinuousOn.sub ( ContinuousOn.sub ( ContinuousOn.rpow ( ContinuousOn.add ( ContinuousOn.add ( continuousOn_id.pow 2 ) continuousOn_id ) continuousOn_const ) continuousOn_const <| by intro x hx; exact Or.inr <| by linarith [ Real.logb_pos ( show 3 > 1 by norm_num ) ( show 2 > 1 by norm_num ) ] ) <| ContinuousOn.rpow continuousOn_id continuousOn_const <| by intro x hx; exact Or.inr <| by linarith [ Real.logb_pos ( show 3 > 1 by norm_num ) ( show 2 > 1 by norm_num ) ] ) continuousOn_const, fun x hx => DifferentiableAt.differentiableWithinAt <| by norm_num [ show x ^ 2 + x + 1 ≠ 0 from by nlinarith, show x ≠ 0 from by linarith [ hx.1 ] ], fun c hc => by rw [ ne_eq, eq_div_iff ] <;> nlinarith [ h_deriv_nonneg c <| by linarith ] ⟩);
-    have := h_phi_ge_phi1 t ht1; norm_num [ Real.rpow_logb ] at *; linarith;
-  · by_cases ht0 : t = 0;
-    · norm_num [ ht0, show Real.logb 3 2 ≠ 0 by exact ne_of_gt ( Real.logb_pos ( by norm_num ) ( by norm_num ) ) ];
+      intro t ht
+      by_contra h_contra
+      push_neg at h_contra
+      have := exists_deriv_eq_slope (f := fun t : ℝ => (t^2 + t + 1) ^ Real.logb 3 2 - t ^ (2 * Real.logb 3 2) - 1) (show t > 1 from lt_of_le_of_ne ht <| Ne.symm <| by rintro rfl; norm_num at h_contra)
+      norm_num at *
+      contrapose! this
+      exact ⟨ContinuousOn.sub (ContinuousOn.sub (ContinuousOn.rpow (ContinuousOn.add (ContinuousOn.add (continuousOn_id.pow 2) continuousOn_id) continuousOn_const) continuousOn_const <| by intro x hx; exact Or.inr <| by linarith [Real.logb_pos (show 3 > 1 by norm_num) (show 2 > 1 by norm_num)]) <| ContinuousOn.rpow continuousOn_id continuousOn_const <| by intro x hx; exact Or.inr <| by linarith [Real.logb_pos (show 3 > 1 by norm_num) (show 2 > 1 by norm_num)]) continuousOn_const, fun x hx => DifferentiableAt.differentiableWithinAt <| by norm_num [show x ^ 2 + x + 1 ≠ 0 from by nlinarith, show x ≠ 0 from by linarith [hx.1]], fun c hc => by rw [ne_eq, eq_div_iff] <;> nlinarith [h_deriv_nonneg c <| by linarith]⟩
+    have := h_phi_ge_phi1 t ht1
+    norm_num [Real.rpow_logb] at *
+    linarith
+  · by_cases ht0 : t = 0
+    · norm_num [ht0, show Real.logb 3 2 ≠ 0 by exact ne_of_gt (Real.logb_pos (by norm_num) (by norm_num))]
     · -- For $0 < t < 1$, we use the symmetry argument.
       have h_symm : (t ^ 2 + t + 1) ^ (Real.logb 3 2) = t ^ (2 * Real.logb 3 2) * ((1 / t ^ 2 + 1 / t + 1) ^ (Real.logb 3 2)) := by
-        rw [ Real.rpow_mul ] <;> norm_num [ ht, ht0 ];
-        rw [ ← Real.mul_rpow ( by positivity ) ( by positivity ) ] ; congr ; nlinarith [ mul_inv_cancel₀ ht0, mul_inv_cancel₀ ( pow_ne_zero 2 ht0 ) ];
+        rw [Real.rpow_mul] <;> norm_num [ht, ht0]
+        rw [← Real.mul_rpow (by positivity) (by positivity)]
+        congr
+        nlinarith [mul_inv_cancel₀ ht0, mul_inv_cancel₀ (pow_ne_zero 2 ht0)]
       -- By the properties of the function $\phi$, we know that $\phi(1/t) \geq 0$ for $t \geq 1$.
       have h_phi_inv : ∀ t : ℝ, 1 ≤ t → (t ^ 2 + t + 1) ^ (Real.logb 3 2) ≥ t ^ (2 * Real.logb 3 2) + 1 := by
         intro t ht1
         have h_phi_inv : ∀ t : ℝ, 1 ≤ t → deriv (fun t => (t ^ 2 + t + 1) ^ (Real.logb 3 2) - t ^ (2 * Real.logb 3 2) - 1) t ≥ 0 := by
-          intro t ht1; norm_num [ show t ^ 2 + t + 1 ≠ 0 by positivity, show t ≠ 0 by positivity ];
-          have := psi_key t ht1;
-          rw [ show ( 1 - Real.logb 3 2 ) = - ( Real.logb 3 2 - 1 ) by ring, Real.rpow_neg ( by positivity ), show ( 1 - 2 * Real.logb 3 2 ) = - ( 2 * Real.logb 3 2 - 1 ) by ring, Real.rpow_neg ( by positivity ) ] at this;
-          field_simp at this;
-          ring_nf at this ⊢;
-          nlinarith [ show 0 < Real.logb 3 2 by exact Real.logb_pos ( by norm_num ) ( by norm_num ) ];
-        by_contra h_contra;
-        have := exists_deriv_eq_slope ( f := fun t => ( t ^ 2 + t + 1 ) ^ Real.logb 3 2 - t ^ ( 2 * Real.logb 3 2 ) - 1 ) ( show t > 1 from ht1.lt_of_ne ( by rintro rfl; norm_num at h_contra ) ) ; norm_num at *;
-        contrapose! this;
-        exact ⟨ ContinuousOn.sub ( ContinuousOn.sub ( ContinuousOn.rpow ( ContinuousOn.add ( ContinuousOn.add ( continuousOn_id.pow 2 ) continuousOn_id ) continuousOn_const ) continuousOn_const <| by intro x hx; exact Or.inr <| by linarith [ Real.logb_pos ( show 3 > 1 by norm_num ) ( show 2 > 1 by norm_num ) ] ) <| ContinuousOn.rpow continuousOn_id continuousOn_const <| by intro x hx; exact Or.inr <| by linarith [ Real.logb_pos ( show 3 > 1 by norm_num ) ( show 2 > 1 by norm_num ) ] ) continuousOn_const, fun x hx => DifferentiableAt.differentiableWithinAt <| by norm_num [ show x ^ 2 + x + 1 ≠ 0 from by nlinarith, show x ≠ 0 from by linarith [ hx.1 ] ], fun c hc => by rw [ ne_eq, eq_div_iff ] <;> nlinarith [ h_phi_inv c <| by linarith ] ⟩;
-      have := h_phi_inv ( 1 / t ) ( by rw [ le_div_iff₀ ( by positivity ) ] ; linarith ) ; simp_all +decide [ division_def ] ;
-      rw [ Real.inv_rpow ( by positivity ) ] at this;
-      nlinarith [ Real.rpow_pos_of_pos ( show 0 < t by positivity ) ( 2 * Real.logb 3 2 ), mul_inv_cancel₀ ( ne_of_gt ( Real.rpow_pos_of_pos ( show 0 < t by positivity ) ( 2 * Real.logb 3 2 ) ) ) ]
+          intro t ht1
+          norm_num [show t ^ 2 + t + 1 ≠ 0 by positivity, show t ≠ 0 by positivity]
+          have := psi_key t ht1
+          rw [show (1 - Real.logb 3 2) = - (Real.logb 3 2 - 1) by ring, Real.rpow_neg (by positivity), show (1 - 2 * Real.logb 3 2) = - (2 * Real.logb 3 2 - 1) by ring, Real.rpow_neg (by positivity)] at this
+          field_simp at this
+          ring_nf at this ⊢
+          nlinarith [show 0 < Real.logb 3 2 by exact Real.logb_pos (by norm_num) (by norm_num)]
+        by_contra h_contra
+        have := exists_deriv_eq_slope (f := fun t => (t ^ 2 + t + 1) ^ Real.logb 3 2 - t ^ (2 * Real.logb 3 2) - 1) (show t > 1 from ht1.lt_of_ne (by rintro rfl; norm_num at h_contra))
+        norm_num at *
+        contrapose! this
+        exact ⟨ContinuousOn.sub (ContinuousOn.sub (ContinuousOn.rpow (ContinuousOn.add (ContinuousOn.add (continuousOn_id.pow 2) continuousOn_id) continuousOn_const) continuousOn_const <| by intro x hx; exact Or.inr <| by linarith [Real.logb_pos (show 3 > 1 by norm_num) (show 2 > 1 by norm_num)]) <| ContinuousOn.rpow continuousOn_id continuousOn_const <| by intro x hx; exact Or.inr <| by linarith [Real.logb_pos (show 3 > 1 by norm_num) (show 2 > 1 by norm_num)]) continuousOn_const, fun x hx => DifferentiableAt.differentiableWithinAt <| by norm_num [show x ^ 2 + x + 1 ≠ 0 from by nlinarith, show x ≠ 0 from by linarith [hx.1]], fun c hc => by rw [ne_eq, eq_div_iff] <;> nlinarith [h_phi_inv c <| by linarith]⟩
+      have := h_phi_inv (1 / t) (by rw [le_div_iff₀ (by positivity)]; linarith)
+      simp_all +decide [division_def]
+      rw [Real.inv_rpow (by positivity)] at this
+      nlinarith [Real.rpow_pos_of_pos (show 0 < t by positivity) (2 * Real.logb 3 2), mul_inv_cancel₀ (ne_of_gt (Real.rpow_pos_of_pos (show 0 < t by positivity) (2 * Real.logb 3 2)))]
 
 /-
 Monotonicity in the exponent: the single-variable star inequality for `p₀ = log₃ 2`
@@ -214,27 +239,35 @@ For `t ≥ 0` and `log₃ 2 ≤ p ≤ 1`, `t ^ (2*p) + 1 ≤ (t^2 + t + 1) ^ p`.
 -/
 lemma star_single {p t : ℝ} (hp0 : Real.logb 3 2 ≤ p) (_hp1 : p ≤ 1) (ht : 0 ≤ t) :
     t ^ (2 * p) + 1 ≤ (t ^ 2 + t + 1) ^ p := by
-  by_cases ht1 : t ≤ 1;
+  by_cases ht1 : t ≤ 1
   · have h_monotone : t ^ (2 * p) + 1 ≤ (t ^ 2 + t + 1) ^ (Real.logb 3 2) := by
       have h_monotone : t ^ (2 * p) ≤ t ^ (2 * Real.logb 3 2) := by
-        by_cases ht0 : t = 0;
-        · norm_num [ ht0, show p ≠ 0 by linarith [ Real.logb_pos ( show ( 3 : ℝ ) > 1 by norm_num ) ( show ( 2 : ℝ ) > 1 by norm_num ) ], show Real.logb 3 2 ≠ 0 by exact ne_of_gt ( Real.logb_pos ( show ( 3 : ℝ ) > 1 by norm_num ) ( show ( 2 : ℝ ) > 1 by norm_num ) ) ];
-        · exact Real.rpow_le_rpow_of_exponent_ge ( by positivity ) ht1 ( by linarith );
+        by_cases ht0 : t = 0
+        · norm_num [ht0, show p ≠ 0 by linarith [Real.logb_pos (show (3 : ℝ) > 1 by norm_num) (show (2 : ℝ) > 1 by norm_num)], show Real.logb 3 2 ≠ 0 by exact ne_of_gt (Real.logb_pos (show (3 : ℝ) > 1 by norm_num) (show (2 : ℝ) > 1 by norm_num))]
+        · exact Real.rpow_le_rpow_of_exponent_ge (by positivity) ht1 (by linarith)
       have h_monotone : t ^ (2 * Real.logb 3 2) + 1 ≤ (t ^ 2 + t + 1) ^ (Real.logb 3 2) := by
-        convert star_single_p0 t ht using 1;
-      linarith;
-    exact h_monotone.trans ( Real.rpow_le_rpow_of_exponent_le ( by nlinarith ) hp0 );
+        convert star_single_p0 t ht using 1
+      linarith
+    exact h_monotone.trans (Real.rpow_le_rpow_of_exponent_le (by nlinarith) hp0)
   · -- For $t > 1$ and $p \ge \log_3 2$, we use the fact that $t^{2p} + 1 \le (t^2 + t + 1)^p$ follows from the monotonicity of the function $f(x) = x^p - x^{p₀}$ on $[1, \infty)$.
     have h_mono : ∀ x y : ℝ, 1 ≤ x → x ≤ y → x^p - x^(Real.logb 3 2) ≤ y^p - y^(Real.logb 3 2) := by
       -- The derivative of $f(x) = x^p - x^{p₀}$ is $f'(x) = p x^{p-1} - p₀ x^{p₀-1}$.
       have h_deriv : ∀ x : ℝ, 1 ≤ x → deriv (fun x => x^p - x^(Real.logb 3 2)) x ≥ 0 := by
-        intro x hx; norm_num [ show x ≠ 0 by linarith ] ; ring_nf;
-        exact mul_le_mul hp0 ( Real.rpow_le_rpow_of_exponent_le hx ( by linarith ) ) ( by positivity ) ( by linarith [ Real.logb_nonneg ( show 3 > 1 by norm_num ) ( show 2 ≥ 1 by norm_num ) ] );
-      intros x y hx hy; by_contra h_contra; push_neg at h_contra; (
-      have := exists_deriv_eq_slope ( f := fun x => x ^ p - x ^ Real.logb 3 2 ) ( show x < y from hy.lt_of_ne ( by rintro rfl; linarith ) ) ; norm_num at *;
-      exact absurd ( this ( by exact continuousOn_of_forall_continuousAt fun z hz => by exact ContinuousAt.sub ( ContinuousAt.rpow continuousAt_id continuousAt_const <| Or.inl <| by linarith [ hz.1 ] ) ( ContinuousAt.rpow continuousAt_id continuousAt_const <| Or.inl <| by linarith [ hz.1 ] ) ) ( by exact fun z hz => by exact DifferentiableAt.differentiableWithinAt <| by exact DifferentiableAt.sub ( DifferentiableAt.rpow ( differentiableAt_id ) ( by norm_num ) <| by linarith [ hz.1 ] ) ( DifferentiableAt.rpow ( differentiableAt_id ) ( by norm_num ) <| by linarith [ hz.1 ] ) ) ) ( by rintro ⟨ c, ⟨ hxc, hcy ⟩, hcd ⟩ ; rw [ eq_div_iff ] at hcd <;> nlinarith [ h_deriv c <| by linarith ] ));
-    have := h_mono ( t ^ 2 ) ( t ^ 2 + t + 1 ) ( by nlinarith ) ( by nlinarith ) ; simp_all +decide [ Real.rpow_mul ];
-    have := star_single_p0 t ht; norm_num [ Real.rpow_mul ht ] at *; linarith;
+        intro x hx
+        norm_num [show x ≠ 0 by linarith]
+        ring_nf
+        exact mul_le_mul hp0 (Real.rpow_le_rpow_of_exponent_le hx (by linarith)) (by positivity) (by linarith [Real.logb_nonneg (show 3 > 1 by norm_num) (show 2 ≥ 1 by norm_num)])
+      intros x y hx hy
+      by_contra h_contra
+      push_neg at h_contra
+      have := exists_deriv_eq_slope (f := fun x => x ^ p - x ^ Real.logb 3 2) (show x < y from hy.lt_of_ne (by rintro rfl; linarith))
+      norm_num at *
+      exact absurd (this (by exact continuousOn_of_forall_continuousAt fun z hz => by exact ContinuousAt.sub (ContinuousAt.rpow continuousAt_id continuousAt_const <| Or.inl <| by linarith [hz.1]) (ContinuousAt.rpow continuousAt_id continuousAt_const <| Or.inl <| by linarith [hz.1])) (by exact fun z hz => by exact DifferentiableAt.differentiableWithinAt <| by exact DifferentiableAt.sub (DifferentiableAt.rpow (differentiableAt_id) (by norm_num) <| by linarith [hz.1]) (DifferentiableAt.rpow (differentiableAt_id) (by norm_num) <| by linarith [hz.1]))) (by rintro ⟨c, ⟨hxc, hcy⟩, hcd⟩; rw [eq_div_iff] at hcd <;> nlinarith [h_deriv c <| by linarith])
+    have := h_mono (t ^ 2) (t ^ 2 + t + 1) (by nlinarith) (by nlinarith)
+    simp_all +decide [Real.rpow_mul]
+    have := star_single_p0 t ht
+    norm_num [Real.rpow_mul ht] at *
+    linarith
 
 /-
 Two-variable homogeneous form of the star inequality.
@@ -244,20 +277,25 @@ For `log₃ 2 ≤ p ≤ 1` and `u, v ≥ 0`,
 lemma star_uv {p : ℝ} (hp0 : Real.logb 3 2 ≤ p) (hp1 : p ≤ 1)
     (u v : ℝ) (hu : 0 ≤ u) (hv : 0 ≤ v) :
     u ^ p + v ^ p ≤ (u + v + Real.sqrt (u * v)) ^ p := by
-  by_cases hu' : u = 0 <;> by_cases hv' : v = 0 <;> simp_all +decide [ Real.sqrt_mul hu ];
-  · rw [ Real.zero_rpow ( by linarith [ Real.logb_pos ( show 3 > 1 by norm_num ) ( show 2 > 1 by norm_num ) ] ) ];
-  · rw [ Real.zero_rpow ( by linarith [ Real.logb_pos ( show 3 > 1 by norm_num ) ( show 2 > 1 by norm_num ) ] ) ];
-  · rw [ Real.zero_rpow ( by linarith [ Real.logb_pos ( show 3 > 1 by norm_num ) ( show 2 > 1 by norm_num ) ] ) ];
+  by_cases hu' : u = 0 <;> by_cases hv' : v = 0 <;> simp_all +decide [Real.sqrt_mul hu]
+  · rw [Real.zero_rpow (by linarith [Real.logb_pos (show 3 > 1 by norm_num) (show 2 > 1 by norm_num)])]
+  · rw [Real.zero_rpow (by linarith [Real.logb_pos (show 3 > 1 by norm_num) (show 2 > 1 by norm_num)])]
+  · rw [Real.zero_rpow (by linarith [Real.logb_pos (show 3 > 1 by norm_num) (show 2 > 1 by norm_num)])]
   · -- Set $t := \sqrt{\frac{u}{v}} \geq 0$, so $t^2 = \frac{u}{v}$ and $\sqrt{uv} = v t$.
     obtain ⟨t, ht⟩ : ∃ t : ℝ, 0 ≤ t ∧ u = v * t^2 := by
-      exact ⟨ Real.sqrt ( u / v ), Real.sqrt_nonneg _, by rw [ Real.sq_sqrt ( div_nonneg hu hv ), mul_div_cancel₀ _ hv' ] ⟩;
+      exact ⟨Real.sqrt (u / v), Real.sqrt_nonneg _, by rw [Real.sq_sqrt (div_nonneg hu hv), mul_div_cancel₀ _ hv']⟩
     -- Then $u^p + v^p = v^p (t^{2p} + 1)$ and $(u + v + \sqrt{uv})^p = v^p (t^2 + t + 1)^p$.
     have h_exp : u ^ p + v ^ p = v ^ p * (t ^ (2 * p) + 1) ∧ (u + v + Real.sqrt (u * v)) ^ p = v ^ p * (t ^ 2 + t + 1) ^ p := by
-      constructor <;> ring_nf;
-      · rw [ ht.2, Real.mul_rpow ( by positivity ) ( by positivity ), ← Real.rpow_natCast, ← Real.rpow_mul ( by linarith ) ] ; ring_nf;
-      · rw [ ← Real.mul_rpow ( by positivity ) ( by nlinarith ) ] ; rw [ ht.2 ] ; ring_nf;
-        rw [ Real.sqrt_mul ( by positivity ), Real.sqrt_sq ( by positivity ), Real.sqrt_sq ( by linarith ) ] ; ring_nf;
-    rw [ ← Real.sqrt_mul hu ] ; exact h_exp.1.symm ▸ h_exp.2.symm ▸ mul_le_mul_of_nonneg_left ( star_single hp0 hp1 ht.1 ) ( by positivity ) ;
+      constructor <;> ring_nf
+      · rw [ht.2, Real.mul_rpow (by positivity) (by positivity), ← Real.rpow_natCast, ← Real.rpow_mul (by linarith)]
+        ring_nf
+      · rw [← Real.mul_rpow (by positivity) (by nlinarith)]
+        rw [ht.2]
+        ring_nf
+        rw [Real.sqrt_mul (by positivity), Real.sqrt_sq (by positivity), Real.sqrt_sq (by linarith)]
+        ring_nf
+    rw [← Real.sqrt_mul hu]
+    exact h_exp.1.symm ▸ h_exp.2.symm ▸ mul_le_mul_of_nonneg_left (star_single hp0 hp1 ht.1) (by positivity)
 
 /-
 **Star inequality** (Lemma `lem:q5-star`).
@@ -268,19 +306,22 @@ lemma star_inequality {q : ℝ} (hq1 : 1 ≤ q) (hq : q ≤ Real.logb 2 3)
     (a b : ℝ) (ha : 0 ≤ a) (hb : 0 ≤ b) :
     (a + b) ^ q ≤ a ^ q + b ^ q + (a * b) ^ (q / 2) := by
   -- Set $p := 1 / q$.
-  set p := 1 / q with hp;
+  set p := 1 / q with hp
   -- Apply star_uv with this p, u := a^q, v := b^q (both ≥ 0).
   have h_star_uv : (a^q)^p + (b^q)^p ≤ (a^q + b^q + Real.sqrt ((a^q) * (b^q)))^p := by
-    convert star_uv _ _ _ _ ( Real.rpow_nonneg ha q ) ( Real.rpow_nonneg hb q ) using 1 <;> ring_nf;
-    · rw [ Real.logb, div_le_div_iff₀ ] <;> norm_num;
-      · rw [ Real.logb ] at hq ; rw [ le_div_iff₀ ( Real.log_pos ( by norm_num ) ) ] at hq ; linarith;
-      · positivity;
-      · linarith;
-    · exact div_le_self zero_le_one hq1;
-  convert Real.rpow_le_rpow _ h_star_uv ( show 0 ≤ q by positivity ) using 1;
-  · rw [ ← Real.rpow_mul ( by positivity ), ← Real.rpow_mul ( by positivity ), mul_one_div_cancel ( by positivity ), Real.rpow_one, Real.rpow_one ];
-  · rw [ ← Real.rpow_mul ( by positivity ), one_div_mul_cancel ( by positivity ), Real.rpow_one ];
-    rw [ ← Real.mul_rpow ( by positivity ) ( by positivity ), Real.sqrt_eq_rpow, ← Real.rpow_mul ( by positivity ) ] ; ring_nf;
+    convert star_uv _ _ _ _ (Real.rpow_nonneg ha q) (Real.rpow_nonneg hb q) using 1 <;> ring_nf
+    · rw [Real.logb, div_le_div_iff₀] <;> norm_num
+      · rw [Real.logb] at hq
+        rw [le_div_iff₀ (Real.log_pos (by norm_num))] at hq
+        linarith
+      · positivity
+      · linarith
+    · exact div_le_self zero_le_one hq1
+  convert Real.rpow_le_rpow _ h_star_uv (show 0 ≤ q by positivity) using 1
+  · rw [← Real.rpow_mul (by positivity), ← Real.rpow_mul (by positivity), mul_one_div_cancel (by positivity), Real.rpow_one, Real.rpow_one]
+  · rw [← Real.rpow_mul (by positivity), one_div_mul_cancel (by positivity), Real.rpow_one]
+    rw [← Real.mul_rpow (by positivity) (by positivity), Real.sqrt_eq_rpow, ← Real.rpow_mul (by positivity)]
+    ring_nf
   · positivity
 
 /-! ## Schoenberg reduction and the supporting metric lemmas -/
@@ -298,9 +339,12 @@ lemma negType_of_schoenberg {q : ℝ} (hq0 : 0 < q) (d : Fin 4 → Fin 4 → ℝ
         + 2 * a0 * a2 * ((d 0 3 ^ q + d 2 3 ^ q - d 0 2 ^ q) / 2)
         + 2 * a1 * a2 * ((d 1 3 ^ q + d 2 3 ^ q - d 1 2 ^ q) / 2)) :
     HasNegType q d := by
-  intro c hc; simp_all +decide [ Fin.sum_univ_four ] ;
-  rw [ show c 3 = -c 0 - c 1 - c 2 by linarith ] ; ring_nf at *;
-  norm_num [ hq0.ne' ] ; linarith [ hPSD ( c 0 ) ( c 1 ) ( c 2 ) ] ;
+  intro c hc
+  simp_all +decide [Fin.sum_univ_four]
+  rw [show c 3 = -c 0 - c 1 - c 2 by linarith]
+  ring_nf at *
+  norm_num [hq0.ne']
+  linarith [hPSD (c 0) (c 1) (c 2)]
 
 /-
 **`2×2` minor nonnegativity** (snowflaked triangle is Euclidean).
@@ -314,21 +358,24 @@ lemma minor_nonneg {q : ℝ} (hq0 : 0 < q) (hq2 : q ≤ 2) (p r s : ℝ)
   -- Set $X := p^{q/2}$, $Y := r^{q/2}$, $Z := s^{q/2}$, all ≥ 0.
   set X := p ^ (q / 2)
   set Y := r ^ (q / 2)
-  set Z := s ^ (q / 2);
+  set Z := s ^ (q / 2)
   -- Then $p^q = X^2$, $r^q = Y^2$, $s^q = Z^2$ (since $(p^{q/2})^2 = p^{(q/2)*2} = p^q$, using Real.rpow_natCast / Real.rpow_mul with $p \geq 0$).
   have hX : X^2 = p^q := by
-    rw [ ← Real.rpow_natCast, ← Real.rpow_mul hp ] ; ring_nf
+    rw [← Real.rpow_natCast, ← Real.rpow_mul hp]
+    ring_nf
   have hY : Y^2 = r^q := by
-    rw [ ← Real.rpow_natCast, ← Real.rpow_mul hr ] ; ring_nf
+    rw [← Real.rpow_natCast, ← Real.rpow_mul hr]
+    ring_nf
   have hZ : Z^2 = s^q := by
-    rw [ ← Real.rpow_natCast, ← Real.rpow_mul hs ] ; ring_nf;
+    rw [← Real.rpow_natCast, ← Real.rpow_mul hs]
+    ring_nf
   -- We show the snowflaked triangle inequalities, i.e. each factor ≥ 0:
   have hX_Y_Z : X + Y - Z ≥ 0 ∧ Z + X - Y ≥ 0 ∧ Z + Y - X ≥ 0 := by
-    refine' ⟨ _, _, _ ⟩ <;> norm_num;
-    · exact le_trans ( Real.rpow_le_rpow ( by positivity ) h1 ( by positivity ) ) ( by simpa using Real.rpow_add_le_add_rpow ( by positivity ) ( by positivity ) ( by positivity ) ( by linarith ) );
-    · exact le_trans ( Real.rpow_le_rpow ( by positivity ) ( by linarith : r ≤ s + p ) ( by positivity ) ) ( by simpa using Real.rpow_add_le_add_rpow hs hp ( by positivity ) ( by linarith ) );
-    · exact le_trans ( Real.rpow_le_rpow ( by positivity ) ( show p ≤ s + r by linarith ) ( by positivity ) ) ( by simpa using Real.rpow_add_le_add_rpow ( by positivity ) ( by positivity ) ( by positivity ) ( by linarith ) );
-  nlinarith [ mul_nonneg hX_Y_Z.1 ( mul_nonneg hX_Y_Z.2.1 hX_Y_Z.2.2 ) ]
+    refine ⟨?_, ?_, ?_⟩ <;> norm_num
+    · exact le_trans (Real.rpow_le_rpow (by positivity) h1 (by positivity)) (by simpa using Real.rpow_add_le_add_rpow (by positivity) (by positivity) (by positivity) (by linarith))
+    · exact le_trans (Real.rpow_le_rpow (by positivity) (by linarith : r ≤ s + p) (by positivity)) (by simpa using Real.rpow_add_le_add_rpow hs hp (by positivity) (by linarith))
+    · exact le_trans (Real.rpow_le_rpow (by positivity) (show p ≤ s + r by linarith) (by positivity)) (by simpa using Real.rpow_add_le_add_rpow (by positivity) (by positivity) (by positivity) (by linarith))
+  nlinarith [mul_nonneg hX_Y_Z.1 (mul_nonneg hX_Y_Z.2.1 hX_Y_Z.2.2)]
 
 /-
 **Line metrics give negative type** (the result proved in `Main`, transported to
@@ -340,15 +387,16 @@ lemma embed_real_negType {q : ℝ} (hq0 : 0 < q) (hq2 : q ≤ 2)
     (x : Fin 4 → ℝ) (c : Fin 4 → ℝ) (hc : ∑ i, c i = 0) :
     ∑ i, ∑ j, c i * c j * |x i - x j| ^ q ≤ 0 := by
   -- Define the grouped weight w : ℝ → ℝ by w v := ∑ i ∈ Finset.univ.filter (fun i => x i = v), c i.
-  set w : ℝ → ℝ := fun v => ∑ i ∈ Finset.univ.filter (fun i => x i = v), c i;
+  set w : ℝ → ℝ := fun v => ∑ i ∈ Finset.univ.filter (fun i => x i = v), c i
   -- Claim 2: $\sum_{i,j} c_i c_j |x_i - x_j|^q = \sum_{v,u} w(v) w(u) |v - u|^q$.
   have h_sum : ∑ i, ∑ j, c i * c j * |x i - x j| ^ q = ∑ v ∈ Finset.image x Finset.univ, ∑ u ∈ Finset.image x Finset.univ, w v * w u * |v - u| ^ q := by
-    simp +zetaDelta at *;
-    simp +decide only [Finset.sum_sigma', Finset.univ_sigma_univ, Finset.sum_mul _ _ _, Finset.mul_sum];
-    refine' Finset.sum_bij ( fun i hi => ⟨ x i.fst, x i.snd, i.fst, i.snd ⟩ ) _ _ _ _ <;> aesop;
+    simp +zetaDelta at *
+    simp +decide only [Finset.sum_sigma', Finset.univ_sigma_univ, Finset.sum_mul _ _ _, Finset.mul_sum]
+    refine Finset.sum_bij (fun i hi => ⟨x i.fst, x i.snd, i.fst, i.snd⟩) ?_ ?_ ?_ ?_ <;> aesop
   -- By NegType.real_finite_negative_type hq0 hq2 S w (Claim 1), the RHS ≤ 0, hence the LHS ≤ 0 by Claim 2.
   apply h_sum.symm ▸ NegType.real_finite_negative_type hq0 hq2 (Finset.image x Finset.univ) w (by
-  rw [ ← hc, Finset.sum_image' ] ; aesop)
+  rw [← hc, Finset.sum_image']
+  aesop)
 
 /-- **Line metrics have negative type** (`lem:q5-line-metrics`).
 If the four-point metric `d` is realised on a line (`d i j = |x i - x j|`), then
@@ -371,10 +419,10 @@ lemma star_negType {q : ℝ} (hq1 : 1 ≤ q) (hq : q ≤ Real.logb 2 3)
     (h01 : d 0 1 = d 0 3 + d 1 3) (h02 : d 0 2 = d 0 3 + d 2 3)
     (h12 : d 1 2 = d 1 3 + d 2 3) :
     HasNegType q d := by
-  refine negType_of_schoenberg ?_ ?_ ?_ ?_ ?_;
-  · linarith;
-  · exact hm.2.1;
-  · exact hm.1;
+  refine negType_of_schoenberg ?_ ?_ ?_ ?_ ?_
+  · linarith
+  · exact hm.2.1
+  · exact hm.1
   · intro a0 a1 a2
     set ρ0 := d 0 3
     set ρ1 := d 1 3
@@ -384,7 +432,7 @@ lemma star_negType {q : ℝ} (hq1 : 1 ≤ q) (hq : q ≤ Real.logb 2 3)
     have hρ1 : 0 ≤ ρ1 := by
       exact hm.2.2.1 _ _
     have hρ2 : 0 ≤ ρ2 := by
-      exact hm.2.2.1 _ _;
+      exact hm.2.2.1 _ _
     -- Introduce η01, η02, η12 ∈ [0,1] and S01, S02, S12 ≥ 0 as in the provided solution.
     obtain ⟨η01, η02, η12, hη01, hη02, hη12, hS01, hS02, hS12⟩ : ∃ η01 η02 η12 S01 S02 S12 : ℝ,
       0 ≤ η01 ∧ η01 ≤ 1 ∧ 0 ≤ η02 ∧ η02 ≤ 1 ∧ 0 ≤ η12 ∧ η12 ≤ 1 ∧
@@ -396,62 +444,70 @@ lemma star_negType {q : ℝ} (hq1 : 1 ≤ q) (hq : q ≤ Real.logb 2 3)
       S02 ^ 2 = ρ0 ^ q * ρ2 ^ q ∧
       S12 ^ 2 = ρ1 ^ q * ρ2 ^ q ∧
       S01 * S02 * S12 = ρ0 ^ q * ρ1 ^ q * ρ2 ^ q := by
-        refine' ⟨ ( ( ρ0 + ρ1 ) ^ q - ρ0 ^ q - ρ1 ^ q ) / Real.sqrt ( ρ0 ^ q * ρ1 ^ q ), ( ( ρ0 + ρ2 ) ^ q - ρ0 ^ q - ρ2 ^ q ) / Real.sqrt ( ρ0 ^ q * ρ2 ^ q ), ( ( ρ1 + ρ2 ) ^ q - ρ1 ^ q - ρ2 ^ q ) / Real.sqrt ( ρ1 ^ q * ρ2 ^ q ), Real.sqrt ( ρ0 ^ q * ρ1 ^ q ), Real.sqrt ( ρ0 ^ q * ρ2 ^ q ), Real.sqrt ( ρ1 ^ q * ρ2 ^ q ), _, _, _, _, _ ⟩ <;> norm_num;
-        · refine' div_nonneg _ ( Real.sqrt_nonneg _ );
-          have := @Real.add_rpow_le_rpow_add;
-          linarith [ this hρ0 hρ1 hq1 ];
-        · refine' div_le_one_of_le₀ _ ( Real.sqrt_nonneg _ );
-          have := star_inequality hq1 hq ρ0 ρ1 hρ0 hρ1;
-          rw [ Real.mul_rpow ( by positivity ) ( by positivity ) ] at this;
-          rw [ show ρ0 ^ q * ρ1 ^ q = ( ρ0 ^ ( q / 2 ) * ρ1 ^ ( q / 2 ) ) ^ 2 by rw [ mul_pow, ← Real.rpow_natCast, ← Real.rpow_mul hρ0, ← Real.rpow_natCast, ← Real.rpow_mul hρ1 ] ; ring_nf, Real.sqrt_sq ( by positivity ) ] ; linarith;
-        · refine' div_nonneg _ ( Real.sqrt_nonneg _ );
-          have := @Real.add_rpow_le_rpow_add;
-          linarith [ this hρ0 hρ2 hq1 ];
-        · refine' div_le_one_of_le₀ _ ( Real.sqrt_nonneg _ );
-          have := star_inequality hq1 hq ρ0 ρ2 hρ0 hρ2;
-          convert sub_le_sub_right this ( ρ0 ^ q + ρ2 ^ q ) using 1 ; ring;
-          rw [ Real.sqrt_eq_rpow, ← Real.mul_rpow ( by positivity ) ( by positivity ) ] ; rw [ ← Real.rpow_mul ( by positivity ) ] ; ring_nf;
-        · refine' ⟨ _, _, _, _, _ ⟩;
-          · refine' div_nonneg _ ( Real.sqrt_nonneg _ );
-            have := @Real.add_rpow_le_rpow_add;
-            linarith [ this hρ1 hρ2 hq1 ];
-          · refine' div_le_one_of_le₀ _ ( Real.sqrt_nonneg _ );
-            have := star_inequality hq1 hq ρ1 ρ2 hρ1 hρ2;
-            rw [ Real.mul_rpow ( by positivity ) ( by positivity ) ] at this;
-            rw [ show ρ1 ^ q * ρ2 ^ q = ( ρ1 ^ ( q / 2 ) * ρ2 ^ ( q / 2 ) ) ^ 2 by rw [ mul_pow, ← Real.rpow_natCast, ← Real.rpow_mul ( by positivity ), ← Real.rpow_natCast, ← Real.rpow_mul ( by positivity ) ] ; ring_nf ] ; rw [ Real.sqrt_sq ( by positivity ) ] ; linarith;
-          · by_cases h : Real.sqrt ( ρ0 ^ q * ρ1 ^ q ) = 0 <;> simp_all +decide [ sub_sub ];
-            cases eq_or_ne ρ0 0 <;> cases eq_or_ne ρ1 0 <;> simp_all +decide [ Real.rpow_nonneg ];
-            · rw [ Real.zero_rpow ( by positivity ) ];
-            · rw [ Real.zero_rpow ( by positivity ) ];
-            · exact absurd ( h.resolve_left ( by positivity ) ) ( by positivity );
-          · by_cases h : Real.sqrt ( ρ0 ^ q * ρ2 ^ q ) = 0 <;> simp_all +decide [ sub_sub ];
-            cases eq_or_ne ρ0 0 <;> cases eq_or_ne ρ2 0 <;> simp_all +decide [ Real.rpow_nonneg ];
-            · rw [ Real.zero_rpow ( by positivity ) ];
-            · rw [ Real.zero_rpow ( by positivity ) ];
-            · exact absurd ( h.resolve_left ( by positivity ) ) ( by positivity );
-          · by_cases h : Real.sqrt ( ρ1 ^ q * ρ2 ^ q ) = 0 <;> simp_all +decide [ sub_sub ];
-            · simp_all +decide [ Real.rpow_nonneg ];
-              cases h <;> simp_all +decide [ Real.rpow_eq_zero_iff_of_nonneg ];
-              · rw [ mul_pow, Real.sq_sqrt ( Real.rpow_nonneg hρ0 _ ), Real.sq_sqrt ( Real.rpow_nonneg hρ2 _ ) ];
-              · rw [ mul_pow, Real.sq_sqrt ( Real.rpow_nonneg hρ0 _ ), Real.sq_sqrt ( Real.rpow_nonneg hρ1 _ ) ];
-            · rw [ Real.sq_sqrt ( by positivity ), Real.sq_sqrt ( by positivity ), Real.sq_sqrt ( by positivity ) ];
-              rw [ ← Real.sqrt_mul <| by positivity, ← Real.sqrt_mul <| by positivity ] ; ring_nf;
-              exact ⟨ trivial, trivial, trivial, by rw [ Real.sqrt_eq_iff_mul_self_eq ] <;> ring_nf <;> positivity ⟩;
+        refine ⟨((ρ0 + ρ1) ^ q - ρ0 ^ q - ρ1 ^ q) / Real.sqrt (ρ0 ^ q * ρ1 ^ q), ((ρ0 + ρ2) ^ q - ρ0 ^ q - ρ2 ^ q) / Real.sqrt (ρ0 ^ q * ρ2 ^ q), ((ρ1 + ρ2) ^ q - ρ1 ^ q - ρ2 ^ q) / Real.sqrt (ρ1 ^ q * ρ2 ^ q), Real.sqrt (ρ0 ^ q * ρ1 ^ q), Real.sqrt (ρ0 ^ q * ρ2 ^ q), Real.sqrt (ρ1 ^ q * ρ2 ^ q), ?_, ?_, ?_, ?_, ?_⟩ <;> norm_num
+        · refine div_nonneg ?_ (Real.sqrt_nonneg _)
+          have := @Real.add_rpow_le_rpow_add
+          linarith [this hρ0 hρ1 hq1]
+        · refine div_le_one_of_le₀ ?_ (Real.sqrt_nonneg _)
+          have := star_inequality hq1 hq ρ0 ρ1 hρ0 hρ1
+          rw [Real.mul_rpow (by positivity) (by positivity)] at this
+          rw [show ρ0 ^ q * ρ1 ^ q = (ρ0 ^ (q / 2) * ρ1 ^ (q / 2)) ^ 2 by rw [mul_pow, ← Real.rpow_natCast, ← Real.rpow_mul hρ0, ← Real.rpow_natCast, ← Real.rpow_mul hρ1]; ring_nf, Real.sqrt_sq (by positivity)]
+          linarith
+        · refine div_nonneg ?_ (Real.sqrt_nonneg _)
+          have := @Real.add_rpow_le_rpow_add
+          linarith [this hρ0 hρ2 hq1]
+        · refine div_le_one_of_le₀ ?_ (Real.sqrt_nonneg _)
+          have := star_inequality hq1 hq ρ0 ρ2 hρ0 hρ2
+          convert sub_le_sub_right this (ρ0 ^ q + ρ2 ^ q) using 1
+          ring
+          rw [Real.sqrt_eq_rpow, ← Real.mul_rpow (by positivity) (by positivity)]
+          rw [← Real.rpow_mul (by positivity)]
+          ring_nf
+        · refine ⟨?_, ?_, ?_, ?_, ?_⟩
+          · refine div_nonneg ?_ (Real.sqrt_nonneg _)
+            have := @Real.add_rpow_le_rpow_add
+            linarith [this hρ1 hρ2 hq1]
+          · refine div_le_one_of_le₀ ?_ (Real.sqrt_nonneg _)
+            have := star_inequality hq1 hq ρ1 ρ2 hρ1 hρ2
+            rw [Real.mul_rpow (by positivity) (by positivity)] at this
+            rw [show ρ1 ^ q * ρ2 ^ q = (ρ1 ^ (q / 2) * ρ2 ^ (q / 2)) ^ 2 by rw [mul_pow, ← Real.rpow_natCast, ← Real.rpow_mul (by positivity), ← Real.rpow_natCast, ← Real.rpow_mul (by positivity)]; ring_nf]
+            rw [Real.sqrt_sq (by positivity)]
+            linarith
+          · by_cases h : Real.sqrt (ρ0 ^ q * ρ1 ^ q) = 0 <;> simp_all +decide [sub_sub]
+            cases eq_or_ne ρ0 0 <;> cases eq_or_ne ρ1 0 <;> simp_all +decide [Real.rpow_nonneg]
+            · rw [Real.zero_rpow (by positivity)]
+            · rw [Real.zero_rpow (by positivity)]
+            · exact absurd (h.resolve_left (by positivity)) (by positivity)
+          · by_cases h : Real.sqrt (ρ0 ^ q * ρ2 ^ q) = 0 <;> simp_all +decide [sub_sub]
+            cases eq_or_ne ρ0 0 <;> cases eq_or_ne ρ2 0 <;> simp_all +decide [Real.rpow_nonneg]
+            · rw [Real.zero_rpow (by positivity)]
+            · rw [Real.zero_rpow (by positivity)]
+            · exact absurd (h.resolve_left (by positivity)) (by positivity)
+          · by_cases h : Real.sqrt (ρ1 ^ q * ρ2 ^ q) = 0 <;> simp_all +decide [sub_sub]
+            · simp_all +decide [Real.rpow_nonneg]
+              cases h <;> simp_all +decide [Real.rpow_eq_zero_iff_of_nonneg]
+              · rw [mul_pow, Real.sq_sqrt (Real.rpow_nonneg hρ0 _), Real.sq_sqrt (Real.rpow_nonneg hρ2 _)]
+              · rw [mul_pow, Real.sq_sqrt (Real.rpow_nonneg hρ0 _), Real.sq_sqrt (Real.rpow_nonneg hρ1 _)]
+            · rw [Real.sq_sqrt (by positivity), Real.sq_sqrt (by positivity), Real.sq_sqrt (by positivity)]
+              rw [← Real.sqrt_mul <| by positivity, ← Real.sqrt_mul <| by positivity]
+              ring_nf
+              exact ⟨trivial, trivial, trivial, by rw [Real.sqrt_eq_iff_mul_self_eq] <;> ring_nf <;> positivity⟩
     -- Apply psd3_of_minors with the given conditions.
     have h_psd : 0 ≤ ρ0 ^ q * ρ1 ^ q - (η01 * hη01 / 2) ^ 2 ∧ 0 ≤ ρ0 ^ q * ρ2 ^ q - (η02 * hη02 / 2) ^ 2 ∧ 0 ≤ ρ1 ^ q * ρ2 ^ q - (η12 * hη12 / 2) ^ 2 ∧ 0 ≤ ρ0 ^ q * ρ1 ^ q * ρ2 ^ q * (1 - (η01 ^ 2 + η02 ^ 2 + η12 ^ 2 + η01 * η02 * η12) / 4) := by
-      refine' ⟨ _, _, _, _ ⟩;
-      · nlinarith [ show 0 ≤ η01 * hη01 by exact mul_nonneg hS01 ( by linarith ), show η01 * hη01 ≤ 2 * hη01 by nlinarith ];
-      · nlinarith [ show 0 ≤ η02 * hη02 by exact mul_nonneg hS12.1 hS12.2.2.2.2.2.1, show η02 * hη02 ≤ 2 * hη02 by nlinarith ];
-      · nlinarith [ show 0 ≤ η12 * hη12 by exact mul_nonneg ( by linarith ) ( by linarith ), show η12 * hη12 ≤ 2 * hη12 by exact mul_le_mul_of_nonneg_right ( by linarith ) ( by linarith ) ];
-      · refine' mul_nonneg ( mul_nonneg ( mul_nonneg ( Real.rpow_nonneg hρ0 _ ) ( Real.rpow_nonneg hρ1 _ ) ) ( Real.rpow_nonneg hρ2 _ ) ) _;
-        exact star_det_nonneg η01 η02 η12 hS01 hS02 hS12.1 hS12.2.1 hS12.2.2.1 hS12.2.2.2.1;
-    rw [ h01, h02, h12 ];
-    rw [ hS12.2.2.2.2.2.2.2.1, hS12.2.2.2.2.2.2.2.2.1, hS12.2.2.2.2.2.2.2.2.2.1 ];
-    convert psd3_of_minors ( ρ0 ^ q ) ( ρ1 ^ q ) ( ρ2 ^ q ) ( - ( η01 * hη01 / 2 ) ) ( - ( η02 * hη02 / 2 ) ) ( - ( η12 * hη12 / 2 ) ) ( by positivity ) ( by positivity ) ( by positivity ) _ _ _ _ a0 a1 a2 using 1 <;> ring_nf;
-    · linarith;
-    · linarith;
-    · linarith;
-    · convert h_psd.2.2.2 using 1 ; ring_nf;
+      refine ⟨?_, ?_, ?_, ?_⟩
+      · nlinarith [show 0 ≤ η01 * hη01 by exact mul_nonneg hS01 (by linarith), show η01 * hη01 ≤ 2 * hη01 by nlinarith]
+      · nlinarith [show 0 ≤ η02 * hη02 by exact mul_nonneg hS12.1 hS12.2.2.2.2.2.1, show η02 * hη02 ≤ 2 * hη02 by nlinarith]
+      · nlinarith [show 0 ≤ η12 * hη12 by exact mul_nonneg (by linarith) (by linarith), show η12 * hη12 ≤ 2 * hη12 by exact mul_le_mul_of_nonneg_right (by linarith) (by linarith)]
+      · refine mul_nonneg (mul_nonneg (mul_nonneg (Real.rpow_nonneg hρ0 _) (Real.rpow_nonneg hρ1 _)) (Real.rpow_nonneg hρ2 _)) ?_
+        exact star_det_nonneg η01 η02 η12 hS01 hS02 hS12.1 hS12.2.1 hS12.2.2.1 hS12.2.2.2.1
+    rw [h01, h02, h12]
+    rw [hS12.2.2.2.2.2.2.2.1, hS12.2.2.2.2.2.2.2.2.1, hS12.2.2.2.2.2.2.2.2.2.1]
+    convert psd3_of_minors (ρ0 ^ q) (ρ1 ^ q) (ρ2 ^ q) (- (η01 * hη01 / 2)) (- (η02 * hη02 / 2)) (- (η12 * hη12 / 2)) (by positivity) (by positivity) (by positivity) _ _ _ _ a0 a1 a2 using 1 <;> ring_nf
+    · linarith
+    · linarith
+    · linarith
+    · convert h_psd.2.2.2 using 1
+      ring_nf
       grind
 
 /-- The Schoenberg determinant (based at `3`), as an explicit function of the
@@ -468,10 +524,10 @@ lemma schoenDet_ge_of_endpoints (A B C v w : ℝ) (hC : 0 ≤ C) (u u1 u2 : ℝ)
     (hu1 : u1 ≤ u) (hu2 : u ≤ u2)
     (h1 : 0 ≤ schoenDet A B C u1 v w) (h2 : 0 ≤ schoenDet A B C u2 v w) :
     0 ≤ schoenDet A B C u v w := by
-  by_cases hu : u1 = u2;
-  · grind;
-  · unfold schoenDet at *;
-    cases lt_or_gt_of_ne hu <;> nlinarith [ mul_le_mul_of_nonneg_left hu1 hC, mul_le_mul_of_nonneg_left hu2 hC, mul_le_mul_of_nonneg_left hu1 ( sub_nonneg.mpr hu2 ), mul_le_mul_of_nonneg_left hu2 ( sub_nonneg.mpr hu1 ) ]
+  by_cases hu : u1 = u2
+  · grind
+  · unfold schoenDet at *
+    cases lt_or_gt_of_ne hu <;> nlinarith [mul_le_mul_of_nonneg_left hu1 hC, mul_le_mul_of_nonneg_left hu2 hC, mul_le_mul_of_nonneg_left hu1 (sub_nonneg.mpr hu2), mul_le_mul_of_nonneg_left hu2 (sub_nonneg.mpr hu1)]
 
 /-
 **Reverse Schoenberg direction**: if `d` has `q`-negative type, then the
@@ -489,36 +545,44 @@ lemma det_nonneg_of_negType {q : ℝ} (hq0 : 0 < q) (d : Fin 4 → Fin 4 → ℝ
   set C := d 2 3 ^ q
   set u := (A + B - d 0 1 ^ q) / 2
   set v := (A + C - d 0 2 ^ q) / 2
-  set w := (B + C - d 1 2 ^ q) / 2;
+  set w := (B + C - d 1 2 ^ q) / 2
   -- By definition of $A$, $B$, $C$, $u$, $v$, and $w$, we know that $M$ is positive semidefinite.
   have hM_posSemidef : ∀ x y z : ℝ, 0 ≤ A * x ^ 2 + B * y ^ 2 + C * z ^ 2 + 2 * u * x * y + 2 * v * x * z + 2 * w * y * z := by
     intro x y z
     specialize hneg (fun i => if i = 0 then x else if i = 1 then y else if i = 2 then z else -(x + y + z)) (by
-    simp +decide [ Fin.sum_univ_four ] ; ring);
-    simp +decide [ Fin.sum_univ_four ] at hneg;
-    simp_all +decide [ ne_of_gt hq0 ];
-    grind;
+    simp +decide [Fin.sum_univ_four]
+    ring)
+    simp +decide [Fin.sum_univ_four] at hneg
+    simp_all +decide [ne_of_gt hq0]
+    grind
   -- Since $M$ is positive semidefinite, its determinant is nonnegative.
   have hM_det_nonneg : Matrix.PosSemidef (Matrix.of ![![A, u, v], ![u, B, w], ![v, w, C]]) := by
-    constructor;
-    · ext i j; fin_cases i <;> fin_cases j <;> rfl;
-    · intro x; convert hM_posSemidef ( x 0 ) ( x 1 ) ( x 2 ) using 1; simp +decide [ Finsupp.sum_fintype, Fin.sum_univ_three ] ; ring;
-  convert hM_det_nonneg.det_nonneg using 1 ; norm_num [ Matrix.det_fin_three ] ; ring_nf!;
-  simp +zetaDelta at *;
-  unfold schoenDet; ring;
+    constructor
+    · ext i j
+      fin_cases i <;> fin_cases j <;> rfl
+    · intro x
+      convert hM_posSemidef (x 0) (x 1) (x 2) using 1
+      simp +decide [Finsupp.sum_fintype, Fin.sum_univ_three]
+      ring
+  convert hM_det_nonneg.det_nonneg using 1
+  norm_num [Matrix.det_fin_three]
+  ring_nf!
+  simp +zetaDelta at *
+  unfold schoenDet
+  ring
 
 /-
 Negative type is invariant under relabelling the four points.
 -/
 lemma hasNegType_reindex {q : ℝ} {d : Fin 4 → Fin 4 → ℝ} (σ : Equiv.Perm (Fin 4))
     (h : HasNegType q d) : HasNegType q (fun i j => d (σ i) (σ j)) := by
-  intro c hc;
+  intro c hc
   -- Set c' := fun k => c (σ⁻¹ k).
-  set c' : Fin 4 → ℝ := fun k => c (σ⁻¹ k);
-  convert h c' _ using 1;
-  · convert rfl using 1;
-    conv_rhs => rw [ ← Equiv.sum_comp σ⁻¹ ] ;
-    exact Finset.sum_congr rfl fun i hi => by rw [ ← Equiv.sum_comp σ ] ; aesop;
+  set c' : Fin 4 → ℝ := fun k => c (σ⁻¹ k)
+  convert h c' _ using 1
+  · convert rfl using 1
+    conv_rhs => rw [← Equiv.sum_comp σ⁻¹]
+    exact Finset.sum_congr rfl fun i hi => by rw [← Equiv.sum_comp σ]; aesop
   · exact hc ▸ Equiv.sum_comp σ⁻¹ c
 
 /-
@@ -529,7 +593,8 @@ lemma schoenDet_congr (D0 D1 D2 A B C u v w : ℝ) :
     schoenDet (D0 ^ 2 * A) (D1 ^ 2 * B) (D2 ^ 2 * C)
         (D0 * D1 * u) (D0 * D2 * v) (D1 * D2 * w)
       = (D0 * D1 * D2) ^ 2 * schoenDet A B C u v w := by
-  unfold schoenDet; ring;
+  unfold schoenDet
+  ring
 
 /-! ### Leaf-permutation symmetry of `schoenDet`
 
@@ -543,17 +608,20 @@ lemmas (`endpoint_star_det`, `endpoint_line_det`, `geodesic_ptolemy_endpoint_det
 /-- Swapping leaves `0 ↔ 1`. -/
 lemma schoenDet_swap01 (A B C u v w : ℝ) :
     schoenDet B A C u w v = schoenDet A B C u v w := by
-  unfold schoenDet; ring
+  unfold schoenDet
+  ring
 
 /-- Swapping leaves `1 ↔ 2`. -/
 lemma schoenDet_swap12 (A B C u v w : ℝ) :
     schoenDet A C B v u w = schoenDet A B C u v w := by
-  unfold schoenDet; ring
+  unfold schoenDet
+  ring
 
 /-- Swapping leaves `0 ↔ 2`. -/
 lemma schoenDet_swap02 (A B C u v w : ℝ) :
     schoenDet C B A w v u = schoenDet A B C u v w := by
-  unfold schoenDet; ring
+  unfold schoenDet
+  ring
 
 /-- **Distance-parameterised concavity reduction** for the first off-diagonal slot.
 The entry `(A + B - t^q)/2` is a decreasing function of the distance `t` (since
@@ -616,7 +684,8 @@ lemma schoenDet_concave_apex (A B p r u : ℝ) (hu : 2 * u ≤ A + B)
     0 ≤ schoenDet A B C u ((A + C - p) / 2) ((B + C - r) / 2) := by
   by_cases hC : C1 = C2
   · have : C = C2 := le_antisymm h2 (hC ▸ h1)
-    rw [this]; exact he2
+    rw [this]
+    exact he2
   · have hlt : C1 < C2 := lt_of_le_of_ne (h1.trans h2) hC
     unfold schoenDet at he1 he2 ⊢
     nlinarith [mul_nonneg he1 (sub_nonneg.mpr h2), mul_nonneg he2 (sub_nonneg.mpr h1),
@@ -636,15 +705,19 @@ lemma endpoint_star_det {q : ℝ} (hq1 : 1 ≤ q) (hq : q ≤ Real.logb 2 3)
         ((y ^ q + (y + r) ^ q - r ^ q) / 2)
         ((y ^ q + (y + z) ^ q - z ^ q) / 2)
         (((y + r) ^ q + (y + z) ^ q - (r + z) ^ q) / 2) := by
-  set dS : Fin 4 → Fin 4 → ℝ := fun i j => if i = j then 0 else (if i = 0 then 0 else if i = 1 then r else if i = 2 then z else y) + (if j = 0 then 0 else if j = 1 then r else if j = 2 then z else y);
+  set dS : Fin 4 → Fin 4 → ℝ := fun i j => if i = j then 0 else (if i = 0 then 0 else if i = 1 then r else if i = 2 then z else y) + (if j = 0 then 0 else if j = 1 then r else if j = 2 then z else y)
   set dC : Fin 4 → Fin 4 → ℝ := fun i j => if i = j then 0 else (if i = 0 then y else if i = 1 then r else if i = 2 then z else 0) + (if j = 0 then y else if j = 1 then r else if j = 2 then z else 0)
   have h_center_negType : HasNegType q dC := by
-    apply star_negType hq1 hq;
+    apply star_negType hq1 hq
     · refine ⟨?_, ?_, ?_, ?_⟩
-      · intro i; fin_cases i <;> simp [dC]
-      · intro i j; fin_cases i <;> fin_cases j <;> simp [dC, add_comm]
-      · intro i j; fin_cases i <;> fin_cases j <;> simp [dC, hy, hr, hz] <;> linarith
-      · intro i j k; fin_cases i <;> fin_cases j <;> fin_cases k <;> simp [dC] <;> linarith [hy, hr, hz]
+      · intro i
+        fin_cases i <;> simp [dC]
+      · intro i j
+        fin_cases i <;> fin_cases j <;> simp [dC, add_comm]
+      · intro i j
+        fin_cases i <;> fin_cases j <;> simp [dC, hy, hr, hz] <;> linarith
+      · intro i j k
+        fin_cases i <;> fin_cases j <;> fin_cases k <;> simp [dC] <;> linarith [hy, hr, hz]
     · simp [dC]
     · simp [dC]
     · simp [dC]
@@ -653,9 +726,12 @@ lemma endpoint_star_det {q : ℝ} (hq1 : 1 ≤ q) (hq : q ≤ Real.logb 2 3)
     convert hasNegType_reindex σ h_center_negType using 1
     exact funext fun i => funext fun j => by fin_cases i <;> fin_cases j <;> simp [dS, dC, σ, Equiv.swap_apply_def]
   convert det_nonneg_of_negType (show 0 < q by linarith) dS _ _ h_star_negType using 1
-  · simp [dS]; ring_nf
-  · intro i j; fin_cases i <;> fin_cases j <;> simp [dS, add_comm]
-  · intro i; fin_cases i <;> simp [dS]
+  · simp [dS]
+    ring_nf
+  · intro i j
+    fin_cases i <;> fin_cases j <;> simp [dS, add_comm]
+  · intro i
+    fin_cases i <;> simp [dS]
 
 /-
 The Schoenberg determinant of the **line** endpoint `h = |r - z|` of an
@@ -667,10 +743,10 @@ lemma endpoint_line_det {q : ℝ} (hq0 : 0 < q) (hq2 : q ≤ 2)
         ((y ^ q + (y + r) ^ q - r ^ q) / 2)
         ((y ^ q + (y + z) ^ q - z ^ q) / 2)
         (((y + r) ^ q + (y + z) ^ q - |r - z| ^ q) / 2) := by
-  convert det_nonneg_of_negType hq0 ( fun i j ↦ |( if i = 3 then 0 else if i = 0 then y else if i = 1 then y + r else y + z ) - ( if j = 3 then 0 else if j = 0 then y else if j = 1 then y + r else y + z )| ) _ _ _ using 1 <;> norm_num;
-  · simp +decide [ abs_of_nonneg, hy, hr, hz ];
-    rw [ abs_of_nonneg ( by positivity : 0 ≤ y + r ), abs_of_nonneg ( by positivity : 0 ≤ y + z ) ];
-  · exact fun i j => abs_sub_comm _ _;
+  convert det_nonneg_of_negType hq0 (fun i j ↦ |(if i = 3 then 0 else if i = 0 then y else if i = 1 then y + r else y + z) - (if j = 3 then 0 else if j = 0 then y else if j = 1 then y + r else y + z)|) _ _ _ using 1 <;> norm_num
+  · simp +decide [abs_of_nonneg, hy, hr, hz]
+    rw [abs_of_nonneg (by positivity : 0 ≤ y + r), abs_of_nonneg (by positivity : 0 ≤ y + z)]
+  · exact fun i j => abs_sub_comm _ _
   · exact line_negType hq0 hq2 _ _ fun i j => rfl
 
 /-
@@ -710,7 +786,8 @@ lemma attached_ray_negType {q : ℝ} (hq1 : 1 ≤ q) (hq : q ≤ Real.logb 2 3)
         norm_num at *
         cases abs_cases (d 0 1 - d 0 2) <;>
           linarith! [ha, hb, hm.2.1 0 1, hm.2.1 0 2, hm.2.1 1 2]
-    · convert endpoint_star_det hq1 hq (d 0 3) (d 0 2) (d 0 1) (hnn _ _) (hnn _ _) (hnn _ _) using 1; ring_nf
+    · convert endpoint_star_det hq1 hq (d 0 3) (d 0 2) (d 0 1) (hnn _ _) (hnn _ _) (hnn _ _) using 1
+      ring_nf
       unfold schoenDet
       ring_nf
       grind +qlia
@@ -777,7 +854,8 @@ lemma inv_isMetric {d : Fin 4 → Fin 4 → ℝ} (hm : IsMetric4 d) (hp : IsPtol
   have hsymdh : ∀ i j, dh i j = dh j i := by
     intro i j
     by_cases hij : i = j
-    · subst j; simp [dh]
+    · subst j
+      simp [dh]
     · have hji : j ≠ i := by exact Ne.symm hij
       by_cases hi3 : i = 3
       · subst i
@@ -790,7 +868,8 @@ lemma inv_isMetric {d : Fin 4 → Fin 4 → ℝ} (hm : IsMetric4 d) (hp : IsPtol
   have hnonneg : ∀ i j, 0 ≤ dh i j := by
     intro i j
     by_cases hij : i = j
-    · subst j; simp [dh]
+    · subst j
+      simp [dh]
     · by_cases hi3 : i = 3
       · subst i
         have hj3 : j ≠ 3 := by exact Ne.symm hij
@@ -868,11 +947,13 @@ lemma inv_isPtolemaic {d : Fin 4 → Fin 4 → ℝ} (hm : IsMetric4 d)
   have hnn := hm.2.2.1
   have htri := hm.2.2.2
   have hdiag : ∀ i, dh i i = 0 := by
-    intro i; simp [dh]
+    intro i
+    simp [dh]
   have hsymdh : ∀ i j, dh i j = dh j i := by
     intro i j
     by_cases hij : i = j
-    · subst j; simp [dh]
+    · subst j
+      simp [dh]
     · have hji : j ≠ i := by exact Ne.symm hij
       by_cases hi3 : i = 3
       · subst i
@@ -885,7 +966,8 @@ lemma inv_isPtolemaic {d : Fin 4 → Fin 4 → ℝ} (hm : IsMetric4 d)
   have hnonneg : ∀ i j, 0 ≤ dh i j := by
     intro i j
     by_cases hij : i = j
-    · subst j; simp [dh]
+    · subst j
+      simp [dh]
     · by_cases hi3 : i = 3
       · subst i
         have hj3 : j ≠ 3 := by exact Ne.symm hij
@@ -971,16 +1053,16 @@ lemma apex3_det_of_inversion {q : ℝ} (hq1 : 1 ≤ q)
     else d i j / (d i 3 * d j 3)
   have hdh_metric : IsMetric4 dh := inv_isMetric hm hp hpos0 hpos1 hpos2
   have h_det_eq : schoenDet (dh 0 3 ^ q) (dh 1 3 ^ q) (dh 2 3 ^ q) ((dh 0 3 ^ q + dh 1 3 ^ q - dh 0 1 ^ q) / 2) ((dh 0 3 ^ q + dh 2 3 ^ q - dh 0 2 ^ q) / 2) ((dh 1 3 ^ q + dh 2 3 ^ q - dh 1 2 ^ q) / 2) = (d 0 3 ^ (-q) * d 1 3 ^ (-q) * d 2 3 ^ (-q)) ^ 2 * schoenDet (d 0 3 ^ q) (d 1 3 ^ q) (d 2 3 ^ q) ((d 0 3 ^ q + d 1 3 ^ q - d 0 1 ^ q) / 2) ((d 0 3 ^ q + d 2 3 ^ q - d 0 2 ^ q) / 2) ((d 1 3 ^ q + d 2 3 ^ q - d 1 2 ^ q) / 2) := by
-    convert schoenDet_congr ( d 0 3 ^ ( -q ) ) ( d 1 3 ^ ( -q ) ) ( d 2 3 ^ ( -q ) ) ( d 0 3 ^ q ) ( d 1 3 ^ q ) ( d 2 3 ^ q ) ( ( d 0 3 ^ q + d 1 3 ^ q - d 0 1 ^ q ) / 2 ) ( ( d 0 3 ^ q + d 2 3 ^ q - d 0 2 ^ q ) / 2 ) ( ( d 1 3 ^ q + d 2 3 ^ q - d 1 2 ^ q ) / 2 ) using 1;
-    simp +zetaDelta at *;
-    norm_num [ Real.rpow_neg hpos0.le, Real.rpow_neg hpos1.le, Real.rpow_neg hpos2.le, Real.div_rpow ( show 0 ≤ d 0 1 by exact hm.2.2.1 _ _ ) ( show 0 ≤ d 0 3 * d 1 3 by positivity ), Real.div_rpow ( show 0 ≤ d 0 2 by exact hm.2.2.1 _ _ ) ( show 0 ≤ d 0 3 * d 2 3 by positivity ), Real.div_rpow ( show 0 ≤ d 1 2 by exact hm.2.2.1 _ _ ) ( show 0 ≤ d 1 3 * d 2 3 by positivity ) ];
-    norm_num [ Real.inv_rpow ( le_of_lt hpos0 ), Real.inv_rpow ( le_of_lt hpos1 ), Real.inv_rpow ( le_of_lt hpos2 ), Real.mul_rpow ( le_of_lt hpos0 ) ( le_of_lt hpos1 ), Real.mul_rpow ( le_of_lt hpos0 ) ( le_of_lt hpos2 ), Real.mul_rpow ( le_of_lt hpos1 ) ( le_of_lt hpos2 ) ];
-    field_simp;
-    ring_nf;
-  contrapose! h_det_eq;
-  refine' ne_of_gt ( lt_of_lt_of_le _ ( det_nonneg_of_negType ( by positivity ) dh _ _ hdhneg ) );
-  · exact mul_neg_of_pos_of_neg ( sq_pos_of_pos ( mul_pos ( mul_pos ( Real.rpow_pos_of_pos hpos0 _ ) ( Real.rpow_pos_of_pos hpos1 _ ) ) ( Real.rpow_pos_of_pos hpos2 _ ) ) ) h_det_eq;
-  · exact hdh_metric.2.1;
+    convert schoenDet_congr (d 0 3 ^ (-q)) (d 1 3 ^ (-q)) (d 2 3 ^ (-q)) (d 0 3 ^ q) (d 1 3 ^ q) (d 2 3 ^ q) ((d 0 3 ^ q + d 1 3 ^ q - d 0 1 ^ q) / 2) ((d 0 3 ^ q + d 2 3 ^ q - d 0 2 ^ q) / 2) ((d 1 3 ^ q + d 2 3 ^ q - d 1 2 ^ q) / 2) using 1
+    simp +zetaDelta at *
+    norm_num [Real.rpow_neg hpos0.le, Real.rpow_neg hpos1.le, Real.rpow_neg hpos2.le, Real.div_rpow (show 0 ≤ d 0 1 by exact hm.2.2.1 _ _) (show 0 ≤ d 0 3 * d 1 3 by positivity), Real.div_rpow (show 0 ≤ d 0 2 by exact hm.2.2.1 _ _) (show 0 ≤ d 0 3 * d 2 3 by positivity), Real.div_rpow (show 0 ≤ d 1 2 by exact hm.2.2.1 _ _) (show 0 ≤ d 1 3 * d 2 3 by positivity)]
+    norm_num [Real.inv_rpow (le_of_lt hpos0), Real.inv_rpow (le_of_lt hpos1), Real.inv_rpow (le_of_lt hpos2), Real.mul_rpow (le_of_lt hpos0) (le_of_lt hpos1), Real.mul_rpow (le_of_lt hpos0) (le_of_lt hpos2), Real.mul_rpow (le_of_lt hpos1) (le_of_lt hpos2)]
+    field_simp
+    ring_nf
+  contrapose! h_det_eq
+  refine ne_of_gt (lt_of_lt_of_le ?_ (det_nonneg_of_negType (by positivity) dh ?_ ?_ hdhneg))
+  · exact mul_neg_of_pos_of_neg (sq_pos_of_pos (mul_pos (mul_pos (Real.rpow_pos_of_pos hpos0 _) (Real.rpow_pos_of_pos hpos1 _)) (Real.rpow_pos_of_pos hpos2 _))) h_det_eq
+  · exact hdh_metric.2.1
   · exact fun i => hdh_metric.1 i
 
 /-
@@ -1059,10 +1141,13 @@ lemma ptolemy_apex_endpoint_det {q : ℝ} (hq1 : 1 ≤ q) (hq : q ≤ Real.logb 
   have hpE : IsPtolemaic4 E := fun x y z w => hp _ _ _ _
   -- `E` satisfies the hypotheses of `geodesic_ptolemy_endpoint_det`.
   have hgeoE : E 3 2 = E 3 1 + E 1 2 := by
-    simp only [hE, hpm1, hpm2, hpm3]; linarith [hgeo, hsymm 3 1]
+    simp only [hE, hpm1, hpm2, hpm3]
+    linarith [hgeo, hsymm 3 1]
   have hPtEqE : (E 3 1 + E 1 2) * E 0 1 = E 1 2 * E 0 3 + E 3 1 * E 0 2 := by
     simp only [hE, hpm0, hpm1, hpm2, hpm3]
-    rw [hsymm 3 1, hsymm 2 0, hsymm 2 1]; rw [hgeo] at hPtEq; nlinarith [hPtEq]
+    rw [hsymm 3 1, hsymm 2 0, hsymm 2 1]
+    rw [hgeo] at hPtEq
+    nlinarith [hPtEq]
   have hposE0 : 0 < E 0 3 := by simp only [hE, hpm0, hpm3]; rw [hsymm 2 0]; exact hp02
   have hposE1 : 0 < E 1 3 := by simp only [hE, hpm1, hpm3]; rw [hsymm 3 0]; exact hp03
   have hposE2 : 0 < E 2 3 := by simp only [hE, hpm2, hpm3]; rw [hsymm 1 0]; exact hd01
@@ -1089,7 +1174,8 @@ lemma isMetric4_update23 {d : Fin 4 → Fin 4 → ℝ}
     by_cases h : (i = 2 ∧ j = 3) ∨ (i = 3 ∧ j = 2)
     · rcases h with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩
       · simp [du, hvge]
-      · simp [du]; linarith [hvge, hsymm 3 2]
+      · simp [du]
+        linarith [hvge, hsymm 3 2]
     · simp [du, h]
   refine ⟨fun i => ?_, fun i j => ?_, fun i j => ?_, fun i j k => ?_⟩
   · fin_cases i <;> simp +decide [du, hd]
@@ -1147,7 +1233,8 @@ private lemma isPtolemaic4_update23_of_bounds {d : Fin 4 → Fin 4 → ℝ}
   set du : Fin 4 → Fin 4 → ℝ :=
     fun i j => if (i = 2 ∧ j = 3) ∨ (i = 3 ∧ j = 2) then t else d i j
   have hdiag : ∀ i, du i i = 0 := by
-    intro i; fin_cases i <;> simp [du, hd]
+    intro i
+    fin_cases i <;> simp [du, hd]
   have hsymdu : ∀ i j, du i j = du j i := by
     intro i j
     by_cases h : (i = 2 ∧ j = 3) ∨ (i = 3 ∧ j = 2)
@@ -1179,10 +1266,12 @@ lemma isPtolemaic4_update23 {d : Fin 4 → Fin 4 → ℝ} (hp : IsPtolemaic4 d)
     IsPtolemaic4 (fun i j => if (i = 2 ∧ j = 3) ∨ (i = 3 ∧ j = 2) then t else d i j) := by
   -- The three Ptolemy inequalities for the updated pair, in canonical form.
   have k2 : d 0 2 * d 1 3 ≤ d 0 1 * t + d 0 3 * d 1 2 := by
-    have h := hp 0 2 1 3; rw [hsymm 2 1] at h
+    have h := hp 0 2 1 3
+    rw [hsymm 2 1] at h
     linarith [h, mul_le_mul_of_nonneg_left ht (hnn 0 1)]
   have k3 : d 0 3 * d 1 2 ≤ d 0 1 * t + d 0 2 * d 1 3 := by
-    have h := hp 0 3 1 2; rw [hsymm 3 2, hsymm 3 1] at h
+    have h := hp 0 3 1 2
+    rw [hsymm 3 2, hsymm 3 1] at h
     linarith [h, mul_le_mul_of_nonneg_left ht (hnn 0 1)]
   exact isPtolemaic4_update23_of_bounds hsymm hnn hd t ht0 htP k2 k3
 
@@ -1209,11 +1298,15 @@ lemma geodesic_insertion_det {q : ℝ} (hq1 : 1 ≤ q) (hq : q ≤ Real.logb 2 3
   have hLd : L ≤ d 2 3 := by
     rw [hLdef]
     refine max_le ?_ (max_le ?_ ?_)
-    · rw [abs_le]; exact ⟨by linarith [htri 0 3 2, hsymm 3 2], by linarith [htri 0 2 3]⟩
-    · rw [abs_le]; exact ⟨by linarith [htri 1 3 2, hsymm 3 2], by linarith [htri 1 2 3]⟩
+    · rw [abs_le]
+      exact ⟨by linarith [htri 0 3 2, hsymm 3 2], by linarith [htri 0 2 3]⟩
+    · rw [abs_le]
+      exact ⟨by linarith [htri 1 3 2, hsymm 3 2], by linarith [htri 1 2 3]⟩
     · rw [div_le_iff₀ hd01, abs_le]
-      have ha := hp 0 2 1 3; rw [hsymm 2 1] at ha
-      have hb := hp 0 3 1 2; rw [hsymm 3 2, hsymm 3 1] at hb
+      have ha := hp 0 2 1 3
+      rw [hsymm 2 1] at ha
+      have hb := hp 0 3 1 2
+      rw [hsymm 3 2, hsymm 3 1] at hb
       exact ⟨by nlinarith [ha], by nlinarith [hb]⟩
   have hdU : d 2 3 ≤ U := by
     rw [hUdef]
@@ -1221,7 +1314,8 @@ lemma geodesic_insertion_det {q : ℝ} (hq1 : 1 ≤ q) (hq : q ≤ Real.logb 2 3
     · linarith [htri 2 0 3, hsymm 2 0]
     · linarith [htri 2 1 3, hsymm 2 1]
     · rw [le_div_iff₀ hd01]
-      have hc := hp 2 3 0 1; rw [hsymm 2 0, hsymm 3 1, hsymm 2 1, hsymm 3 0] at hc
+      have hc := hp 2 3 0 1
+      rw [hsymm 2 0, hsymm 3 1, hsymm 2 1, hsymm 3 0] at hc
       nlinarith [hc]
   refine schoenDet_concave_apex (d 0 3 ^ q) (d 1 3 ^ q) (d 0 2 ^ q) (d 1 2 ^ q)
     ((d 0 3 ^ q + d 1 3 ^ q - d 0 1 ^ q) / 2)
@@ -1238,7 +1332,8 @@ lemma geodesic_insertion_det {q : ℝ} (hq1 : 1 ≤ q) (hq : q ≤ Real.logb 2 3
     · -- `L = |d03 - d02|`, with the Ptolemy-lo bound `≤ |d03-d02|`.
       rw [hLeq]
       have hPt : |d 0 2 * d 1 3 - d 0 3 * d 1 2| ≤ |d 0 3 - d 0 2| * d 0 1 := by
-        rw [← div_le_iff₀ hd01]; exact le_trans (le_max_right _ _) hLge
+        rw [← div_le_iff₀ hd01]
+        exact le_trans (le_max_right _ _) hLge
       rcases le_total (d 0 2) (d 0 3) with hcmp | hcmp
       · -- `d03 ≥ d02`: `2` between `0,3`; Ptolemy forces `d12 = d01 - d02`, line `0,2,3,1`.
         rw [abs_of_nonneg (by linarith : (0:ℝ) ≤ d 0 3 - d 0 2)] at hPt ⊢
@@ -1246,9 +1341,11 @@ lemma geodesic_insertion_det {q : ℝ} (hq1 : 1 ≤ q) (hq : q ≤ Real.logb 2 3
           have hge : d 0 1 - d 0 2 ≤ d 1 2 := by linarith [htri 0 2 1, hsymm 2 1]
           have hPt' : d 0 3 * d 1 2 - d 0 2 * d 1 3 ≤ (d 0 3 - d 0 2) * d 0 1 := by
             have h1 := le_abs_self (d 0 3 * d 1 2 - d 0 2 * d 1 3)
-            rw [abs_sub_comm] at h1; linarith [h1, hPt]
+            rw [abs_sub_comm] at h1
+            linarith [h1, hPt]
           have hmul : d 0 3 * d 1 2 ≤ d 0 3 * (d 0 1 - d 0 2) := by rw [hgeo] at hPt'; nlinarith [hPt']
-          have := le_of_mul_le_mul_left hmul hp03; linarith
+          have := le_of_mul_le_mul_left hmul hp03
+          linarith
         rw [hd12, hgeo]
         set x : Fin 4 → ℝ := fun i =>
           if i = 0 then 0 else if i = 1 then d 0 3 + d 1 3 else if i = 2 then d 0 2 else d 0 3
@@ -1258,17 +1355,22 @@ lemma geodesic_insertion_det {q : ℝ} (hq1 : 1 ≤ q) (hq : q ≤ Real.logb 2 3
         have hx2 : x 2 = d 0 2 := by simp [hxdef]
         have hx3 : x 3 = d 0 3 := by simp [hxdef]
         have e01 : |x 0 - x 1| = d 0 3 + d 1 3 := by
-          rw [hx0, hx1, abs_of_nonpos (by linarith [hnn 0 3, hnn 1 3])]; ring
+          rw [hx0, hx1, abs_of_nonpos (by linarith [hnn 0 3, hnn 1 3])]
+          ring
         have e02 : |x 0 - x 2| = d 0 2 := by
-          rw [hx0, hx2, abs_of_nonpos (by linarith [hnn 0 2])]; ring
+          rw [hx0, hx2, abs_of_nonpos (by linarith [hnn 0 2])]
+          ring
         have e03 : |x 0 - x 3| = d 0 3 := by
-          rw [hx0, hx3, abs_of_nonpos (by linarith [hnn 0 3])]; ring
+          rw [hx0, hx3, abs_of_nonpos (by linarith [hnn 0 3])]
+          ring
         have e12 : |x 1 - x 2| = d 0 3 + d 1 3 - d 0 2 := by
           rw [hx1, hx2, abs_of_nonneg (by linarith)]
         have e13 : |x 1 - x 3| = d 1 3 := by
-          rw [hx1, hx3, abs_of_nonneg (by linarith [hnn 1 3])]; ring
+          rw [hx1, hx3, abs_of_nonneg (by linarith [hnn 1 3])]
+          ring
         have e23 : |x 2 - x 3| = d 0 3 - d 0 2 := by
-          rw [hx2, hx3, abs_of_nonpos (by linarith)]; ring
+          rw [hx2, hx3, abs_of_nonpos (by linarith)]
+          ring
         have key := det_nonneg_of_negType hq0 (fun i j => |x i - x j|)
           (fun i j => abs_sub_comm _ _) (fun i => by simp)
           (line_negType hq0 hq2 _ x (fun _ _ => rfl))
@@ -1278,7 +1380,8 @@ lemma geodesic_insertion_det {q : ℝ} (hq1 : 1 ≤ q) (hq : q ≤ Real.logb 2 3
         have hLval : |d 0 3 - d 0 2| = d 0 2 - d 0 3 := by rw [abs_of_nonpos (by linarith)]; ring
         rw [hLval]
         have hLge' : |d 1 3 - d 1 2| ≤ d 0 2 - d 0 3 := by
-          have h := le_trans (le_max_left _ _) hLge; rwa [hLval] at h
+          have h := le_trans (le_max_left _ _) hLge
+          rwa [hLval] at h
         obtain ⟨hge1, hge2⟩ := abs_le.mp hLge'
         set dA : Fin 4 → Fin 4 → ℝ :=
           fun i j => if (i = 2 ∧ j = 3) ∨ (i = 3 ∧ j = 2) then d 0 2 - d 0 3 else d i j with hdA
@@ -1286,8 +1389,10 @@ lemma geodesic_insertion_det {q : ℝ} (hq1 : 1 ≤ q) (hq : q ≤ Real.logb 2 3
           rw [hdA]
           apply isMetric4_update23_lo hsymm hnn hd htri
           · linarith
-          · rw [hsymm 2 0, hsymm 3 0]; linarith [hnn 0 3]
-          · rw [hsymm 2 1, hsymm 3 1]; linarith [hgeo, htri 0 1 2]
+          · rw [hsymm 2 0, hsymm 3 0]
+            linarith [hnn 0 3]
+          · rw [hsymm 2 1, hsymm 3 1]
+            linarith [hgeo, htri 0 1 2]
           · rw [hsymm 2 0, hsymm 3 0, abs_of_nonneg (by linarith : 0 ≤ d 0 2 - d 0 3)]
           · rwa [hsymm 2 1, hsymm 3 1, abs_sub_comm]
         have hneg : HasNegType q dA := by
@@ -1310,7 +1415,8 @@ lemma geodesic_insertion_det {q : ℝ} (hq1 : 1 ≤ q) (hq : q ≤ Real.logb 2 3
       · -- `L = |d13 - d12|`, with Ptolemy-lo `≤ |d13-d12|`.
         rw [hL2eq]
         have hPt : |d 0 2 * d 1 3 - d 0 3 * d 1 2| ≤ |d 1 3 - d 1 2| * d 0 1 := by
-          rw [← div_le_iff₀ hd01]; exact hL2ge
+          rw [← div_le_iff₀ hd01]
+          exact hL2ge
         rcases le_total (d 1 2) (d 1 3) with hcmp | hcmp
         · -- `d13 ≥ d12`: `2` between `1,3`; Ptolemy forces `d02 = d01 - d12`, line `0,3,2,1`.
           rw [abs_of_nonneg (by linarith : (0:ℝ) ≤ d 1 3 - d 1 2)] at hPt ⊢
@@ -1319,7 +1425,8 @@ lemma geodesic_insertion_det {q : ℝ} (hq1 : 1 ≤ q) (hq : q ≤ Real.logb 2 3
             have hPt' : d 0 2 * d 1 3 - d 0 3 * d 1 2 ≤ (d 1 3 - d 1 2) * d 0 1 :=
               le_trans (le_abs_self _) hPt
             have hmul : d 1 3 * d 0 2 ≤ d 1 3 * (d 0 1 - d 1 2) := by rw [hgeo] at hPt'; nlinarith [hPt']
-            have := le_of_mul_le_mul_left hmul hp13; linarith
+            have := le_of_mul_le_mul_left hmul hp13
+            linarith
           rw [hd02, hgeo]
           set x : Fin 4 → ℝ := fun i =>
             if i = 0 then 0 else if i = 1 then d 0 3 + d 1 3 else if i = 2 then d 0 3 + d 1 3 - d 1 2 else d 0 3
@@ -1329,17 +1436,23 @@ lemma geodesic_insertion_det {q : ℝ} (hq1 : 1 ≤ q) (hq : q ≤ Real.logb 2 3
           have hx2 : x 2 = d 0 3 + d 1 3 - d 1 2 := by simp [hxdef]
           have hx3 : x 3 = d 0 3 := by simp [hxdef]
           have e01 : |x 0 - x 1| = d 0 3 + d 1 3 := by
-            rw [hx0, hx1, abs_of_nonpos (by linarith [hnn 0 3, hnn 1 3])]; ring
+            rw [hx0, hx1, abs_of_nonpos (by linarith [hnn 0 3, hnn 1 3])]
+            ring
           have e02 : |x 0 - x 2| = d 0 3 + d 1 3 - d 1 2 := by
-            rw [hx0, hx2, abs_of_nonpos (by linarith [hnn 0 2])] ; ring
+            rw [hx0, hx2, abs_of_nonpos (by linarith [hnn 0 2])]
+            ring
           have e03 : |x 0 - x 3| = d 0 3 := by
-            rw [hx0, hx3, abs_of_nonpos (by linarith [hnn 0 3])]; ring
+            rw [hx0, hx3, abs_of_nonpos (by linarith [hnn 0 3])]
+            ring
           have e12 : |x 1 - x 2| = d 1 2 := by
-            rw [hx1, hx2, abs_of_nonneg (by linarith [hnn 1 2])] ; ring
+            rw [hx1, hx2, abs_of_nonneg (by linarith [hnn 1 2])]
+            ring
           have e13 : |x 1 - x 3| = d 1 3 := by
-            rw [hx1, hx3, abs_of_nonneg (by linarith [hnn 1 3])]; ring
+            rw [hx1, hx3, abs_of_nonneg (by linarith [hnn 1 3])]
+            ring
           have e23 : |x 2 - x 3| = d 1 3 - d 1 2 := by
-            rw [hx2, hx3, abs_of_nonneg (by linarith)] ; ring
+            rw [hx2, hx3, abs_of_nonneg (by linarith)]
+            ring
           have key := det_nonneg_of_negType hq0 (fun i j => |x i - x j|)
             (fun i j => abs_sub_comm _ _) (fun i => by simp)
             (line_negType hq0 hq2 _ x (fun _ _ => rfl))
@@ -1351,15 +1464,18 @@ lemma geodesic_insertion_det {q : ℝ} (hq1 : 1 ≤ q) (hq : q ≤ Real.logb 2 3
           have hb02 : d 0 2 - d 0 3 ≤ d 1 2 - d 1 3 := by
             have h1 : |d 0 3 - d 0 2| < |d 1 3 - d 1 2| := by rw [hL2eq] at hLlt; exact hLlt
             have h2 : d 0 2 - d 0 3 ≤ |d 0 3 - d 0 2| := by rw [abs_sub_comm]; exact le_abs_self _
-            rw [hLval] at h1; linarith [h1, h2]
+            rw [hLval] at h1
+            linarith [h1, h2]
           set dA : Fin 4 → Fin 4 → ℝ :=
             fun i j => if (i = 2 ∧ j = 3) ∨ (i = 3 ∧ j = 2) then d 1 2 - d 1 3 else d i j with hdA
           have hmA : IsMetric4 dA := by
             rw [hdA]
             apply isMetric4_update23_lo hsymm hnn hd htri
             · linarith
-            · rw [hsymm 2 0, hsymm 3 0]; linarith [hgeo, htri 1 0 2, hsymm 1 0]
-            · rw [hsymm 2 1, hsymm 3 1]; linarith [hnn 1 3]
+            · rw [hsymm 2 0, hsymm 3 0]
+              linarith [hgeo, htri 1 0 2, hsymm 1 0]
+            · rw [hsymm 2 1, hsymm 3 1]
+              linarith [hnn 1 3]
             · rw [hsymm 2 0, hsymm 3 0, abs_sub_comm]
               rw [← hLval]
               exact le_of_lt (by rw [hL2eq] at hLlt; exact hLlt)
@@ -1409,11 +1525,13 @@ lemma geodesic_insertion_det {q : ℝ} (hq1 : 1 ≤ q) (hq : q ≤ Real.logb 2 3
     · -- `U = d03 + d02`: Ptolemy forces `d12 = d01 + d02`, giving the line `2,0,3,1`.
       rw [hUeq]
       have hPt : (d 0 3 + d 0 2) * d 0 1 ≤ d 0 2 * d 1 3 + d 0 3 * d 1 2 := by
-        have h := le_trans hUle (min_le_right _ _); rwa [le_div_iff₀ hd01] at h
+        have h := le_trans hUle (min_le_right _ _)
+        rwa [le_div_iff₀ hd01] at h
       have hd12 : d 1 2 = d 0 1 + d 0 2 := by
         have h012 : d 1 2 ≤ d 0 1 + d 0 2 := by linarith [htri 1 0 2, hsymm 1 0]
         have hmul : d 0 3 * (d 0 1 + d 0 2) ≤ d 0 3 * d 1 2 := by rw [hgeo] at hPt; nlinarith [hPt]
-        have := le_of_mul_le_mul_left hmul hp03; linarith
+        have := le_of_mul_le_mul_left hmul hp03
+        linarith
       rw [hd12, hgeo]
       set x : Fin 4 → ℝ := fun i =>
         if i = 0 then 0 else if i = 1 then d 0 3 + d 1 3 else if i = 2 then -d 0 2 else d 0 3
@@ -1423,17 +1541,23 @@ lemma geodesic_insertion_det {q : ℝ} (hq1 : 1 ≤ q) (hq : q ≤ Real.logb 2 3
       have hx2 : x 2 = -d 0 2 := by simp [hxdef]
       have hx3 : x 3 = d 0 3 := by simp [hxdef]
       have e01 : |x 0 - x 1| = d 0 3 + d 1 3 := by
-        rw [hx0, hx1, abs_of_nonpos (by linarith [hnn 0 3, hnn 1 3])]; ring
+        rw [hx0, hx1, abs_of_nonpos (by linarith [hnn 0 3, hnn 1 3])]
+        ring
       have e02 : |x 0 - x 2| = d 0 2 := by
-        rw [hx0, hx2, abs_of_nonneg (by linarith [hnn 0 2])]; ring
+        rw [hx0, hx2, abs_of_nonneg (by linarith [hnn 0 2])]
+        ring
       have e03 : |x 0 - x 3| = d 0 3 := by
-        rw [hx0, hx3, abs_of_nonpos (by linarith [hnn 0 3])]; ring
+        rw [hx0, hx3, abs_of_nonpos (by linarith [hnn 0 3])]
+        ring
       have e12 : |x 1 - x 2| = d 0 3 + d 1 3 + d 0 2 := by
-        rw [hx1, hx2, abs_of_nonneg (by linarith [hnn 0 3, hnn 1 3, hnn 0 2])]; ring
+        rw [hx1, hx2, abs_of_nonneg (by linarith [hnn 0 3, hnn 1 3, hnn 0 2])]
+        ring
       have e13 : |x 1 - x 3| = d 1 3 := by
-        rw [hx1, hx3, abs_of_nonneg (by linarith [hnn 1 3])]; ring
+        rw [hx1, hx3, abs_of_nonneg (by linarith [hnn 1 3])]
+        ring
       have e23 : |x 2 - x 3| = d 0 3 + d 0 2 := by
-        rw [hx2, hx3, abs_of_nonpos (by linarith [hnn 0 3, hnn 0 2])]; ring
+        rw [hx2, hx3, abs_of_nonpos (by linarith [hnn 0 3, hnn 0 2])]
+        ring
       have key := det_nonneg_of_negType hq0 (fun i j => |x i - x j|)
         (fun i j => abs_sub_comm _ _) (fun i => by simp)
         (line_negType hq0 hq2 _ x (fun _ _ => rfl))
@@ -1450,7 +1574,8 @@ lemma geodesic_insertion_det {q : ℝ} (hq1 : 1 ≤ q) (hq : q ≤ Real.logb 2 3
         have hd02 : d 0 2 = d 0 1 + d 1 2 := by
           have h021 : d 0 2 ≤ d 0 1 + d 1 2 := by linarith [htri 0 1 2]
           have hmul : d 1 3 * (d 0 1 + d 1 2) ≤ d 1 3 * d 0 2 := by rw [hgeo] at hPt; nlinarith [hPt]
-          have := le_of_mul_le_mul_left hmul hp13; linarith
+          have := le_of_mul_le_mul_left hmul hp13
+          linarith
         rw [hd02, hgeo]
         set x : Fin 4 → ℝ := fun i =>
           if i = 0 then d 1 2 + d 1 3 + d 0 3 else if i = 1 then d 1 2 else if i = 2 then 0 else d 1 2 + d 1 3
@@ -1460,17 +1585,23 @@ lemma geodesic_insertion_det {q : ℝ} (hq1 : 1 ≤ q) (hq : q ≤ Real.logb 2 3
         have hx2 : x 2 = 0 := by simp [hxdef]
         have hx3 : x 3 = d 1 2 + d 1 3 := by simp [hxdef]
         have e01 : |x 0 - x 1| = d 0 3 + d 1 3 := by
-          rw [hx0, hx1, abs_of_nonneg (by linarith [hnn 0 3, hnn 1 3])]; ring
+          rw [hx0, hx1, abs_of_nonneg (by linarith [hnn 0 3, hnn 1 3])]
+          ring
         have e02 : |x 0 - x 2| = d 0 3 + d 1 3 + d 1 2 := by
-          rw [hx0, hx2, abs_of_nonneg (by linarith [hnn 0 3, hnn 1 3, hnn 1 2])]; ring
+          rw [hx0, hx2, abs_of_nonneg (by linarith [hnn 0 3, hnn 1 3, hnn 1 2])]
+          ring
         have e03 : |x 0 - x 3| = d 0 3 := by
-          rw [hx0, hx3, abs_of_nonneg (by linarith [hnn 0 3])]; ring
+          rw [hx0, hx3, abs_of_nonneg (by linarith [hnn 0 3])]
+          ring
         have e12 : |x 1 - x 2| = d 1 2 := by
-          rw [hx1, hx2, abs_of_nonneg (by linarith [hnn 1 2])]; ring
+          rw [hx1, hx2, abs_of_nonneg (by linarith [hnn 1 2])]
+          ring
         have e13 : |x 1 - x 3| = d 1 3 := by
-          rw [hx1, hx3, abs_of_nonpos (by linarith [hnn 1 3])]; ring
+          rw [hx1, hx3, abs_of_nonpos (by linarith [hnn 1 3])]
+          ring
         have e23 : |x 2 - x 3| = d 1 3 + d 1 2 := by
-          rw [hx2, hx3, abs_of_nonpos (by linarith [hnn 1 3, hnn 1 2])]; ring
+          rw [hx2, hx3, abs_of_nonpos (by linarith [hnn 1 3, hnn 1 2])]
+          ring
         have key := det_nonneg_of_negType hq0 (fun i j => |x i - x j|)
           (fun i j => abs_sub_comm _ _) (fun i => by simp)
           (line_negType hq0 hq2 _ x (fun _ _ => rfl))
@@ -1495,7 +1626,8 @@ lemma geodesic_insertion_det {q : ℝ} (hq1 : 1 ≤ q) (hq : q ≤ Real.logb 2 3
           have htval : t * d 0 1 = d 0 2 * d 1 3 + d 0 3 * d 1 2 := by rw [ht]; field_simp
           have htge : d 2 3 ≤ t := by
             rw [ht, le_div_iff₀ hd01]
-            have hh := hp 2 3 0 1; rw [hsymm 2 0, hsymm 3 1, hsymm 2 1, hsymm 3 0] at hh
+            have hh := hp 2 3 0 1
+            rw [hsymm 2 0, hsymm 3 1, hsymm 2 1, hsymm 3 0] at hh
             nlinarith [hh]
           have ht0 : 0 ≤ t := le_trans (hnn 2 3) htge
           have hb0 : t < d 0 3 + d 0 2 := by rw [hUeq2] at hUlt1; exact hUlt1
@@ -1507,8 +1639,10 @@ lemma geodesic_insertion_det {q : ℝ} (hq1 : 1 ≤ q) (hq : q ≤ Real.logb 2 3
             apply isMetric4_update23 hsymm hnn hd htri
             · exact ht0
             · exact htge
-            · rw [hsymm 2 0, hsymm 3 0]; linarith [hb0]
-            · rw [hsymm 2 1, hsymm 3 1]; linarith [hb1]
+            · rw [hsymm 2 0, hsymm 3 0]
+              linarith [hb0]
+            · rw [hsymm 2 1, hsymm 3 1]
+              linarith [hb1]
           have hpP : IsPtolemaic4 dP := isPtolemaic4_update23 hp hsymm hnn hd t ht0 htge (le_of_eq htval)
           have hkey := ptolemy_apex_endpoint_det hq1 hq dP hmP hpP
             (by simp [hdP]; exact hd02) (by simp [hdP]; exact hp03) (by simp [hdP]; exact hp13)
@@ -1545,7 +1679,8 @@ lemma isMetric4_update01 {d : Fin 4 → Fin 4 → ℝ}
     by_cases h : (i = 0 ∧ j = 1) ∨ (i = 1 ∧ j = 0)
     · rcases h with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩
       · simp [du, hvge]
-      · simp [du]; linarith [hvge, hsymm 1 0]
+      · simp [du]
+        linarith [hvge, hsymm 1 0]
     · simp [du, h]
   refine ⟨fun i => ?_, fun i j => ?_, fun i j => ?_, fun i j k => ?_⟩
   · fin_cases i <;> simp +decide [du, hd]
@@ -1574,7 +1709,8 @@ private lemma isPtolemaic4_update01_of_bounds {d : Fin 4 → Fin 4 → ℝ}
   set du : Fin 4 → Fin 4 → ℝ :=
     fun i j => if (i = 0 ∧ j = 1) ∨ (i = 1 ∧ j = 0) then v else d i j
   have hdiag : ∀ i, du i i = 0 := by
-    intro i; fin_cases i <;> simp [du, hd]
+    intro i
+    fin_cases i <;> simp [du, hd]
   have hsymdu : ∀ i j, du i j = du j i := by
     intro i j
     by_cases h : (i = 0 ∧ j = 1) ∨ (i = 1 ∧ j = 0)
@@ -1606,10 +1742,12 @@ lemma isPtolemaic4_update01 {d : Fin 4 → Fin 4 → ℝ} (hp : IsPtolemaic4 d)
     IsPtolemaic4 (fun i j => if (i = 0 ∧ j = 1) ∨ (i = 1 ∧ j = 0) then v else d i j) := by
   -- The three Ptolemy inequalities for the updated pair, in canonical form.
   have k2 : d 0 2 * d 1 3 ≤ v * d 2 3 + d 0 3 * d 1 2 := by
-    have h := hp 0 2 1 3; rw [hsymm 2 1] at h
+    have h := hp 0 2 1 3
+    rw [hsymm 2 1] at h
     linarith [h, mul_le_mul_of_nonneg_right hvge (hnn 2 3)]
   have k3 : d 0 3 * d 1 2 ≤ v * d 2 3 + d 0 2 * d 1 3 := by
-    have h := hp 0 3 1 2; rw [hsymm 3 2, hsymm 3 1] at h
+    have h := hp 0 3 1 2
+    rw [hsymm 3 2, hsymm 3 1] at h
     linarith [h, mul_le_mul_of_nonneg_right hvge (hnn 2 3)]
   exact isPtolemaic4_update01_of_bounds hsymm hnn hd v hv0 hvP k2 k3
 
@@ -1741,7 +1879,8 @@ lemma schoenberg_det_nonneg {q : ℝ} (hq1 : 1 ≤ q) (hq : q ≤ Real.logb 2 3)
       ((d 0 3 ^ q + d 1 3 ^ q - d 0 1 ^ q) / 2)
       ((d 0 3 ^ q + d 2 3 ^ q - d 0 2 ^ q) / 2)
       ((d 1 3 ^ q + d 2 3 ^ q - d 1 2 ^ q) / 2) by
-    unfold schoenDet at h; linarith
+    unfold schoenDet at h
+    linarith
   -- Reduce the leaves-{0,1} entry by varying `d 0 1` over its feasible interval.
   -- The interval endpoints are the tightest of the triangle bounds (`{0,1,3}`,
   -- `{0,1,2}`) and the Ptolemy bound; at each endpoint a constraint is tight, giving
@@ -1757,17 +1896,22 @@ lemma schoenberg_det_nonneg {q : ℝ} (hq1 : 1 ≤ q) (hq : q ≤ Real.logb 2 3)
     exact le_max_of_le_left (le_max_of_le_left (abs_nonneg _))
   · -- `t1 ≤ d 0 1` : every lower bound is `≤ d 0 1`
     refine max_le (max_le ?_ ?_) ?_
-    · rw [abs_le]; exact ⟨by linarith [htri 1 0 3, hsymm 1 0], by linarith [htri 0 1 3]⟩
-    · rw [abs_le]; exact ⟨by linarith [htri 1 0 2, hsymm 1 0], by linarith [htri 0 1 2]⟩
+    · rw [abs_le]
+      exact ⟨by linarith [htri 1 0 3, hsymm 1 0], by linarith [htri 0 1 3]⟩
+    · rw [abs_le]
+      exact ⟨by linarith [htri 1 0 2, hsymm 1 0], by linarith [htri 0 1 2]⟩
     · rw [div_le_iff₀ hC', abs_le]
-      have ha := hp 0 3 1 2; rw [hsymm 3 2, hsymm 3 1] at ha
-      have hb := hp 0 2 1 3; rw [hsymm 2 1] at hb
+      have ha := hp 0 3 1 2
+      rw [hsymm 3 2, hsymm 3 1] at ha
+      have hb := hp 0 2 1 3
+      rw [hsymm 2 1] at hb
       exact ⟨by linarith [ha], by linarith [hb]⟩
   · -- `d 0 1 ≤ t2` : `d 0 1` is below every upper bound
     refine le_min (le_min ?_ ?_) ?_
     · linarith [htri 0 3 1, hsymm 3 1]
     · linarith [htri 0 2 1, hsymm 2 1]
-    · rw [le_div_iff₀ hC']; linarith [hp 0 1 2 3]
+    · rw [le_div_iff₀ hC']
+      linarith [hp 0 1 2 3]
   · -- endpoint `t1` (lower): the tightest lower bound is active.
     rcases max_cases (max |d 0 3 - d 1 3| |d 0 2 - d 1 2|) (|d 0 2 * d 1 3 - d 0 3 * d 1 2| / d 2 3)
       with ⟨he, hbo⟩ | ⟨he, hbo2⟩
@@ -1776,17 +1920,21 @@ lemma schoenberg_det_nonneg {q : ℝ} (hq1 : 1 ≤ q) (hq : q ≤ Real.logb 2 3)
       · rw [he2]
         -- `d 0 1 = |d03 - d13|`: collinear in the {0,1,3} triangle.
         have hPlo : |d 0 2 * d 1 3 - d 0 3 * d 1 2| ≤ |d 0 3 - d 1 3| * d 2 3 := by
-          rw [← div_le_iff₀ hC']; exact he2 ▸ hbo
+          rw [← div_le_iff₀ hC']
+          exact he2 ▸ hbo
         by_cases hz : d 0 3 = d 1 3
         · -- boundary `|d03-d13| = 0`: forces `d02 = d12`, determinant `≡ 0`.
           have hd02 : d 0 2 = d 1 2 := by
             have h0 : |d 0 2 - d 1 2| ≤ 0 := by have := hb; rwa [hz, sub_self, abs_zero] at this
             exact sub_eq_zero.mp (abs_nonpos_iff.mp h0)
           rw [hz, hd02, sub_self, abs_zero, Real.zero_rpow hq0.ne']
-          apply le_of_eq; unfold schoenDet; ring
+          apply le_of_eq
+          unfold schoenDet
+          ring
         · have hvpos : 0 < |d 0 3 - d 1 3| := abs_pos.mpr (sub_ne_zero.mpr hz)
           have hvle01 : |d 0 3 - d 1 3| ≤ d 0 1 := by
-            rw [abs_le]; exact ⟨by linarith [htri 1 0 3, hsymm 1 0], by linarith [htri 0 1 3]⟩
+            rw [abs_le]
+            exact ⟨by linarith [htri 1 0 3, hsymm 1 0], by linarith [htri 0 1 3]⟩
           set d' : Fin 4 → Fin 4 → ℝ :=
             fun i j => if (i = 0 ∧ j = 1) ∨ (i = 1 ∧ j = 0) then |d 0 3 - d 1 3| else d i j with hd'
           have hm' : IsMetric4 d' := isMetric4_update01_lo hsymm hnn hd htri |d 0 3 - d 1 3|
@@ -1834,9 +1982,11 @@ lemma schoenberg_det_nonneg {q : ℝ} (hq1 : 1 ≤ q) (hq : q ≤ Real.logb 2 3)
         have hvpos : 0 < |d 0 2 - d 1 2| := lt_of_le_of_lt (abs_nonneg _) hb
         have hne : d 0 2 ≠ d 1 2 := sub_ne_zero.mp (abs_pos.mp hvpos)
         have hPlo : |d 0 2 * d 1 3 - d 0 3 * d 1 2| ≤ |d 0 2 - d 1 2| * d 2 3 := by
-          rw [← div_le_iff₀ hC']; exact he2 ▸ hbo
+          rw [← div_le_iff₀ hC']
+          exact he2 ▸ hbo
         have hvle01 : |d 0 2 - d 1 2| ≤ d 0 1 := by
-          rw [abs_le]; exact ⟨by linarith [htri 1 0 2, hsymm 1 0], by linarith [htri 0 1 2]⟩
+          rw [abs_le]
+          exact ⟨by linarith [htri 1 0 2, hsymm 1 0], by linarith [htri 0 1 2]⟩
         set d' : Fin 4 → Fin 4 → ℝ :=
           fun i j => if (i = 0 ∧ j = 1) ∨ (i = 1 ∧ j = 0) then |d 0 2 - d 1 2| else d i j with hd'
         have hm' : IsMetric4 d' := isMetric4_update01_lo hsymm hnn hd htri |d 0 2 - d 1 2|
@@ -1927,7 +2077,8 @@ lemma schoenberg_det_nonneg {q : ℝ} (hq1 : 1 ≤ q) (hq : q ≤ Real.logb 2 3)
               (by simp +decide [hD, hd', Equiv.swap_apply_def, hsymm 2 1]; positivity)
               (by simp +decide [hD, hd', Equiv.swap_apply_def, hv, hsymm 2 1]
                   rw [abs_of_nonneg (by linarith : (0:ℝ) ≤ d 0 2 * d 1 3 - d 0 3 * d 1 2)]
-                  field_simp; ring)
+                  field_simp
+                  ring)
           convert hasNegType_reindex (Equiv.swap 1 3 * Equiv.swap 1 2)⁻¹ hG using 1
           exact funext fun i => funext fun j => by fin_cases i <;> fin_cases j <;> rfl
         · -- `d03·d12 ≥ d02·d13`: inverted `0'` between `1'`,`2'`; reindex by `(0 2 3)`
@@ -1941,7 +2092,8 @@ lemma schoenberg_det_nonneg {q : ℝ} (hq1 : 1 ≤ q) (hq : q ≤ Real.logb 2 3)
               (by simp +decide [hD, hd', Equiv.swap_apply_def]; positivity)
               (by simp +decide [hD, hd', Equiv.swap_apply_def, hv, hsymm 2 1, hsymm 2 0]
                   rw [abs_of_nonpos (by linarith : d 0 2 * d 1 3 - d 0 3 * d 1 2 ≤ 0)]
-                  field_simp; ring)
+                  field_simp
+                  ring)
           convert hasNegType_reindex (Equiv.swap 0 3 * Equiv.swap 0 2)⁻¹ hG using 1
           exact funext fun i => funext fun j => by fin_cases i <;> fin_cases j <;> rfl
       have hfinal := apex3_det_of_inversion hq1 d' hm' hp' hpos0' hpos1' hpos2' hDneg
@@ -2139,9 +2291,10 @@ lemma metric4_qpos_gram (d : Fin 4 → Fin 4 → ℝ) (hm : IsMetric4 d)
     simp [c, S]
   have hle := h1 c hS
   simp only [Real.rpow_one] at hle ⊢
-  simp [Fin.sum_univ_four] at hle ⊢;
-  simp +zetaDelta at *;
-  simp_all +decide [ Fin.sum_univ_four, IsMetric4 ] ; nlinarith! [ sq_nonneg ( a 0 + a 1 + a 2 + a 3 ) ] ;
+  simp [Fin.sum_univ_four] at hle ⊢
+  simp +zetaDelta at *
+  simp_all +decide [Fin.sum_univ_four, IsMetric4]
+  nlinarith! [sq_nonneg (a 0 + a 1 + a 2 + a 3)]
 
 /-- **The case `0 < q ≤ 1` (Blumenthal): every four-point metric has `q`-negative
 type.**
@@ -2160,12 +2313,18 @@ lemma blumenthal_negType {q : ℝ} (hq0 : 0 < q) (hq1 : q ≤ 1)
   · intro a ha
     have hsymmB : ∀ i j : Fin 4, (fun i j => (d i 3 + d j 3 - d i j) / 2) i j
         = (fun i j => (d i 3 + d j 3 - d i j) / 2) j i := by
-      intro i j; simp only []; rw [hm.2.1 j i]; ring
+      intro i j
+      simp only []
+      rw [hm.2.1 j i]
+      ring
     have hrelB : ∀ i j : Fin 4, d i j
         = (fun i j => (d i 3 + d j 3 - d i j) / 2) i i
         + (fun i j => (d i 3 + d j 3 - d i j) / 2) j j
         - 2 * (fun i j => (d i 3 + d j 3 - d i j) / 2) i j := by
-      intro i j; simp only []; rw [hm.1 i, hm.1 j]; ring
+      intro i j
+      simp only []
+      rw [hm.1 i, hm.1 j]
+      ring
     exact ExpKernel.qpos_downward hsymmB (metric4_qpos_gram d hm h1) hrelB
       (fun i j => hm.2.2.1 i j) ⟨hq0, hlt⟩ a ha
 
