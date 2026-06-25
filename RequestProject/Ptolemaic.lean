@@ -1848,6 +1848,40 @@ lemma negType_ge_one {q : ℝ} (hq1 : 1 ≤ q) (hq : q ≤ Real.logb 2 3)
     · exact hm.2.2.2 2 1 3 |> le_trans <| by rw [ hm.2.1 ] ;
   · convert schoenberg_det_nonneg hq1 hq d hm hp using 1
 
+/-- Determinant decomposition when `g01` is the smallest Gromov product. -/
+private lemma det_gromov_nonneg_of_g01_min (r0 r1 r2 g01 g02 g12 : ℝ)
+    (hg01 : 0 ≤ g01) (h0102 : g01 ≤ g02) (h0112 : g01 ≤ g12)
+    (h02 : g02 ≤ r0) (h12 : g12 ≤ r1) (t2 : g02 + g12 - g01 ≤ r2) :
+    0 ≤ r0 * r1 * r2 + 2 * g01 * g02 * g12 - r0 * g12 ^ 2 - r1 * g02 ^ 2
+      - r2 * g01 ^ 2 := by
+  have hA : 0 ≤ r0 - g02 := by linarith
+  have hB : 0 ≤ r1 - g12 := by linarith
+  have hC : 0 ≤ r2 - (g02 + g12 - g01) := by linarith
+  have hD : 0 ≤ g02 - g01 := by linarith
+  have hE : 0 ≤ g12 - g01 := by linarith
+  have hdecomp :
+      r0 * r1 * r2 + 2 * g01 * g02 * g12 - r0 * g12 ^ 2 - r1 * g02 ^ 2
+          - r2 * g01 ^ 2 =
+        (r0 - g02) * (r1 - g12) * (r2 - (g02 + g12 - g01))
+        + (r0 - g02) * (r1 - g12) * (g02 - g01)
+        + (r0 - g02) * (r1 - g12) * (g12 - g01)
+        + (r0 - g02) * (r1 - g12) * g01
+        + (r0 - g02) * (r2 - (g02 + g12 - g01)) * (g12 - g01)
+        + (r0 - g02) * (r2 - (g02 + g12 - g01)) * g01
+        + (r0 - g02) * (g02 - g01) * (g12 - g01)
+        + (r0 - g02) * (g02 - g01) * g01
+        + (r1 - g12) * (r2 - (g02 + g12 - g01)) * (g02 - g01)
+        + (r1 - g12) * (r2 - (g02 + g12 - g01)) * g01
+        + (r1 - g12) * (g02 - g01) * (g12 - g01)
+        + (r1 - g12) * (g12 - g01) * g01
+        + (r2 - (g02 + g12 - g01)) * (g02 - g01) * (g12 - g01)
+        + (r2 - (g02 + g12 - g01)) * (g02 - g01) * g01
+        + (r2 - (g02 + g12 - g01)) * (g12 - g01) * g01
+        + (g02 - g01) * (g12 - g01) * g01 := by
+    ring
+  rw [hdecomp]
+  positivity
+
 /-- **`q = 1` Schoenberg determinant** for an arbitrary four-point metric: the
 Gromov-product (Schoenberg) matrix based at point `3` has nonnegative determinant.
 This is the polyhedral fact that for `n ≤ 4` the metric cone equals the cut cone,
@@ -1858,33 +1892,21 @@ private lemma det_gromov_nonneg (r0 r1 r2 g01 g02 g12 : ℝ)
     (a12 : g12 ≤ r1) (b12 : g12 ≤ r2)
     (t0 : g01 + g02 - g12 ≤ r0) (t1 : g01 + g12 - g02 ≤ r1) (t2 : g02 + g12 - g01 ≤ r2) :
     0 ≤ r0 * r1 * r2 + 2 * g01 * g02 * g12 - r0 * g12 ^ 2 - r1 * g02 ^ 2 - r2 * g01 ^ 2 := by
-  rcases le_total g01 g02 with h12 | h12
-  · rcases le_total g01 g12 with h13 | h13
-    · have hA : (0:ℝ) ≤ r0 - g02 := by linarith
-      have hB : (0:ℝ) ≤ r1 - g12 := by linarith
-      have hC : (0:ℝ) ≤ r2 - (g02 + g12 - g01) := by linarith
-      have hD : (0:ℝ) ≤ g02 - g01 := by linarith
-      have hE : (0:ℝ) ≤ g12 - g01 := by linarith
-      nlinarith [mul_nonneg (mul_nonneg hA hB) hC, mul_nonneg (mul_nonneg hA hB) hD, mul_nonneg (mul_nonneg hA hB) hE, mul_nonneg (mul_nonneg hA hB) hg01, mul_nonneg (mul_nonneg hA hC) hD, mul_nonneg (mul_nonneg hA hC) hE, mul_nonneg (mul_nonneg hA hC) hg01, mul_nonneg (mul_nonneg hA hD) hE, mul_nonneg (mul_nonneg hA hD) hg01, mul_nonneg (mul_nonneg hA hE) hg01, mul_nonneg (mul_nonneg hB hC) hD, mul_nonneg (mul_nonneg hB hC) hE, mul_nonneg (mul_nonneg hB hC) hg01, mul_nonneg (mul_nonneg hB hD) hE, mul_nonneg (mul_nonneg hB hD) hg01, mul_nonneg (mul_nonneg hB hE) hg01, mul_nonneg (mul_nonneg hC hD) hE, mul_nonneg (mul_nonneg hC hD) hg01, mul_nonneg (mul_nonneg hC hE) hg01, mul_nonneg (mul_nonneg hD hE) hg01]
-    · have hA : (0:ℝ) ≤ r0 - (g01 + g02 - g12) := by linarith
-      have hB : (0:ℝ) ≤ r1 - g01 := by linarith
-      have hC : (0:ℝ) ≤ r2 - g02 := by linarith
-      have hD : (0:ℝ) ≤ g01 - g12 := by linarith
-      have hE : (0:ℝ) ≤ g02 - g12 := by linarith
-      nlinarith [mul_nonneg (mul_nonneg hA hB) hC, mul_nonneg (mul_nonneg hA hB) hD, mul_nonneg (mul_nonneg hA hB) hE, mul_nonneg (mul_nonneg hA hB) hg12, mul_nonneg (mul_nonneg hA hC) hD, mul_nonneg (mul_nonneg hA hC) hE, mul_nonneg (mul_nonneg hA hC) hg12, mul_nonneg (mul_nonneg hA hD) hE, mul_nonneg (mul_nonneg hA hD) hg12, mul_nonneg (mul_nonneg hA hE) hg12, mul_nonneg (mul_nonneg hB hC) hD, mul_nonneg (mul_nonneg hB hC) hE, mul_nonneg (mul_nonneg hB hC) hg12, mul_nonneg (mul_nonneg hB hD) hE, mul_nonneg (mul_nonneg hB hD) hg12, mul_nonneg (mul_nonneg hB hE) hg12, mul_nonneg (mul_nonneg hC hD) hE, mul_nonneg (mul_nonneg hC hD) hg12, mul_nonneg (mul_nonneg hC hE) hg12, mul_nonneg (mul_nonneg hD hE) hg12]
-  · rcases le_total g02 g12 with h23 | h23
-    · have hA : (0:ℝ) ≤ r0 - g01 := by linarith
-      have hB : (0:ℝ) ≤ r1 - (g01 + g12 - g02) := by linarith
-      have hC : (0:ℝ) ≤ r2 - g12 := by linarith
-      have hD : (0:ℝ) ≤ g01 - g02 := by linarith
-      have hE : (0:ℝ) ≤ g12 - g02 := by linarith
-      nlinarith [mul_nonneg (mul_nonneg hA hB) hC, mul_nonneg (mul_nonneg hA hB) hD, mul_nonneg (mul_nonneg hA hB) hE, mul_nonneg (mul_nonneg hA hB) hg02, mul_nonneg (mul_nonneg hA hC) hD, mul_nonneg (mul_nonneg hA hC) hE, mul_nonneg (mul_nonneg hA hC) hg02, mul_nonneg (mul_nonneg hA hD) hE, mul_nonneg (mul_nonneg hA hD) hg02, mul_nonneg (mul_nonneg hA hE) hg02, mul_nonneg (mul_nonneg hB hC) hD, mul_nonneg (mul_nonneg hB hC) hE, mul_nonneg (mul_nonneg hB hC) hg02, mul_nonneg (mul_nonneg hB hD) hE, mul_nonneg (mul_nonneg hB hD) hg02, mul_nonneg (mul_nonneg hB hE) hg02, mul_nonneg (mul_nonneg hC hD) hE, mul_nonneg (mul_nonneg hC hD) hg02, mul_nonneg (mul_nonneg hC hE) hg02, mul_nonneg (mul_nonneg hD hE) hg02]
-    · have hA : (0:ℝ) ≤ r0 - (g01 + g02 - g12) := by linarith
-      have hB : (0:ℝ) ≤ r1 - g01 := by linarith
-      have hC : (0:ℝ) ≤ r2 - g02 := by linarith
-      have hD : (0:ℝ) ≤ g01 - g12 := by linarith
-      have hE : (0:ℝ) ≤ g02 - g12 := by linarith
-      nlinarith [mul_nonneg (mul_nonneg hA hB) hC, mul_nonneg (mul_nonneg hA hB) hD, mul_nonneg (mul_nonneg hA hB) hE, mul_nonneg (mul_nonneg hA hB) hg12, mul_nonneg (mul_nonneg hA hC) hD, mul_nonneg (mul_nonneg hA hC) hE, mul_nonneg (mul_nonneg hA hC) hg12, mul_nonneg (mul_nonneg hA hD) hE, mul_nonneg (mul_nonneg hA hD) hg12, mul_nonneg (mul_nonneg hA hE) hg12, mul_nonneg (mul_nonneg hB hC) hD, mul_nonneg (mul_nonneg hB hC) hE, mul_nonneg (mul_nonneg hB hC) hg12, mul_nonneg (mul_nonneg hB hD) hE, mul_nonneg (mul_nonneg hB hD) hg12, mul_nonneg (mul_nonneg hB hE) hg12, mul_nonneg (mul_nonneg hC hD) hE, mul_nonneg (mul_nonneg hC hD) hg12, mul_nonneg (mul_nonneg hC hE) hg12, mul_nonneg (mul_nonneg hD hE) hg12]
+  rcases le_total g01 g02 with h0102 | h0201
+  · rcases le_total g01 g12 with h0112 | h1201
+    · exact det_gromov_nonneg_of_g01_min r0 r1 r2 g01 g02 g12 hg01 h0102 h0112 a02 a12 t2
+    · have h := det_gromov_nonneg_of_g01_min r1 r2 r0 g12 g01 g02 hg12 h1201
+        (le_trans h1201 h0102) b01 b02 t0
+      convert h using 1
+      ring
+  · rcases le_total g02 g12 with h0212 | h1202
+    · have h := det_gromov_nonneg_of_g01_min r0 r2 r1 g02 g01 g12 hg02 h0201 h0212 a01 b12 t1
+      convert h using 1
+      ring
+    · have h := det_gromov_nonneg_of_g01_min r1 r2 r0 g12 g01 g02 hg12
+        (le_trans h1202 h0201) h1202 b01 b02 t0
+      convert h using 1
+      ring
 
 lemma metric4_det_q1_nonneg (d : Fin 4 → Fin 4 → ℝ) (hm : IsMetric4 d) :
     0 ≤ schoenDet (d 0 3) (d 1 3) (d 2 3)
