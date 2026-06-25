@@ -569,6 +569,38 @@ lemma schoenDet_reduce_dist {q : ℝ} (hq0 : 0 < q) (A B C v w : ℝ) (hC : 0 �
   exact schoenDet_ge_of_endpoints A B C v w hC ((A + B - t ^ q) / 2)
     ((A + B - t2 ^ q) / 2) ((A + B - t1 ^ q) / 2) (by linarith) (by linarith) h2 h1
 
+/-- A nonnegative base-`3` Schoenberg determinant, together with the metric triangle
+inequalities, gives `q`-negative type. -/
+lemma negType_of_schoenDet_nonneg {q : ℝ} (hq0 : 0 < q) (hq2 : q ≤ 2)
+    (d : Fin 4 → Fin 4 → ℝ) (hm : IsMetric4 d)
+    (hdet : 0 ≤ schoenDet (d 0 3 ^ q) (d 1 3 ^ q) (d 2 3 ^ q)
+        ((d 0 3 ^ q + d 1 3 ^ q - d 0 1 ^ q) / 2)
+        ((d 0 3 ^ q + d 2 3 ^ q - d 0 2 ^ q) / 2)
+        ((d 1 3 ^ q + d 2 3 ^ q - d 1 2 ^ q) / 2)) :
+    HasNegType q d := by
+  apply negType_of_schoenberg hq0 d hm.2.1 hm.1
+  intro a0 a1 a2
+  unfold schoenDet at hdet
+  nlinarith [psd3_of_minors (d 0 3 ^ q) (d 1 3 ^ q) (d 2 3 ^ q)
+    ((d 0 3 ^ q + d 1 3 ^ q - d 0 1 ^ q) / 2)
+    ((d 0 3 ^ q + d 2 3 ^ q - d 0 2 ^ q) / 2)
+    ((d 1 3 ^ q + d 2 3 ^ q - d 1 2 ^ q) / 2)
+    (Real.rpow_nonneg (hm.2.2.1 _ _) _) (Real.rpow_nonneg (hm.2.2.1 _ _) _)
+    (Real.rpow_nonneg (hm.2.2.1 _ _) _)
+    (minor_nonneg hq0 hq2 (d 0 3) (d 1 3) (d 0 1)
+      (hm.2.2.1 _ _) (hm.2.2.1 _ _) (hm.2.2.1 _ _)
+      (by linarith [hm.2.2.2 0 3 1, hm.2.1 3 1]) (by linarith [hm.2.2.2 0 1 3])
+      (by linarith [hm.2.2.2 1 0 3, hm.2.1 1 0]))
+    (minor_nonneg hq0 hq2 (d 0 3) (d 2 3) (d 0 2)
+      (hm.2.2.1 _ _) (hm.2.2.1 _ _) (hm.2.2.1 _ _)
+      (by linarith [hm.2.2.2 0 3 2, hm.2.1 3 2]) (by linarith [hm.2.2.2 0 2 3])
+      (by linarith [hm.2.2.2 2 0 3, hm.2.1 2 0]))
+    (minor_nonneg hq0 hq2 (d 1 3) (d 2 3) (d 1 2)
+      (hm.2.2.1 _ _) (hm.2.2.1 _ _) (hm.2.2.1 _ _)
+      (by linarith [hm.2.2.2 1 3 2, hm.2.1 3 2]) (by linarith [hm.2.2.2 1 2 3])
+      (by linarith [hm.2.2.2 2 1 3, hm.2.1 2 1]))
+    hdet a0 a1 a2]
+
 /-- **Concavity in the apex-distance entry.** When the apex distance `C` (between the
 base point and the third leaf) varies, it enters `schoenDet` through the diagonal entry
 `C` *and* the two off-diagonal entries `(A+C-p)/2`, `(B+C-r)/2`.  The result is a
@@ -648,149 +680,51 @@ lemma attached_ray_negType {q : ℝ} (hq1 : 1 ≤ q) (hq : q ≤ Real.logb 2 3)
     (d : Fin 4 → Fin 4 → ℝ) (hm : IsMetric4 d)
     (hU : d 1 3 = d 0 3 + d 0 1) (hV : d 2 3 = d 0 3 + d 0 2) :
     HasNegType q d := by
-  apply negType_of_schoenberg (by linarith) d hm.2.1 hm.1 (fun a0 a1 a2 => ?_);
-  have := @psd3_of_minors ( d 0 3 ^ q ) ( d 1 3 ^ q ) ( d 2 3 ^ q ) ( ( d 0 3 ^ q + d 1 3 ^ q - d 0 1 ^ q ) / 2 ) ( ( d 0 3 ^ q + d 2 3 ^ q - d 0 2 ^ q ) / 2 ) ( ( d 1 3 ^ q + d 2 3 ^ q - d 1 2 ^ q ) / 2 ) ?_ ?_ ?_ ?_ ?_ ?_ ?_;
-  any_goals linarith [ this a0 a1 a2 ];
-  all_goals have := hm.2.2.1; simp_all +decide [ Real.rpow_nonneg ];
-  any_goals exact Real.rpow_nonneg ( add_nonneg ( this _ _ ) ( this _ _ ) ) _;
-  · have := @minor_nonneg q ( by linarith ) ( by linarith [ show Real.logb 2 3 ≤ 2 by rw [ Real.logb_le_iff_le_rpow ] <;> norm_num ] ) ( d 0 3 ) ( d 1 3 ) ( d 0 1 ) ; simp_all +decide;
-    exact this ( by linarith [ ‹∀ i j, 0 ≤ d i j› 0 3, ‹∀ i j, 0 ≤ d i j› 0 1 ] ) ( by linarith [ ‹∀ i j, 0 ≤ d i j› 0 3, ‹∀ i j, 0 ≤ d i j› 0 1 ] ) ( by linarith [ ‹∀ i j, 0 ≤ d i j› 0 3, ‹∀ i j, 0 ≤ d i j› 0 1 ] ) ( by linarith [ ‹∀ i j, 0 ≤ d i j› 0 3, ‹∀ i j, 0 ≤ d i j› 0 1 ] );
-  · have := @minor_nonneg q ( by linarith ) ( by linarith [ show Real.logb 2 3 ≤ 2 by rw [ Real.logb_le_iff_le_rpow ] <;> norm_num ] ) ( d 0 3 ) ( d 0 3 + d 0 2 ) ( d 0 2 ) ( this _ _ ) ( add_nonneg ( this _ _ ) ( this _ _ ) ) ( this _ _ ) ?_ ?_ ?_ <;> norm_num at *;
-    · linarith;
-    · linarith [ this 0 3, this 0 2 ];
-    · linarith [ this 0 2, this 0 3 ];
-    · linarith;
-  · have := @minor_nonneg q ( by linarith ) ( by linarith [ show Real.logb 2 3 ≤ 2 by rw [ Real.logb_le_iff_le_rpow ] <;> norm_num ] ) ( d 0 3 + d 0 1 ) ( d 0 3 + d 0 2 ) ( d 1 2 ) ?_ ?_ ?_ ?_ ?_ ?_ <;> try linarith [ this 0 3, this 0 1, this 0 2, this 1 2 ];
-    · linarith;
-    · linarith [ hm.2.2.2 1 0 2, hm.2.2.2 2 0 1, hm.2.2.2 1 3 2, hm.2.2.2 2 3 1, hm.2.1 1 3, hm.2.1 2 3 ];
-    · linarith [ hm.2.2.2 0 1 2, hm.2.2.2 0 2 1, hm.2.2.2 1 2 0, hm.2.2.2 1 0 2, hm.2.2.2 2 0 1, hm.2.2.2 2 1 0, hm.2.1 0 1, hm.2.1 0 2, hm.2.1 1 2 ];
-    · linarith [ hm.2.2.2 0 1 2, hm.2.2.2 0 2 1, hm.2.2.2 1 2 0, hm.2.2.2 1 0 2, hm.2.2.2 2 0 1, hm.2.2.2 2 1 0, hm.2.1 0 1, hm.2.1 0 2, hm.2.1 1 2 ];
-  · have h_det_nonneg : 0 ≤ schoenDet (d 2 3 ^ q) (d 1 3 ^ q) (d 0 3 ^ q) (((d 2 3 ^ q + d 1 3 ^ q - d 1 2 ^ q) / 2)) (((d 2 3 ^ q + d 0 3 ^ q - d 0 2 ^ q) / 2)) (((d 1 3 ^ q + d 0 3 ^ q - d 0 1 ^ q) / 2)) := by
-      apply schoenDet_ge_of_endpoints;
-      exact Real.rpow_nonneg ( this _ _ ) _;
-      rotate_left;
-      rotate_left;
-      rotate_left;
-      rotate_left;
-      exact ( ( d 0 3 + d 0 2 ) ^ q + ( d 0 3 + d 0 1 ) ^ q - ( d 0 1 + d 0 2 ) ^ q ) / 2;
-      exact ( ( d 0 3 + d 0 2 ) ^ q + ( d 0 3 + d 0 1 ) ^ q - |d 0 1 - d 0 2| ^ q ) / 2;
-      · rw [ hU, hV ];
-        gcongr;
-        · exact this _ _;
-        · exact hm.2.2.2 1 0 2 |> le_trans <| by linarith [ hm.2.1 0 1, hm.2.1 0 2 ] ;
-      · gcongr;
-        · exact this _ _;
-        · linarith;
-        · exact this _ _;
-        · linarith;
-        · have := hm.2.2.2 0 1 2; ( have := hm.2.2.2 0 2 1; ( norm_num at *; cases abs_cases ( d 0 1 - d 0 2 ) <;> linarith! [ this, hm.2.1 0 1, hm.2.1 0 2, hm.2.1 1 2 ] ; ) );
-      · convert endpoint_star_det hq1 hq ( d 0 3 ) ( d 0 2 ) ( d 0 1 ) ( this _ _ ) ( this _ _ ) ( this _ _ ) using 1 ; ring_nf;
-        unfold schoenDet; ring_nf;
-        grind +qlia;
-      · convert endpoint_line_det ( show 0 < q by linarith ) ( show q ≤ 2 by linarith [ show Real.logb 2 3 ≤ 2 by rw [ Real.logb_le_iff_le_rpow ] <;> norm_num ] ) ( d 0 3 ) ( d 0 1 ) ( d 0 2 ) ( this _ _ ) ( this _ _ ) ( this _ _ ) using 1;
-        unfold schoenDet; ring_nf;
-        rw [ hU, hV ] ; ring;
-    unfold schoenDet at h_det_nonneg; rw [ hU, hV ] at h_det_nonneg; linarith;
-
-/-
-**Metric-inversion (Ptolemy-equality) endpoint.**  With apex `A = 3`, `P = 1`
-on the geodesic `A`–`B = 2`, all apex distances positive, and the Ptolemy bound
-holding with equality, the Schoenberg determinant based at `3` is nonnegative.
-Proof: invert the metric at `A`; the inverted metric is an attached-ray
-configuration, so its determinant is `≥ 0` by `attached_ray_negType`, and by the
-diagonal-congruence identity `schoenDet_congr` the original determinant is a
-positive multiple of it.
--/
-lemma geodesic_ptolemy_endpoint_det {q : ℝ} (hq1 : 1 ≤ q) (hq : q ≤ Real.logb 2 3)
-    (d : Fin 4 → Fin 4 → ℝ) (hm : IsMetric4 d) (hp : IsPtolemaic4 d)
-    (hpos0 : 0 < d 0 3) (hpos1 : 0 < d 1 3) (hpos2 : 0 < d 2 3)
-    (hgeo : d 3 2 = d 3 1 + d 1 2)
-    (hPtEq : (d 3 1 + d 1 2) * d 0 1 = d 1 2 * d 0 3 + d 3 1 * d 0 2) :
-    0 ≤ schoenDet (d 0 3 ^ q) (d 1 3 ^ q) (d 2 3 ^ q)
-        ((d 0 3 ^ q + d 1 3 ^ q - d 0 1 ^ q) / 2)
-        ((d 0 3 ^ q + d 2 3 ^ q - d 0 2 ^ q) / 2)
-        ((d 1 3 ^ q + d 2 3 ^ q - d 1 2 ^ q) / 2) := by
-  -- Define the inverted metric `dh`.
-  set dh : Fin 4 → Fin 4 → ℝ := fun i j =>
-    if i = j then 0
-    else if i = 3 then 1 / d j 3
-    else if j = 3 then 1 / d i 3
-    else d i j / (d i 3 * d j 3);
-  -- Prove that `dh` is a metric.
-  have hdh_metric : IsMetric4 dh := by
-    refine' ⟨ _, _, _, _ ⟩;
-    · aesop;
-    · simp +decide [ dh, hm.2.1 ];
-      grind;
-    · intro i j; fin_cases i <;> fin_cases j <;> simp +decide [ * ] ;
-      all_goals simp +decide [ dh, hm.2.2.1 ];
-      all_goals exact div_nonneg ( hm.2.2.1 _ _ ) ( mul_nonneg ( hm.2.2.1 _ _ ) ( hm.2.2.1 _ _ ) ) ;
-    · intro i j k;
-      by_cases hi : i = 3 <;> by_cases hj : j = 3 <;> by_cases hk : k = 3 <;> simp +decide [ hi, hj, hk, dh ];
-      · split_ifs <;> linarith [ inv_nonneg.2 ( show 0 ≤ d j 3 by exact hm.2.2.1 _ _ ) ];
-      · split_ifs <;> simp_all +decide [ div_eq_mul_inv ];
-        field_simp;
-        rw [ div_le_div_iff₀ ];
-        · rw [ add_mul, div_mul_cancel₀ ] <;> norm_num;
-          · grind +locals;
-          · fin_cases k <;> simp_all +decide [ IsMetric4 ]; all_goals linarith;
-        · fin_cases k <;> simp_all +decide [ hm.2.1 ];
-        · grind;
-      · split_ifs <;> simp_all +decide [ div_eq_mul_inv ];
-        · exact hm.2.2.1 _ _;
-        · have := hm.2.2.2 i 3 k;
-          field_simp;
-          rw [ div_add_div, div_le_div_iff₀ ];
-          · convert mul_le_mul_of_nonneg_right this ( mul_nonneg ( hm.2.2.1 i 3 ) ( hm.2.2.1 k 3 ) ) using 1 ; ring_nf;
-            rw [ hm.2.1 ] ; ring;
-          · fin_cases i <;> fin_cases k <;> simp_all +decide;
-          · fin_cases i <;> fin_cases k <;> simp_all +decide;
-          · grind +splitIndPred;
-          · grind;
-      · split_ifs <;> simp_all +decide [ div_eq_mul_inv, mul_comm ];
-        field_simp;
-        rw [ div_add_one, div_div, div_le_div_iff₀ ];
-        · have := hm.2.2.2 j i 3; simp_all +decide [ hm.2.1 ] ;
-          nlinarith [ hm.2.2.1 i 3, hm.2.2.1 j 3 ];
-        · fin_cases i <;> fin_cases j <;> simp_all +decide;
-        · fin_cases i <;> fin_cases j <;> simp +decide [ * ] at *;
-        · grind +splitIndPred;
-      · split_ifs <;> simp_all +decide [ mul_comm ];
-        · exact add_nonneg ( div_nonneg ( hm.2.2.1 _ _ ) ( mul_nonneg ( hm.2.2.1 _ _ ) ( hm.2.2.1 _ _ ) ) ) ( div_nonneg ( hm.2.2.1 _ _ ) ( mul_nonneg ( hm.2.2.1 _ _ ) ( hm.2.2.1 _ _ ) ) );
-        · rw [ div_add_div, div_le_div_iff₀ ];
-          · have := hp i k j 3;
-            convert mul_le_mul_of_nonneg_right this ( show 0 ≤ d i 3 * d j 3 * d k 3 by exact mul_nonneg ( mul_nonneg ( hm.2.2.1 _ _ ) ( hm.2.2.1 _ _ ) ) ( hm.2.2.1 _ _ ) ) using 1 <;> ring_nf;
-            rw [ hm.2.1 j k ];
-          · fin_cases i <;> fin_cases k <;> simp_all +decide;
-          · fin_cases i <;> fin_cases j <;> fin_cases k <;> simp +decide at hi hj hk ‹¬_› ‹¬_› ‹¬_› ⊢ <;> positivity;
-          · fin_cases i <;> fin_cases j <;> fin_cases k <;> simp_all +decide;
-            all_goals constructor <;> linarith;
-          · fin_cases j <;> fin_cases k <;> simp_all +decide [ ne_of_gt ];
-  -- Prove that `dh` has `q`-negative type.
-  have hdh_negType : HasNegType q dh := by
-    -- Apply the attached-ray lemma to `dh`.
-    have hdh_attached_ray : HasNegType q (fun i j => dh (Equiv.swap 0 2 (Equiv.swap 1 3 i)) (Equiv.swap 0 2 (Equiv.swap 1 3 j))) := by
-      apply attached_ray_negType hq1 hq;
-      · exact ⟨ fun i => hdh_metric.1 _, fun i j => hdh_metric.2.1 _ _, fun i j => hdh_metric.2.2.1 _ _, fun i j k => hdh_metric.2.2.2 _ _ _ ⟩;
-      · simp +decide [ dh, Equiv.swap_apply_def ];
-        field_simp;
-        linarith [ hm.2.1 3 2, hm.2.1 3 1, hm.2.1 2 1 ];
-      · simp +decide [ dh, Equiv.swap_apply_def ];
-        grind +locals;
-    convert hasNegType_reindex ( Equiv.swap 0 2 * Equiv.swap 1 3 )⁻¹ hdh_attached_ray using 1;
-    exact funext fun i => funext fun j => by fin_cases i <;> fin_cases j <;> rfl;
-  have h_det_eq : schoenDet (dh 0 3 ^ q) (dh 1 3 ^ q) (dh 2 3 ^ q) ((dh 0 3 ^ q + dh 1 3 ^ q - dh 0 1 ^ q) / 2) ((dh 0 3 ^ q + dh 2 3 ^ q - dh 0 2 ^ q) / 2) ((dh 1 3 ^ q + dh 2 3 ^ q - dh 1 2 ^ q) / 2) = (d 0 3 ^ (-q) * d 1 3 ^ (-q) * d 2 3 ^ (-q)) ^ 2 * schoenDet (d 0 3 ^ q) (d 1 3 ^ q) (d 2 3 ^ q) ((d 0 3 ^ q + d 1 3 ^ q - d 0 1 ^ q) / 2) ((d 0 3 ^ q + d 2 3 ^ q - d 0 2 ^ q) / 2) ((d 1 3 ^ q + d 2 3 ^ q - d 1 2 ^ q) / 2) := by
-    convert schoenDet_congr ( d 0 3 ^ ( -q ) ) ( d 1 3 ^ ( -q ) ) ( d 2 3 ^ ( -q ) ) ( d 0 3 ^ q ) ( d 1 3 ^ q ) ( d 2 3 ^ q ) ( ( d 0 3 ^ q + d 1 3 ^ q - d 0 1 ^ q ) / 2 ) ( ( d 0 3 ^ q + d 2 3 ^ q - d 0 2 ^ q ) / 2 ) ( ( d 1 3 ^ q + d 2 3 ^ q - d 1 2 ^ q ) / 2 ) using 1;
-    simp +zetaDelta at *;
-    norm_num [ Real.rpow_neg hpos0.le, Real.rpow_neg hpos1.le, Real.rpow_neg hpos2.le, Real.div_rpow ( show 0 ≤ d 0 1 by exact hm.2.2.1 _ _ ) ( show 0 ≤ d 0 3 * d 1 3 by positivity ), Real.div_rpow ( show 0 ≤ d 0 2 by exact hm.2.2.1 _ _ ) ( show 0 ≤ d 0 3 * d 2 3 by positivity ), Real.div_rpow ( show 0 ≤ d 1 2 by exact hm.2.2.1 _ _ ) ( show 0 ≤ d 1 3 * d 2 3 by positivity ) ];
-    norm_num [ Real.inv_rpow ( le_of_lt hpos0 ), Real.inv_rpow ( le_of_lt hpos1 ), Real.inv_rpow ( le_of_lt hpos2 ), Real.mul_rpow ( le_of_lt hpos0 ) ( le_of_lt hpos1 ), Real.mul_rpow ( le_of_lt hpos0 ) ( le_of_lt hpos2 ), Real.mul_rpow ( le_of_lt hpos1 ) ( le_of_lt hpos2 ) ];
-    field_simp;
-    ring_nf;
-  contrapose! h_det_eq;
-  refine' ne_of_gt ( lt_of_lt_of_le _ ( det_nonneg_of_negType ( by positivity ) dh _ _ hdh_negType ) );
-  · exact mul_neg_of_pos_of_neg ( sq_pos_of_pos ( mul_pos ( mul_pos ( Real.rpow_pos_of_pos hpos0 _ ) ( Real.rpow_pos_of_pos hpos1 _ ) ) ( Real.rpow_pos_of_pos hpos2 _ ) ) ) h_det_eq;
-  · exact hdh_metric.2.1;
-  · exact fun i => hdh_metric.1 i
+  have hq0 : (0 : ℝ) < q := by linarith
+  have hq2 : q ≤ 2 :=
+    le_trans hq (by rw [Real.logb_le_iff_le_rpow] <;> norm_num)
+  have hnn := hm.2.2.1
+  have h_det_nonneg : 0 ≤ schoenDet (d 2 3 ^ q) (d 1 3 ^ q) (d 0 3 ^ q) (((d 2 3 ^ q + d 1 3 ^ q - d 1 2 ^ q) / 2)) (((d 2 3 ^ q + d 0 3 ^ q - d 0 2 ^ q) / 2)) (((d 1 3 ^ q + d 0 3 ^ q - d 0 1 ^ q) / 2)) := by
+    apply schoenDet_ge_of_endpoints
+    · exact Real.rpow_nonneg (hnn _ _) _
+    rotate_left
+    rotate_left
+    rotate_left
+    rotate_left
+    exact ((d 0 3 + d 0 2) ^ q + (d 0 3 + d 0 1) ^ q - (d 0 1 + d 0 2) ^ q) / 2
+    exact ((d 0 3 + d 0 2) ^ q + (d 0 3 + d 0 1) ^ q - |d 0 1 - d 0 2| ^ q) / 2
+    · rw [hU, hV]
+      gcongr
+      · exact hnn _ _
+      · exact hm.2.2.2 1 0 2 |> le_trans <| by linarith [hm.2.1 0 1, hm.2.1 0 2]
+    · gcongr
+      · exact hnn _ _
+      · linarith
+      · exact hnn _ _
+      · linarith
+      · have ha := hm.2.2.2 0 1 2
+        have hb := hm.2.2.2 0 2 1
+        norm_num at *
+        cases abs_cases (d 0 1 - d 0 2) <;>
+          linarith! [ha, hb, hm.2.1 0 1, hm.2.1 0 2, hm.2.1 1 2]
+    · convert endpoint_star_det hq1 hq (d 0 3) (d 0 2) (d 0 1) (hnn _ _) (hnn _ _) (hnn _ _) using 1; ring_nf
+      unfold schoenDet
+      ring_nf
+      grind +qlia
+    · convert endpoint_line_det hq0 hq2 (d 0 3) (d 0 1) (d 0 2) (hnn _ _) (hnn _ _) (hnn _ _) using 1
+      unfold schoenDet
+      ring_nf
+      rw [hU, hV]
+      ring
+  have hdet : 0 ≤ schoenDet (d 0 3 ^ q) (d 1 3 ^ q) (d 2 3 ^ q)
+      ((d 0 3 ^ q + d 1 3 ^ q - d 0 1 ^ q) / 2)
+      ((d 0 3 ^ q + d 2 3 ^ q - d 0 2 ^ q) / 2)
+      ((d 1 3 ^ q + d 2 3 ^ q - d 1 2 ^ q) / 2) := by
+    unfold schoenDet at h_det_nonneg ⊢
+    rw [hU, hV] at h_det_nonneg ⊢
+    ring_nf at h_det_nonneg ⊢
+    linarith
+  exact negType_of_schoenDet_nonneg hq0 hq2 d hm hdet
 
 /-- The metric inverted at the apex `3` is again a metric (uses Ptolemaicity of `d` for
 the triangle inequality). -/
@@ -886,6 +820,46 @@ lemma apex3_det_of_inversion {q : ℝ} (hq1 : 1 ≤ q)
   · exact hdh_metric.2.1;
   · exact fun i => hdh_metric.1 i
 
+/-
+**Metric-inversion (Ptolemy-equality) endpoint.**  With apex `A = 3`, `P = 1`
+on the geodesic `A`–`B = 2`, all apex distances positive, and the Ptolemy bound
+holding with equality, the Schoenberg determinant based at `3` is nonnegative.
+After inversion at the apex, the metric is an attached-ray configuration; the
+shared inversion bridge transports that negative-type proof back to the original
+Schoenberg determinant.
+-/
+lemma geodesic_ptolemy_endpoint_det {q : ℝ} (hq1 : 1 ≤ q) (hq : q ≤ Real.logb 2 3)
+    (d : Fin 4 → Fin 4 → ℝ) (hm : IsMetric4 d) (hp : IsPtolemaic4 d)
+    (hpos0 : 0 < d 0 3) (hpos1 : 0 < d 1 3) (hpos2 : 0 < d 2 3)
+    (hgeo : d 3 2 = d 3 1 + d 1 2)
+    (hPtEq : (d 3 1 + d 1 2) * d 0 1 = d 1 2 * d 0 3 + d 3 1 * d 0 2) :
+    0 ≤ schoenDet (d 0 3 ^ q) (d 1 3 ^ q) (d 2 3 ^ q)
+        ((d 0 3 ^ q + d 1 3 ^ q - d 0 1 ^ q) / 2)
+        ((d 0 3 ^ q + d 2 3 ^ q - d 0 2 ^ q) / 2)
+        ((d 1 3 ^ q + d 2 3 ^ q - d 1 2 ^ q) / 2) := by
+  set dh : Fin 4 → Fin 4 → ℝ := fun i j =>
+    if i = j then 0
+    else if i = 3 then 1 / d j 3
+    else if j = 3 then 1 / d i 3
+    else d i j / (d i 3 * d j 3)
+  have hdh_metric : IsMetric4 dh := inv_isMetric hm hp hpos0 hpos1 hpos2
+  have hdh_negType : HasNegType q dh := by
+    have hdh_attached_ray :
+        HasNegType q
+          (fun i j => dh (Equiv.swap 0 2 (Equiv.swap 1 3 i))
+            (Equiv.swap 0 2 (Equiv.swap 1 3 j))) := by
+      apply attached_ray_negType hq1 hq
+      · exact ⟨fun i => hdh_metric.1 _, fun i j => hdh_metric.2.1 _ _,
+          fun i j => hdh_metric.2.2.1 _ _, fun i j k => hdh_metric.2.2.2 _ _ _⟩
+      · simp +decide [dh, Equiv.swap_apply_def]
+        field_simp
+        linarith [hm.2.1 3 2, hm.2.1 3 1, hm.2.1 2 1]
+      · simp +decide [dh, Equiv.swap_apply_def]
+        grind +locals
+    convert hasNegType_reindex (Equiv.swap 0 2 * Equiv.swap 1 3)⁻¹ hdh_attached_ray using 1
+    exact funext fun i => funext fun j => by fin_cases i <;> fin_cases j <;> rfl
+  exact apex3_det_of_inversion hq1 d hm hp hpos0 hpos1 hpos2 (by simpa [dh] using hdh_negType)
+
 /-- **Ptolemy-equality endpoint, apex-between labeling.** Here the apex `3` lies on the
 geodesic between leaves `0` and `1`, and the Ptolemy inequality for `d 2 3` holds with
 equality.  This is `geodesic_ptolemy_endpoint_det` under the relabelling `pm = (0 2 1 3)`,
@@ -926,24 +900,7 @@ lemma ptolemy_apex_endpoint_det {q : ℝ} (hq1 : 1 ≤ q) (hq : q ≤ Real.logb 
   have hposE2 : 0 < E 2 3 := by simp only [hE, hpm2, hpm3]; rw [hsymm 1 0]; exact hd01
   have hdetE := geodesic_ptolemy_endpoint_det hq1 hq E hmE hpE hposE0 hposE1 hposE2 hgeoE hPtEqE
   -- Transport: `negType E`, reindex to `negType d`, then the base-3 determinant.
-  have hnegE : HasNegType q E := by
-    apply negType_of_schoenberg hq0 E (fun i j => hmE.2.1 _ _) (fun i => hmE.1 _)
-    intro a0 a1 a2
-    nlinarith [psd3_of_minors (E 0 3 ^ q) (E 1 3 ^ q) (E 2 3 ^ q)
-      ((E 0 3 ^ q + E 1 3 ^ q - E 0 1 ^ q) / 2) ((E 0 3 ^ q + E 2 3 ^ q - E 0 2 ^ q) / 2)
-      ((E 1 3 ^ q + E 2 3 ^ q - E 1 2 ^ q) / 2)
-      (Real.rpow_nonneg (hmE.2.2.1 _ _) _) (Real.rpow_nonneg (hmE.2.2.1 _ _) _)
-      (Real.rpow_nonneg (hmE.2.2.1 _ _) _)
-      (minor_nonneg hq0 hq2 (E 0 3) (E 1 3) (E 0 1) (hmE.2.2.1 _ _) (hmE.2.2.1 _ _) (hmE.2.2.1 _ _)
-        (by linarith [hmE.2.2.2 0 3 1, hmE.2.1 3 1]) (by linarith [hmE.2.2.2 0 1 3])
-        (by linarith [hmE.2.2.2 1 0 3, hmE.2.1 1 0]))
-      (minor_nonneg hq0 hq2 (E 0 3) (E 2 3) (E 0 2) (hmE.2.2.1 _ _) (hmE.2.2.1 _ _) (hmE.2.2.1 _ _)
-        (by linarith [hmE.2.2.2 0 3 2, hmE.2.1 3 2]) (by linarith [hmE.2.2.2 0 2 3])
-        (by linarith [hmE.2.2.2 2 0 3, hmE.2.1 2 0]))
-      (minor_nonneg hq0 hq2 (E 1 3) (E 2 3) (E 1 2) (hmE.2.2.1 _ _) (hmE.2.2.1 _ _) (hmE.2.2.1 _ _)
-        (by linarith [hmE.2.2.2 1 3 2, hmE.2.1 3 2]) (by linarith [hmE.2.2.2 1 2 3])
-        (by linarith [hmE.2.2.2 2 1 3, hmE.2.1 2 1]))
-      hdetE a0 a1 a2]
+  have hnegE : HasNegType q E := negType_of_schoenDet_nonneg hq0 hq2 E hmE hdetE
   have hnegd : HasNegType q d := by
     convert hasNegType_reindex pm⁻¹ hnegE using 1
     exact funext fun i => funext fun j => by rw [hE]; rw [hpm]; congr 1 <;> simp [Equiv.Perm.mul_apply]
@@ -1327,27 +1284,11 @@ lemma geodesic_insertion_negType {q : ℝ} (hq1 : 1 ≤ q) (hq : q ≤ Real.logb
     (d : Fin 4 → Fin 4 → ℝ) (hm : IsMetric4 d) (hp : IsPtolemaic4 d)
     (hp03 : 0 < d 0 3) (hp13 : 0 < d 1 3) (hgeo : d 0 1 = d 0 3 + d 1 3) :
     HasNegType q d := by
-  obtain ⟨hd, hsymm, hnn, htri⟩ := hm
   have hq0 : (0 : ℝ) < q := by linarith
   have hq2 : q ≤ 2 :=
     le_trans hq (by linarith [show Real.logb 2 3 < 2 by rw [Real.logb_lt_iff_lt_rpow] <;> norm_num])
-  apply negType_of_schoenberg hq0 d (fun i j => hsymm _ _) (fun i => hd _)
-  intro a0 a1 a2
-  nlinarith [psd3_of_minors (d 0 3 ^ q) (d 1 3 ^ q) (d 2 3 ^ q)
-    ((d 0 3 ^ q + d 1 3 ^ q - d 0 1 ^ q) / 2) ((d 0 3 ^ q + d 2 3 ^ q - d 0 2 ^ q) / 2)
-    ((d 1 3 ^ q + d 2 3 ^ q - d 1 2 ^ q) / 2)
-    (Real.rpow_nonneg (hnn _ _) _) (Real.rpow_nonneg (hnn _ _) _)
-    (Real.rpow_nonneg (hnn _ _) _)
-    (minor_nonneg hq0 hq2 (d 0 3) (d 1 3) (d 0 1) (hnn _ _) (hnn _ _) (hnn _ _)
-      (by linarith [htri 0 3 1, hsymm 3 1]) (by linarith [htri 0 1 3])
-      (by linarith [htri 1 0 3, hsymm 1 0]))
-    (minor_nonneg hq0 hq2 (d 0 3) (d 2 3) (d 0 2) (hnn _ _) (hnn _ _) (hnn _ _)
-      (by linarith [htri 0 3 2, hsymm 3 2]) (by linarith [htri 0 2 3])
-      (by linarith [htri 2 0 3, hsymm 2 0]))
-    (minor_nonneg hq0 hq2 (d 1 3) (d 2 3) (d 1 2) (hnn _ _) (hnn _ _) (hnn _ _)
-      (by linarith [htri 1 3 2, hsymm 3 2]) (by linarith [htri 1 2 3])
-      (by linarith [htri 2 1 3, hsymm 2 1]))
-    (geodesic_insertion_det hq1 hq d ⟨hd, hsymm, hnn, htri⟩ hp hp03 hp13 hgeo) a0 a1 a2]
+  exact negType_of_schoenDet_nonneg hq0 hq2 d hm
+    (geodesic_insertion_det hq1 hq d hm hp hp03 hp13 hgeo)
 
 /-- Updating the `0`–`1` entry of a metric to a value `v` with `d01 ≤ v ≤ d02+d12` and
 `v ≤ d03+d13` preserves metricity. -/
@@ -1830,23 +1771,9 @@ matrix.
 lemma negType_ge_one {q : ℝ} (hq1 : 1 ≤ q) (hq : q ≤ Real.logb 2 3)
     (d : Fin 4 → Fin 4 → ℝ) (hm : IsMetric4 d) (hp : IsPtolemaic4 d) :
     HasNegType q d := by
-  convert negType_of_schoenberg ( by linarith : 0 < q ) d hm.2.1 hm.1 ( fun a0 a1 a2 => ?_ ) using 1;
-  have := @psd3_of_minors ( d 0 3 ^ q ) ( d 1 3 ^ q ) ( d 2 3 ^ q ) ( ( d 0 3 ^ q + d 1 3 ^ q - d 0 1 ^ q ) / 2 ) ( ( d 0 3 ^ q + d 2 3 ^ q - d 0 2 ^ q ) / 2 ) ( ( d 1 3 ^ q + d 2 3 ^ q - d 1 2 ^ q ) / 2 ) ?_ ?_ ?_ ?_ ?_ ?_ ?_;
-  any_goals exact Real.rpow_nonneg ( hm.2.2.1 _ _ ) _;
-  · linarith [ this a0 a1 a2 ];
-  · convert minor_nonneg ( show 0 < q by positivity ) ( show q ≤ 2 by linarith [ show Real.logb 2 3 < 2 by rw [ Real.logb_lt_iff_lt_rpow ] <;> norm_num ] ) ( d 0 3 ) ( d 1 3 ) ( d 0 1 ) ( hm.2.2.1 _ _ ) ( hm.2.2.1 _ _ ) ( hm.2.2.1 _ _ ) _ _ _ using 1 <;> ring_nf;
-    · simpa only [ hm.2.1 ] using hm.2.2.2 0 3 1;
-    · exact hm.2.2.2 _ _ _;
-    · linarith [ hm.2.2.2 1 0 3, hm.2.1 0 1 ];
-  · convert minor_nonneg ( by linarith : 0 < q ) ( by linarith [ show Real.logb 2 3 < 2 by rw [ Real.logb_lt_iff_lt_rpow ] <;> norm_num ] : q ≤ 2 ) ( d 0 3 ) ( d 2 3 ) ( d 0 2 ) ( hm.2.2.1 _ _ ) ( hm.2.2.1 _ _ ) ( hm.2.2.1 _ _ ) _ _ _ using 1;
-    · simpa only [ hm.2.1 _ 3 ] using hm.2.2.2 0 3 2;
-    · exact hm.2.2.2 _ _ _;
-    · simpa only [ hm.2.1 ] using hm.2.2.2 2 0 3;
-  · convert minor_nonneg ( show 0 < q by positivity ) ( show q ≤ 2 by linarith [ show Real.logb 2 3 < 2 by rw [ Real.logb_lt_iff_lt_rpow ] <;> norm_num ] ) ( d 1 3 ) ( d 2 3 ) ( d 1 2 ) ( hm.2.2.1 _ _ ) ( hm.2.2.1 _ _ ) ( hm.2.2.1 _ _ ) _ _ _ using 1 <;> ring_nf;
-    · simpa only [ hm.2.1 ] using hm.2.2.2 1 3 2;
-    · exact hm.2.2.2 _ _ _;
-    · exact hm.2.2.2 2 1 3 |> le_trans <| by rw [ hm.2.1 ] ;
-  · convert schoenberg_det_nonneg hq1 hq d hm hp using 1
+  exact negType_of_schoenDet_nonneg (by linarith) (by
+    linarith [show Real.logb 2 3 < 2 by rw [Real.logb_lt_iff_lt_rpow] <;> norm_num])
+    d hm (schoenberg_det_nonneg hq1 hq d hm hp)
 
 /-- Determinant decomposition when `g01` is the smallest Gromov product. -/
 private lemma det_gromov_nonneg_of_g01_min (r0 r1 r2 g01 g02 g12 : ℝ)
@@ -1929,31 +1856,8 @@ lemma metric4_det_q1_nonneg (d : Fin 4 → Fin 4 → ℝ) (hm : IsMetric4 d) :
 /-- **Every four-point metric has `1`-negative type.** -/
 lemma metric4_one_negType (d : Fin 4 → Fin 4 → ℝ) (hm : IsMetric4 d) :
     HasNegType 1 d := by
-  apply negType_of_schoenberg one_pos d hm.2.1 hm.1
-  intro a0 a1 a2
-  have hmn := hm.2.2.1
-  have hkey := psd3_of_minors (d 0 3) (d 1 3) (d 2 3)
-    ((d 0 3 + d 1 3 - d 0 1) / 2) ((d 0 3 + d 2 3 - d 0 2) / 2)
-    ((d 1 3 + d 2 3 - d 1 2) / 2)
-    (hmn 0 3) (hmn 1 3) (hmn 2 3) ?_ ?_ ?_ ?_ a0 a1 a2
-  · simp only [Real.rpow_one]; nlinarith [hkey]
-  · have := minor_nonneg (q := 1) one_pos (by norm_num) (d 0 3) (d 1 3) (d 0 1)
-      (hmn 0 3) (hmn 1 3) (hmn 0 1)
-      (by simpa [hm.2.1] using hm.2.2.2 0 3 1) (hm.2.2.2 0 1 3)
-      (by simpa [hm.2.1] using hm.2.2.2 1 0 3)
-    simpa only [Real.rpow_one] using this
-  · have := minor_nonneg (q := 1) one_pos (by norm_num) (d 0 3) (d 2 3) (d 0 2)
-      (hmn 0 3) (hmn 2 3) (hmn 0 2)
-      (by simpa [hm.2.1] using hm.2.2.2 0 3 2) (hm.2.2.2 0 2 3)
-      (by simpa [hm.2.1] using hm.2.2.2 2 0 3)
-    simpa only [Real.rpow_one] using this
-  · have := minor_nonneg (q := 1) one_pos (by norm_num) (d 1 3) (d 2 3) (d 1 2)
-      (hmn 1 3) (hmn 2 3) (hmn 1 2)
-      (by simpa [hm.2.1] using hm.2.2.2 1 3 2) (hm.2.2.2 1 2 3)
-      (by simpa [hm.2.1] using hm.2.2.2 2 1 3)
-    simpa only [Real.rpow_one] using this
-  · have := metric4_det_q1_nonneg d hm
-    simpa only [Real.rpow_one, schoenDet] using this
+  exact negType_of_schoenDet_nonneg one_pos (by norm_num) d hm
+    (by simpa only [Real.rpow_one] using metric4_det_q1_nonneg d hm)
 
 /-
 The Gromov-product (Schoenberg) kernel of a four-point metric of `1`-negative
