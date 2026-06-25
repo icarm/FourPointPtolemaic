@@ -47,14 +47,20 @@ lemma integrable_kern {q : ℝ} (hq0 : 0 < q) (hq2 : q < 2) (t : ℝ) :
       have h_bound : ∀ s ∈ Set.Ioc 0 1, abs ((1 - Real.cos (t * s)) / s ^ (1 + q)) ≤ (t^2 / 2) * s^(1 - q) := by
         -- Using the fact that $|1 - \cos(ts)| \leq \frac{(ts)^2}{2}$ for all $s$, we get:
         have h_bound : ∀ s ∈ Set.Ioc 0 1, abs (1 - Real.cos (t * s)) ≤ (t^2 / 2) * s^2 := by
-          -- Use the trigonometric identity $1 - \cos(ts) = 2 \sin^2(ts/2)$ and the fact that $|\sin(x)| \leq |x|$ for all $x$.
-          have h_sin_bound : ∀ s ∈ Set.Ioc 0 1, |Real.sin (t * s / 2)| ≤ |t * s / 2| := by
-            exact fun s a => Real.abs_sin_le_abs;
-          intro s hs; convert mul_le_mul_of_nonneg_left ( pow_le_pow_left₀ ( abs_nonneg _ ) ( h_sin_bound s hs ) 2 ) zero_le_two using 1 <;> ring_nf; norm_num [ Real.sin_sq, Real.cos_sq ] ; ring_nf;
-          · exact abs_of_nonneg ( sub_nonneg_of_le ( Real.cos_le_one _ ) );
-          · norm_num [ mul_pow ] ; ring;
-        intro s hs; rw [ abs_div, abs_of_nonneg ( Real.rpow_nonneg hs.1.le _ ) ] ; convert div_le_div_of_nonneg_right ( h_bound s hs ) ( Real.rpow_nonneg hs.1.le _ ) using 1 ; ring_nf;
-        rw [ show 1 - q = 2 - ( 1 + q ) by ring, Real.rpow_sub hs.1 ] ; norm_cast ; norm_num ; ring;
+          intro s hs
+          rw [abs_of_nonneg (sub_nonneg_of_le (Real.cos_le_one _))]
+          nlinarith [Real.one_sub_sq_div_two_le_cos (x := t * s)]
+        intro s hs
+        calc
+          abs ((1 - Real.cos (t * s)) / s ^ (1 + q))
+              = abs (1 - Real.cos (t * s)) / s ^ (1 + q) := by
+                rw [abs_div, abs_of_nonneg (Real.rpow_nonneg hs.1.le _)]
+          _ ≤ ((t^2 / 2) * s^2) / s ^ (1 + q) :=
+                div_le_div_of_nonneg_right (h_bound s hs) (Real.rpow_nonneg hs.1.le _)
+          _ = (t^2 / 2) * s^(1 - q) := by
+                rw [show 1 - q = 2 - (1 + q) by ring, Real.rpow_sub hs.1]
+                norm_cast
+                ring
       refine' MeasureTheory.Integrable.mono' _ _ _;
       refine' fun s => t ^ 2 / 2 * s ^ ( 1 - q );
       · exact ( intervalIntegral.intervalIntegrable_rpow' ( by linarith ) ).1.const_mul _;
@@ -94,6 +100,7 @@ lemma integral_kern_eq {q : ℝ} (hq0 : 0 < q) (t : ℝ) :
       rw [ ← MeasureTheory.integral_const_mul ] ; refine' MeasureTheory.setIntegral_congr_fun measurableSet_Ioi fun u hu => _ ; rw [ mul_div_cancel₀ _ ( ne_of_gt ( abs_pos.mpr ht ) ) ] ; rw [ Real.div_rpow ( le_of_lt hu ) ( by positivity ) ] ; ring_nf;
       norm_num [ Real.rpow_add ( abs_pos.mpr ht ), Real.rpow_one ] ; ring_nf;
       norm_num [ ht ];
+    unfold Kconst g
     convert h_subst using 3;
     cases abs_cases t <;> simp +decide [ * ]
 
@@ -111,9 +118,13 @@ lemma Kconst_pos {q : ℝ} (hq0 : 0 < q) (hq2 : q < 2) : 0 < Kconst q := by
         exact ( lt_of_lt_of_le ( by norm_num ) ( MeasureTheory.measure_mono ( show Set.Ioo 0 1 ⊆ { x : ℝ | ¬1 - Real.cos x = 0 ∧ ¬x ^ ( 1 + q ) = 0 } ∩ Ioo 0 1 from fun x hx => ⟨ ⟨ by exact ne_of_gt ( by nlinarith [ Real.sin_sq_add_cos_sq x, Real.sin_pos_of_pos_of_lt_pi hx.1 ( by linarith [ Real.pi_gt_three, hx.2 ] ) ] ), by exact ne_of_gt ( Real.rpow_pos_of_pos hx.1 _ ) ⟩, hx ⟩ ) ) );
       · filter_upwards [ MeasureTheory.ae_restrict_mem measurableSet_Ioo ] with u hu using div_nonneg ( sub_nonneg.2 ( Real.cos_le_one u ) ) ( Real.rpow_nonneg hu.1.le _ );
       · refine' MeasureTheory.IntegrableOn.mono_set _ ( Set.Ioo_subset_Ioi_self );
-        convert integrable_g hq0 hq2 using 1;
+        convert integrable_g hq0 hq2 using 1
+        ext u
+        rfl
     refine' h_integral_pos.trans_le ( MeasureTheory.setIntegral_mono_set _ _ _ );
-    · convert integrable_g hq0 hq2 using 1;
+    · convert integrable_g hq0 hq2 using 1
+      ext u
+      rfl
     · filter_upwards [ MeasureTheory.ae_restrict_mem measurableSet_Ioi ] with u hu using div_nonneg ( sub_nonneg.2 ( Real.cos_le_one u ) ) ( Real.rpow_nonneg hu.out.le _ );
     · exact MeasureTheory.ae_of_all _ fun x hx => hx.1
 
@@ -143,15 +154,19 @@ lemma neg_type_lt_two {q : ℝ} (hq0 : 0 < q) (hq2 : q < 2)
     have h_fubini : ∀ x ∈ S, ∀ y ∈ S, MeasureTheory.IntegrableOn (fun s => c x * c y * (1 - Real.cos ((x - y) * s)) / s ^ (1 + q)) (Set.Ioi (0 : ℝ)) := by
       intro x hx y hy; specialize h_integral; have := integrable_kern hq0 hq2 ( x - y ) ; simp_all +decide [ mul_div_assoc ] ;
       exact this.const_mul _;
-    rw [ MeasureTheory.integral_finset_sum ];
-    · exact Finset.sum_congr rfl fun x hx => by rw [ MeasureTheory.integral_finset_sum _ fun y hy => h_fubini x hx y hy ] ; exact Finset.sum_congr rfl fun y hy => by simp +decide only [mul_div_assoc, integral_const_mul] ;
-    · exact fun x hx => MeasureTheory.integrable_finset_sum _ fun y hy => h_fubini x hx y hy;
-  convert div_nonpos_of_nonpos_of_nonneg h_integral ( show 0 ≤ Kconst q from ?_ ) using 1;
-  · rw [ h_fubini, eq_div_iff ];
+    rw [ MeasureTheory.integral_finsetSum ];
+    · exact Finset.sum_congr rfl fun x hx => by rw [ MeasureTheory.integral_finsetSum _ fun y hy => h_fubini x hx y hy ] ; exact Finset.sum_congr rfl fun y hy => by simp +decide only [mul_div_assoc, integral_const_mul] ;
+    · exact fun x hx => MeasureTheory.integrable_finsetSum _ fun y hy => h_fubini x hx y hy;
+  have hK_nonneg : 0 ≤ Kconst q := le_of_lt (Kconst_pos hq0 hq2)
+  have hsum_eq : ∑ x ∈ S, ∑ y ∈ S, c x * c y * |x - y| ^ q =
+      (∫ s in Set.Ioi (0 : ℝ), ∑ x ∈ S, ∑ y ∈ S,
+        c x * c y * (1 - Real.cos ((x - y) * s)) / s ^ (1 + q)) / Kconst q := by
+    rw [ h_fubini, eq_div_iff ];
     · simp +decide only [mul_assoc, Finset.sum_mul];
       exact Finset.sum_congr rfl fun x hx => Finset.sum_congr rfl fun y hy => by rw [ integral_kern_eq hq0 ( x - y ) ] ;
     · exact ne_of_gt ( Kconst_pos hq0 hq2 );
-  · exact le_of_lt ( Kconst_pos hq0 hq2 )
+  rw [hsum_eq]
+  exact div_nonpos_of_nonpos_of_nonneg h_integral hK_nonneg
 
 /-
 Negative type for the endpoint `q = 2`, algebraically.

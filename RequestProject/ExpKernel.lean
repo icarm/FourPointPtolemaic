@@ -30,9 +30,9 @@ def QPos (B : ι → ι → ℝ) : Prop :=
 
 lemma QPos.smul {B : ι → ι → ℝ} (hB : QPos B) {c : ℝ} (hc : 0 ≤ c) :
     QPos (fun i j => c * B i j) := by
-  intro a;
-  convert mul_nonneg hc ( hB a ) using 1 ; ring_nf;
-  simp +decide only [mul_assoc, mul_left_comm, Finset.mul_sum _ _ _]
+  intro a
+  simpa +decide only [mul_assoc, mul_comm, mul_left_comm, Finset.mul_sum _ _ _,
+    Finset.sum_mul] using mul_nonneg hc (hB a)
 
 /-
 The constant kernel `1` is `QPos` (its quadratic form is `(∑ a)^2`).
@@ -51,9 +51,7 @@ lemma posSemidef_of_qpos {B : ι → ι → ℝ} (hsymm : ∀ i j, B i j = B j i
   constructor;
   · ext i j; simp +decide [ hsymm ] ;
   · intro x
-    convert hB (fun i => x i) using 1
-    simp [mul_comm, mul_left_comm];
-    simp +decide [ Finsupp.sum_fintype, mul_comm, mul_left_comm ]
+    simpa +decide [Finsupp.sum_fintype, mul_comm, mul_left_comm] using hB (fun i => x i)
 
 open Matrix in
 open scoped MatrixOrder in
@@ -142,20 +140,35 @@ lemma qpos_resolvent [DecidableEq ι] {B d : ι → ι → ℝ}
     0 ≤ ∑ i, ∑ j, a i * a j * (1 / (t + d i j)) := by
   -- By Fubini's theorem, we can interchange the order of summation and integration.
   have h_fubini : ∑ i, ∑ j, a i * a j * (∫ s in Set.Ioi 0, Real.exp (-(t + d i j) * s)) = ∫ s in Set.Ioi 0, ∑ i, ∑ j, a i * a j * Real.exp (-(t + d i j) * s) := by
-    rw [ MeasureTheory.integral_finset_sum ];
+    rw [ MeasureTheory.integral_finsetSum ];
     · refine' Finset.sum_congr rfl fun i _ => _;
-      rw [ MeasureTheory.integral_finset_sum ];
+      rw [ MeasureTheory.integral_finsetSum ];
       · simp +decide only [integral_const_mul];
-      · intro j _; exact MeasureTheory.Integrable.const_mul ( by exact ( by exact ( by exact ( by exact ( by exact ( by exact ( by exact ( by exact ( by exact ( by exact ( by exact ( by exact ( by exact by simpa [ mul_comm ] using ( exp_neg_integrableOn_Ioi 0 ( show 0 < t + d i j by linarith [ hdnn i j ] ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) _;
-    · intro i hi; refine' MeasureTheory.integrable_finset_sum _ _; intro j hj; refine' MeasureTheory.Integrable.const_mul _ _; refine' ( exp_neg_integrableOn_Ioi 0 ( show 0 < t + d i j by linarith [ hdnn i j ] ) ) |> fun h => h.mono_set <| Set.Ioi_subset_Ioi <| by linarith;
+      · intro j _
+        have hint : IntegrableOn (fun s => Real.exp (-(t + d i j) * s)) (Set.Ioi 0) := by
+          simpa [mul_comm] using
+            (exp_neg_integrableOn_Ioi 0 (show 0 < t + d i j by linarith [hdnn i j]))
+        exact hint.integrable.const_mul _
+    · intro i hi; refine' MeasureTheory.integrable_finsetSum _ _; intro j hj; refine' MeasureTheory.Integrable.const_mul _ _;
+      have hint : IntegrableOn (fun s => Real.exp (-(t + d i j) * s)) (Set.Ioi 0) := by
+        simpa [mul_comm] using
+          (exp_neg_integrableOn_Ioi 0 (show 0 < t + d i j by linarith [hdnn i j]))
+      exact (hint.mono_set <| Set.Ioi_subset_Ioi <| by linarith).integrable
   -- Now use the fact that the inner sum is non-negative by qpos_exp_neg_dist.
   have h_inner_nonneg : ∀ s ∈ Set.Ioi 0, 0 ≤ ∑ i, ∑ j, a i * a j * Real.exp (-(t + d i j) * s) := by
     intro s hs
     have h_inner : 0 ≤ ∑ i, ∑ j, a i * a j * Real.exp (-(s * d i j)) := by
       convert qpos_exp_neg_dist hsymm hB hrel hs.out.le a using 1;
-    convert mul_nonneg ( Real.exp_nonneg ( - ( t * s ) ) ) h_inner using 1;
-    simp +decide only [Finset.mul_sum _ _ _, mul_left_comm];
-    exact Finset.sum_congr rfl fun i hi => Finset.sum_congr rfl fun j hj => by rw [ ← Real.exp_add ] ; ring_nf;
+    have hscale :
+        ∑ i, ∑ j, a i * a j * Real.exp (-(t + d i j) * s)
+          = Real.exp (-(t * s)) * ∑ i, ∑ j, a i * a j * Real.exp (-(s * d i j)) := by
+      simp +decide only [Finset.mul_sum _ _ _, mul_assoc, mul_comm,
+        mul_left_comm]
+      exact Finset.sum_congr rfl fun i hi => Finset.sum_congr rfl fun j hj => by
+        rw [← Real.exp_add]
+        ring_nf
+    rw [hscale]
+    exact mul_nonneg (Real.exp_nonneg (-(t * s))) h_inner
   convert h_fubini.symm ▸ MeasureTheory.setIntegral_nonneg measurableSet_Ioi h_inner_nonneg using 1;
   exact Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => by rw [ show ∫ s in Set.Ioi 0, Real.exp ( - ( t + d i j ) * s ) = 1 / ( t + d i j ) by have := integral_exp_neg_mul_rpow zero_lt_one ( show 0 < t + d i j by linarith [ hdnn i j ] ) ; norm_num [ Real.rpow_neg_one ] at this ⊢; linarith ] ;
 
@@ -176,15 +189,15 @@ theorem qpos_downward [DecidableEq ι] {B d : ι → ι → ℝ}
     intro i j; rw [ Real.rpow_eq_const_mul_integral hp ( hdnn i j ) ] ; ring;
   -- So
   have hsum : ∑ i, ∑ j, a i * a j * (d i j) ^ p = (∫ t in Set.Ioi 0, (∑ i, ∑ j, a i * a j * (Real.rpowIntegrand₀₁ p t (d i j)))) / (∫ t in Set.Ioi 0, (Real.rpowIntegrand₀₁ p t 1)) := by
-    rw [ MeasureTheory.integral_finset_sum, Finset.sum_div ];
+    rw [ MeasureTheory.integral_finsetSum, Finset.sum_div ];
     · refine' Finset.sum_congr rfl fun i _ => _;
-      rw [ MeasureTheory.integral_finset_sum ];
+      rw [ MeasureTheory.integral_finsetSum ];
       · simp +decide only [hrpow, mul_assoc, integral_const_mul, Finset.sum_div];
         exact Finset.sum_congr rfl fun _ _ => by ring;
       · intro j _;
         refine' MeasureTheory.Integrable.const_mul _ _;
         apply_rules [ Real.integrableOn_rpowIntegrand₀₁_Ioi ];
-    · intro i _; apply_rules [ MeasureTheory.integrable_finset_sum, MeasureTheory.Integrable.const_mul ] ;
+    · intro i _; apply_rules [ MeasureTheory.integrable_finsetSum, MeasureTheory.Integrable.const_mul ] ;
       intro j _;
       exact MeasureTheory.Integrable.const_mul ( Real.integrableOn_rpowIntegrand₀₁_Ioi hp ( hdnn i j ) ) _;
   -- For t > 0:
