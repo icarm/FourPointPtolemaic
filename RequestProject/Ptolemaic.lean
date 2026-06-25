@@ -850,7 +850,7 @@ lemma inv_isPtolemaic {d : Fin 4 → Fin 4 → ℝ} (hm : IsMetric4 d)
     | (field_simp
        nlinarith [hm.2.2.2 0 1 2, hm.2.2.2 1 0 2, hm.2.2.2 2 0 1, hm.2.2.2 0 2 1, hm.2.2.2 1 2 0,
          hm.2.2.2 2 1 0, hm.2.1 0 1, hm.2.1 0 2, hm.2.1 1 2,
-         mul_pos h0 h1, mul_pos h0 h2, mul_pos h1 h2, h0, h1, h2, n01, n02, n03, n12, n13, n23])
+         mul_pos h0 h1, mul_pos h0 h2, mul_pos h1 h2])
 
 /-- **Reusable inversion bridge.**  If the metric inverted at the apex `3` has
 `q`-negative type, then the base-`3` Schoenberg determinant of `d` is nonnegative.
@@ -917,7 +917,7 @@ lemma ptolemy_apex_endpoint_det {q : ℝ} (hq1 : 1 ≤ q) (hq : q ≤ Real.logb 
   have hpE : IsPtolemaic4 E := fun x y z w => hp _ _ _ _
   -- `E` satisfies the hypotheses of `geodesic_ptolemy_endpoint_det`.
   have hgeoE : E 3 2 = E 3 1 + E 1 2 := by
-    simp only [hE, hpm0, hpm1, hpm2, hpm3]; linarith [hgeo, hsymm 3 1]
+    simp only [hE, hpm1, hpm2, hpm3]; linarith [hgeo, hsymm 3 1]
   have hPtEqE : (E 3 1 + E 1 2) * E 0 1 = E 1 2 * E 0 3 + E 3 1 * E 0 2 := by
     simp only [hE, hpm0, hpm1, hpm2, hpm3]
     rw [hsymm 3 1, hsymm 2 0, hsymm 2 1]; rw [hgeo] at hPtEq; nlinarith [hPtEq]
@@ -956,14 +956,22 @@ lemma isPtolemaic4_update23 {d : Fin 4 → Fin 4 → ℝ} (hp : IsPtolemaic4 d)
     (hsymm : ∀ i j, d i j = d j i) (hnn : ∀ i j, 0 ≤ d i j) (hd : ∀ i, d i i = 0)
     (t : ℝ) (ht0 : 0 ≤ t) (ht : d 2 3 ≤ t) (htval : t * d 0 1 = d 0 2 * d 1 3 + d 0 3 * d 1 2) :
     IsPtolemaic4 (fun i j => if (i = 2 ∧ j = 3) ∨ (i = 3 ∧ j = 2) then t else d i j) := by
+  -- The three Ptolemy inequalities for the updated pair, in canonical form.
+  have k2 : d 0 2 * d 1 3 ≤ d 0 1 * t + d 0 3 * d 1 2 := by
+    have h := hp 0 2 1 3; rw [hsymm 2 1] at h
+    linarith [h, mul_le_mul_of_nonneg_left ht (hnn 0 1)]
+  have k3 : d 0 3 * d 1 2 ≤ d 0 1 * t + d 0 2 * d 1 3 := by
+    have h := hp 0 3 1 2; rw [hsymm 3 2, hsymm 3 1] at h
+    linarith [h, mul_le_mul_of_nonneg_left ht (hnn 0 1)]
+  have n01 := hnn 0 1; have n02 := hnn 0 2; have n03 := hnn 0 3
+  have n12 := hnn 1 2; have n13 := hnn 1 3; have n23 := hnn 2 3
   intro x y z w
   fin_cases x <;> fin_cases y <;> fin_cases z <;> fin_cases w <;> simp [hd] <;>
     first
     | exact hp _ _ _ _
+    | positivity
     | (try simp only [hsymm 1 0, hsymm 2 0, hsymm 2 1, hsymm 3 0, hsymm 3 1]
-       nlinarith [htval, ht, ht0, hp 0 1 2 3, hp 0 2 1 3, hp 0 3 1 2,
-         hnn 0 1, hnn 0 2, hnn 0 3, hnn 1 2, hnn 1 3, hnn 2 3,
-         mul_nonneg (hnn 0 3) (hnn 1 2), mul_nonneg (hnn 0 2) (hnn 1 3)])
+       nlinarith [htval, k2, k3])
 
 /-- **Geodesic-insertion face** (`lem:q5-radial`): the apex `3` lies on the geodesic
 between leaves `0` and `1` (`d 0 1 = d 0 3 + d 1 3`).  Since `schoenDet` is concave in
@@ -1043,7 +1051,7 @@ lemma geodesic_insertion_det {q : ℝ} (hq1 : 1 ≤ q) (hq : q ≤ Real.logb 2 3
         have e03 : |x 0 - x 3| = d 0 3 := by
           rw [hx0, hx3, abs_of_nonpos (by linarith [hnn 0 3])]; ring
         have e12 : |x 1 - x 2| = d 0 3 + d 1 3 - d 0 2 := by
-          rw [hx1, hx2, abs_of_nonneg (by linarith)] <;> ring
+          rw [hx1, hx2, abs_of_nonneg (by linarith)]
         have e13 : |x 1 - x 3| = d 1 3 := by
           rw [hx1, hx3, abs_of_nonneg (by linarith [hnn 1 3])]; ring
         have e23 : |x 2 - x 3| = d 0 3 - d 0 2 := by
@@ -1085,7 +1093,7 @@ lemma geodesic_insertion_det {q : ℝ} (hq1 : 1 ≤ q) (hq : q ≤ Real.logb 2 3
           convert hasNegType_reindex (Equiv.swap 0 3)⁻¹ hAR using 1
           exact funext fun i => funext fun j => by fin_cases i <;> fin_cases j <;> rfl
         have hdet := det_nonneg_of_negType hq0 dA hmA.2.1 hmA.1 hneg
-        convert hdet using 3 <;> simp [hdA]
+        convert hdet using 3
     · -- `L = max |d13-d12| (Ptolemy-lo)`
       rw [hLeq]
       rcases max_cases |d 1 3 - d 1 2| (|d 0 2 * d 1 3 - d 0 3 * d 1 2| / d 0 1)
@@ -1114,15 +1122,15 @@ lemma geodesic_insertion_det {q : ℝ} (hq1 : 1 ≤ q) (hq : q ≤ Real.logb 2 3
           have e01 : |x 0 - x 1| = d 0 3 + d 1 3 := by
             rw [hx0, hx1, abs_of_nonpos (by linarith [hnn 0 3, hnn 1 3])]; ring
           have e02 : |x 0 - x 2| = d 0 3 + d 1 3 - d 1 2 := by
-            rw [hx0, hx2, abs_of_nonpos (by linarith [hnn 0 2])] <;> ring
+            rw [hx0, hx2, abs_of_nonpos (by linarith [hnn 0 2])] ; ring
           have e03 : |x 0 - x 3| = d 0 3 := by
             rw [hx0, hx3, abs_of_nonpos (by linarith [hnn 0 3])]; ring
           have e12 : |x 1 - x 2| = d 1 2 := by
-            rw [hx1, hx2, abs_of_nonneg (by linarith [hnn 1 2])] <;> ring
+            rw [hx1, hx2, abs_of_nonneg (by linarith [hnn 1 2])] ; ring
           have e13 : |x 1 - x 3| = d 1 3 := by
             rw [hx1, hx3, abs_of_nonneg (by linarith [hnn 1 3])]; ring
           have e23 : |x 2 - x 3| = d 1 3 - d 1 2 := by
-            rw [hx2, hx3, abs_of_nonneg (by linarith)] <;> ring
+            rw [hx2, hx3, abs_of_nonneg (by linarith)] ; ring
           have key := det_nonneg_of_negType hq0 (fun i j => |x i - x j|)
             (fun i j => abs_sub_comm _ _) (fun i => by simp)
             (line_negType hq0 hq2 _ x (fun _ _ => rfl))
@@ -1162,7 +1170,7 @@ lemma geodesic_insertion_det {q : ℝ} (hq1 : 1 ≤ q) (hq : q ≤ Real.logb 2 3
             convert hasNegType_reindex (Equiv.swap 0 1 * Equiv.swap 0 3)⁻¹ hAR using 1
             exact funext fun i => funext fun j => by fin_cases i <;> fin_cases j <;> rfl
           have hdet := det_nonneg_of_negType hq0 dA hmA.2.1 hmA.1 hneg
-          convert hdet using 3 <;> simp [hdA]
+          convert hdet using 3
       · -- `L = Ptolemy-lo`: this branch is vacuous.  The Ptolemy lower bound never
         -- strictly exceeds *both* triangle bounds, since
         -- `d02·d13 - d03·d12 = -(d03-d02)·d13 + (d13-d12)·d03`, so
@@ -1308,7 +1316,7 @@ lemma geodesic_insertion_det {q : ℝ} (hq1 : 1 ≤ q) (hq : q ≤ Real.logb 2 3
           have hkey := ptolemy_apex_endpoint_det hq1 hq dP hmP hpP
             (by simp [hdP]; exact hd02) (by simp [hdP]; exact hp03) (by simp [hdP]; exact hp13)
             (by simp [hdP]; exact hgeo) (by simp [hdP]; exact htval)
-          convert hkey using 2 <;> simp [hdP]
+          convert hkey using 2
 
 /-- The `HasNegType` form of `geodesic_insertion_det`: the same geodesic-insertion
 hypotheses give that `d` has `q`-negative type (the Schoenberg matrix based at `3` is
@@ -1374,18 +1382,22 @@ lemma isPtolemaic4_update01 {d : Fin 4 → Fin 4 → ℝ} (hp : IsPtolemaic4 d)
     (v : ℝ) (hv0 : 0 ≤ v) (hvge : d 0 1 ≤ v)
     (hvP : v * d 2 3 ≤ d 0 2 * d 1 3 + d 0 3 * d 1 2) :
     IsPtolemaic4 (fun i j => if (i = 0 ∧ j = 1) ∨ (i = 1 ∧ j = 0) then v else d i j) := by
+  -- The three Ptolemy inequalities for the updated pair, in canonical form.
+  have k2 : d 0 2 * d 1 3 ≤ v * d 2 3 + d 0 3 * d 1 2 := by
+    have h := hp 0 2 1 3; rw [hsymm 2 1] at h
+    linarith [h, mul_le_mul_of_nonneg_right hvge (hnn 2 3)]
+  have k3 : d 0 3 * d 1 2 ≤ v * d 2 3 + d 0 2 * d 1 3 := by
+    have h := hp 0 3 1 2; rw [hsymm 3 2, hsymm 3 1] at h
+    linarith [h, mul_le_mul_of_nonneg_right hvge (hnn 2 3)]
+  have n01 := hnn 0 1; have n02 := hnn 0 2; have n03 := hnn 0 3
+  have n12 := hnn 1 2; have n13 := hnn 1 3; have n23 := hnn 2 3
   intro x y z w
   fin_cases x <;> fin_cases y <;> fin_cases z <;> fin_cases w <;> simp [hd] <;>
     first
     | exact hp _ _ _ _
-    | (try simp only [hsymm 1 0, hsymm 2 0, hsymm 2 1, hsymm 3 0, hsymm 3 1]
-       nlinarith [hvP, hv0, hvge, hp 0 1 2 3, hp 0 2 1 3, hp 0 3 1 2, hp 0 2 3 1, hp 0 3 2 1,
-         hp 0 1 3 2, hp 0 1 2 3,
-         hsymm 0 1, hsymm 0 2, hsymm 0 3, hsymm 1 2, hsymm 1 3, hsymm 2 3,
-         hnn 0 1, hnn 0 2, hnn 0 3, hnn 1 2, hnn 1 3, hnn 2 3,
-         mul_nonneg (hnn 0 3) (hnn 1 2), mul_nonneg (hnn 0 2) (hnn 1 3),
-         mul_nonneg (sub_nonneg.mpr hvge) (hnn 2 3),
-         mul_nonneg (sub_nonneg.mpr hvge) (hnn 3 2)])
+    | positivity
+    | (try simp only [hsymm 2 0, hsymm 2 1, hsymm 3 0, hsymm 3 1, hsymm 3 2]
+       nlinarith [hvP, k2, k3])
 
 /-- Updating the `0`–`1` entry of a metric to a *smaller* value `v` (with the triangle
 bounds `|d02-d12| ≤ v ≤ d02+d12` and `|d03-d13| ≤ v ≤ d03+d13`) preserves metricity. -/
@@ -1419,22 +1431,24 @@ lemma isMetric4_update01_lo {d : Fin 4 → Fin 4 → ℝ}
 /-- Updating the `0`–`1` entry of a Ptolemaic metric to a *smaller* value `v`, with the
 upper Ptolemy bound `v·d23 ≤ d02·d13+d03·d12` and the lower one
 `|d02·d13 - d03·d12| ≤ v·d23`, preserves Ptolemaicity. -/
-lemma isPtolemaic4_update01_lo {d : Fin 4 → Fin 4 → ℝ} (hp : IsPtolemaic4 d)
+lemma isPtolemaic4_update01_lo {d : Fin 4 → Fin 4 → ℝ} (_hp : IsPtolemaic4 d)
     (hsymm : ∀ i j, d i j = d j i) (hnn : ∀ i j, 0 ≤ d i j) (hd : ∀ i, d i i = 0)
     (v : ℝ) (hv0 : 0 ≤ v)
     (hPup : v * d 2 3 ≤ d 0 2 * d 1 3 + d 0 3 * d 1 2)
     (hPlo : |d 0 2 * d 1 3 - d 0 3 * d 1 2| ≤ v * d 2 3) :
     IsPtolemaic4 (fun i j => if (i = 0 ∧ j = 1) ∨ (i = 1 ∧ j = 0) then v else d i j) := by
   obtain ⟨hlo1, hlo2⟩ := abs_le.mp hPlo
+  -- The three Ptolemy inequalities for the updated pair, in canonical form.
+  have k2 : d 0 2 * d 1 3 ≤ v * d 2 3 + d 0 3 * d 1 2 := by linarith
+  have k3 : d 0 3 * d 1 2 ≤ v * d 2 3 + d 0 2 * d 1 3 := by linarith
+  have n01 := hnn 0 1; have n02 := hnn 0 2; have n03 := hnn 0 3
+  have n12 := hnn 1 2; have n13 := hnn 1 3; have n23 := hnn 2 3
   intro x y z w
   fin_cases x <;> fin_cases y <;> fin_cases z <;> fin_cases w <;> simp [hd] <;>
     first
-    | exact hp _ _ _ _
-    | (try simp only [hsymm 1 0, hsymm 2 0, hsymm 2 1, hsymm 3 0, hsymm 3 1]
-       nlinarith [hPup, hlo1, hlo2, hv0, hp 0 1 2 3, hp 0 2 1 3, hp 0 3 1 2, hp 0 2 3 1, hp 0 3 2 1,
-         hsymm 0 1, hsymm 0 2, hsymm 0 3, hsymm 1 2, hsymm 1 3, hsymm 2 3,
-         hnn 0 1, hnn 0 2, hnn 0 3, hnn 1 2, hnn 1 3, hnn 2 3,
-         mul_nonneg (hnn 0 3) (hnn 1 2), mul_nonneg (hnn 0 2) (hnn 1 3)])
+    | positivity
+    | (try simp only [hsymm 2 0, hsymm 2 1, hsymm 3 0, hsymm 3 1, hsymm 3 2]
+       nlinarith [hPup, k2, k3])
 
 /-- **The hard core: nonnegativity of the Schoenberg determinant.**
 For a four-point Ptolemaic metric and `1 ≤ q ≤ log₂ 3`, the determinant of the
@@ -1586,7 +1600,7 @@ lemma schoenberg_det_nonneg {q : ℝ} (hq1 : 1 ≤ q) (hq : q ≤ Real.logb 2 3)
                   ⟨fun i => hm'.1 _, fun i j => hm'.2.1 _ _, fun i j => hm'.2.2.1 _ _,
                     fun i j k => hm'.2.2.2 _ _ _⟩
                   (fun x y z w => hp' _ _ _ _)
-                  (by simp +decide [hd', Equiv.swap_apply_def]; linarith [hA', hsymm 3 0])
+                  (by simp +decide [hd']; linarith [hA', hsymm 3 0])
                   (by simp +decide [hd', Equiv.swap_apply_def]; linarith [hvpos])
                   (by simp +decide [hd', Equiv.swap_apply_def]
                       rw [abs_of_neg (by linarith : d 0 3 - d 1 3 < 0)]
@@ -1600,14 +1614,14 @@ lemma schoenberg_det_nonneg {q : ℝ} (hq1 : 1 ≤ q) (hq : q ≤ Real.logb 2 3)
                     fun i j k => hm'.2.2.2 _ _ _⟩
                   (fun x y z w => hp' _ _ _ _)
                   (by simp +decide [hd', Equiv.swap_apply_def]; linarith [hvpos])
-                  (by simp +decide [hd', Equiv.swap_apply_def]; linarith [hB', hsymm 3 1])
+                  (by simp +decide [hd']; linarith [hB', hsymm 3 1])
                   (by simp +decide [hd', Equiv.swap_apply_def]
                       rw [abs_of_nonneg (by linarith : (0:ℝ) ≤ d 0 3 - d 1 3)]
                       linarith [hsymm 3 1])
               convert hasNegType_reindex (Equiv.swap 1 3)⁻¹ hG using 1
               exact funext fun i => funext fun j => by fin_cases i <;> fin_cases j <;> rfl
           have hdet := det_nonneg_of_negType hq0 d' hm'.2.1 hm'.1 hd'neg
-          convert hdet using 2 <;> simp [hd']
+          convert hdet using 2
       · rw [he2]
         -- `d 0 1 = |d02 - d12|`: collinear in the {0,1,2} triangle; here `|d02-d12| > 0`.
         have hvpos : 0 < |d 0 2 - d 1 2| := lt_of_le_of_lt (abs_nonneg _) hb
@@ -1659,7 +1673,7 @@ lemma schoenberg_det_nonneg {q : ℝ} (hq1 : 1 ≤ q) (hq : q ≤ Real.logb 2 3)
             convert hasNegType_reindex (Equiv.swap 1 3 * Equiv.swap 1 2)⁻¹ hG using 1
             exact funext fun i => funext fun j => by fin_cases i <;> fin_cases j <;> rfl
         have hdet := det_nonneg_of_negType hq0 d' hm'.2.1 hm'.1 hd'neg
-        convert hdet using 2 <;> simp [hd']
+        convert hdet using 2
     · rw [he]
       -- `d 0 1` at the lower Ptolemy bound.  Update `d01` to this value, then invert at the
       -- apex `3`: the inverted metric has a leaf between two others (which leaf depends on the
@@ -1702,9 +1716,9 @@ lemma schoenberg_det_nonneg {q : ℝ} (hq1 : 1 ≤ q) (hq : q ≤ Real.logb 2 3)
               ⟨fun i => hDm.1 _, fun i j => hDm.2.1 _ _, fun i j => hDm.2.2.1 _ _,
                 fun i j k => hDm.2.2.2 _ _ _⟩
               (fun x y z w => hDp _ _ _ _)
-              (by simp +decide [hD, hd', Equiv.swap_apply_def, hsymm 2 1, hsymm 2 0]; positivity)
-              (by simp +decide [hD, hd', Equiv.swap_apply_def, hsymm 2 1, hsymm 2 0]; positivity)
-              (by simp +decide [hD, hd', Equiv.swap_apply_def, hv, hsymm 2 1, hsymm 2 0]
+              (by simp +decide [hD, hd', Equiv.swap_apply_def]; positivity)
+              (by simp +decide [hD, hd', Equiv.swap_apply_def, hsymm 2 1]; positivity)
+              (by simp +decide [hD, hd', Equiv.swap_apply_def, hv, hsymm 2 1]
                   rw [abs_of_nonneg (by linarith : (0:ℝ) ≤ d 0 2 * d 1 3 - d 0 3 * d 1 2)]
                   field_simp; ring)
           convert hasNegType_reindex (Equiv.swap 1 3 * Equiv.swap 1 2)⁻¹ hG using 1
@@ -1716,15 +1730,15 @@ lemma schoenberg_det_nonneg {q : ℝ} (hq1 : 1 ≤ q) (hq : q ≤ Real.logb 2 3)
               ⟨fun i => hDm.1 _, fun i j => hDm.2.1 _ _, fun i j => hDm.2.2.1 _ _,
                 fun i j k => hDm.2.2.2 _ _ _⟩
               (fun x y z w => hDp _ _ _ _)
-              (by simp +decide [hD, hd', Equiv.swap_apply_def, hsymm 2 1, hsymm 2 0]; positivity)
-              (by simp +decide [hD, hd', Equiv.swap_apply_def, hsymm 2 1, hsymm 2 0]; positivity)
+              (by simp +decide [hD, hd', Equiv.swap_apply_def, hsymm 2 0]; positivity)
+              (by simp +decide [hD, hd', Equiv.swap_apply_def]; positivity)
               (by simp +decide [hD, hd', Equiv.swap_apply_def, hv, hsymm 2 1, hsymm 2 0]
                   rw [abs_of_nonpos (by linarith : d 0 2 * d 1 3 - d 0 3 * d 1 2 ≤ 0)]
                   field_simp; ring)
           convert hasNegType_reindex (Equiv.swap 0 3 * Equiv.swap 0 2)⁻¹ hG using 1
           exact funext fun i => funext fun j => by fin_cases i <;> fin_cases j <;> rfl
       have hfinal := apex3_det_of_inversion hq1 d' hm' hp' hpos0' hpos1' hpos2' hDneg
-      convert hfinal using 2 <;> simp [hd']
+      convert hfinal using 2
   · -- endpoint `t2` (upper): the tightest upper bound is active.
     rcases min_cases (min (d 0 3 + d 1 3) (d 0 2 + d 1 2)) ((d 0 2 * d 1 3 + d 0 3 * d 1 2) / d 2 3)
       with ⟨he, hble⟩ | ⟨he, hbe⟩
@@ -1743,7 +1757,7 @@ lemma schoenberg_det_nonneg {q : ℝ} (hq1 : 1 ≤ q) (hq : q ≤ Real.logb 2 3)
         have hneg := geodesic_insertion_negType hq1 hq d' hm' hp'
           (by simp [hd']; exact hA') (by simp [hd']; exact hB') (by simp [hd'])
         have hdet := det_nonneg_of_negType hq0 d' hm'.2.1 hm'.1 hneg
-        convert hdet using 2 <;> simp [hd']
+        convert hdet using 2
       · rw [he2]
         -- `d 0 1 = d02 + d12`: leaf 2 lies between leaves 0 and 1.  Reindexing by the
         -- transposition `(2 3)` turns this into apex-`3`-between-`0`,`1`, so
@@ -1769,7 +1783,7 @@ lemma schoenberg_det_nonneg {q : ℝ} (hq1 : 1 ≤ q) (hq : q ≤ Real.logb 2 3)
           convert hasNegType_reindex (Equiv.swap 2 3)⁻¹ hG using 1
           exact funext fun i => funext fun j => by fin_cases i <;> fin_cases j <;> rfl
         have hdet := det_nonneg_of_negType hq0 d' hm'.2.1 hm'.1 hd'neg
-        convert hdet using 2 <;> simp [hd']
+        convert hdet using 2
     · rw [he]
       -- `d 0 1` at the upper Ptolemy bound: Ptolemy equality.  Update `d01` to this value,
       -- then invert at the apex `3`: the inverted metric has `2'` between `0'` and `1'`, a
@@ -1800,14 +1814,14 @@ lemma schoenberg_det_nonneg {q : ℝ} (hq1 : 1 ≤ q) (hq : q ≤ Real.logb 2 3)
           ⟨fun i => hDm.1 _, fun i j => hDm.2.1 _ _, fun i j => hDm.2.2.1 _ _,
             fun i j k => hDm.2.2.2 _ _ _⟩
           (fun x y z w => hDp _ _ _ _)
-          (by simp +decide [hD, hd', Equiv.swap_apply_def, hsymm 2 1, hsymm 2 0]; positivity)
-          (by simp +decide [hD, hd', Equiv.swap_apply_def, hsymm 2 1, hsymm 2 0]; positivity)
+          (by simp +decide [hD, hd', Equiv.swap_apply_def]; positivity)
+          (by simp +decide [hD, hd', Equiv.swap_apply_def]; positivity)
           (by simp +decide [hD, hd', Equiv.swap_apply_def]; field_simp)
       have hDneg : HasNegType q D := by
         convert hasNegType_reindex (Equiv.swap 2 3)⁻¹ hG using 1
         exact funext fun i => funext fun j => by fin_cases i <;> fin_cases j <;> rfl
       have hfinal := apex3_det_of_inversion hq1 d' hm' hp' hpos0' hpos1' hpos2' hDneg
-      convert hfinal using 2 <;> simp [hd']
+      convert hfinal using 2
 
 /-
 **Negative type for `1 ≤ q ≤ log₂ 3`** via the positive semidefinite Schoenberg
