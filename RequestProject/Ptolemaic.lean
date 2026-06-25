@@ -800,7 +800,7 @@ lemma attached_ray_negType {q : ℝ} (hq1 : 1 ≤ q) (hq : q ≤ Real.logb 2 3)
     unfold schoenDet at h_det_nonneg ⊢
     rw [hU, hV] at h_det_nonneg ⊢
     ring_nf at h_det_nonneg ⊢
-    linarith
+    positivity
   exact negType_of_schoenDet_nonneg hq0 hq2 d hm hdet
 
 private lemma ptolemy_of_duplicate (u : Fin 4 → Fin 4 → ℝ)
@@ -1875,9 +1875,7 @@ lemma schoenberg_det_nonneg {q : ℝ} (hq1 : 1 ≤ q) (hq : q ≤ Real.logb 2 3)
   suffices h : 0 ≤ schoenDet (d 0 3 ^ q) (d 1 3 ^ q) (d 2 3 ^ q)
       ((d 0 3 ^ q + d 1 3 ^ q - d 0 1 ^ q) / 2)
       ((d 0 3 ^ q + d 2 3 ^ q - d 0 2 ^ q) / 2)
-      ((d 1 3 ^ q + d 2 3 ^ q - d 1 2 ^ q) / 2) by
-    unfold schoenDet at h
-    linarith
+      ((d 1 3 ^ q + d 2 3 ^ q - d 1 2 ^ q) / 2) by positivity
   -- Reduce the leaves-{0,1} entry by varying `d 0 1` over its feasible interval.
   -- The interval endpoints are the tightest of the triangle bounds (`{0,1,3}`,
   -- `{0,1,2}`) and the Ptolemy bound; at each endpoint a constraint is tight, giving
@@ -1953,7 +1951,7 @@ lemma schoenberg_det_nonneg {q : ℝ} (hq1 : 1 ≤ q) (hq : q ≤ Real.logb 2 3)
                     fun i j k => hm'.2.2.2 _ _ _⟩
                   (fun x y z w => hp' _ _ _ _)
                   (by simp +decide [hd']; linarith [hA', hsymm 3 0])
-                  (by simp +decide [hd', Equiv.swap_apply_def]; linarith [hvpos])
+                  (by positivity)
                   (by simp +decide [hd', Equiv.swap_apply_def]
                       rw [abs_of_neg (by linarith : d 0 3 - d 1 3 < 0)]
                       linarith [hsymm 3 0, hsymm 3 1])
@@ -1965,7 +1963,7 @@ lemma schoenberg_det_nonneg {q : ℝ} (hq1 : 1 ≤ q) (hq : q ≤ Real.logb 2 3)
                   ⟨fun i => hm'.1 _, fun i j => hm'.2.1 _ _, fun i j => hm'.2.2.1 _ _,
                     fun i j k => hm'.2.2.2 _ _ _⟩
                   (fun x y z w => hp' _ _ _ _)
-                  (by simp +decide [hd', Equiv.swap_apply_def]; linarith [hvpos])
+                  (by positivity)
                   (by simp +decide [hd']; linarith [hB', hsymm 3 1])
                   (by simp +decide [hd', Equiv.swap_apply_def]
                       rw [abs_of_nonneg (by linarith : (0:ℝ) ≤ d 0 3 - d 1 3)]
@@ -2006,7 +2004,7 @@ lemma schoenberg_det_nonneg {q : ℝ} (hq1 : 1 ≤ q) (hq : q ≤ Real.logb 2 3)
                   fun i j k => hm'.2.2.2 _ _ _⟩
                 (fun x y z w => hp' _ _ _ _)
                 (by simp +decide [hd', Equiv.swap_apply_def]; linarith [hP', hsymm 2 0])
-                (by simp +decide [hd', Equiv.swap_apply_def]; linarith [hvpos])
+                (by positivity)
                 (by simp +decide [hd', Equiv.swap_apply_def]
                     rw [abs_of_neg (by linarith : d 0 2 - d 1 2 < 0)]
                     linarith [hsymm 2 0, hsymm 2 1])
@@ -2019,7 +2017,7 @@ lemma schoenberg_det_nonneg {q : ℝ} (hq1 : 1 ≤ q) (hq : q ≤ Real.logb 2 3)
                 ⟨fun i => hm'.1 _, fun i j => hm'.2.1 _ _, fun i j => hm'.2.2.1 _ _,
                   fun i j k => hm'.2.2.2 _ _ _⟩
                 (fun x y z w => hp' _ _ _ _)
-                (by simp +decide [hd', Equiv.swap_apply_def]; linarith [hvpos])
+                (by positivity)
                 (by simp +decide [hd', Equiv.swap_apply_def]; linarith [hQ', hsymm 2 1])
                 (by simp +decide [hd', Equiv.swap_apply_def]
                     rw [abs_of_nonneg (by linarith : (0:ℝ) ≤ d 0 2 - d 1 2)]
@@ -2123,17 +2121,17 @@ lemma schoenberg_det_nonneg {q : ℝ} (hq1 : 1 ≤ q) (hq : q ≤ Real.logb 2 3)
         set d' : Fin 4 → Fin 4 → ℝ :=
           fun i j => if (i = 0 ∧ j = 1) ∨ (i = 1 ∧ j = 0) then d 0 2 + d 1 2 else d i j with hd'
         have hm' : IsMetric4 d' := isMetric4_update01 hsymm hnn hd htri (d 0 2 + d 1 2)
-          (by linarith [hnn 0 2, hnn 1 2]) (by linarith [htri 0 2 1, hsymm 2 1]) le_rfl
+          (by positivity) (by linarith [htri 0 2 1, hsymm 2 1]) le_rfl
           (le_of_lt hb2)
         have hp' : IsPtolemaic4 d' := isPtolemaic4_update01 hp hsymm hnn hd (d 0 2 + d 1 2)
-          (by linarith [hnn 0 2, hnn 1 2]) (by linarith [htri 0 2 1, hsymm 2 1]) hvP
+          (by positivity) (by linarith [htri 0 2 1, hsymm 2 1]) hvP
         have hG : HasNegType q (fun i j => d' (Equiv.swap 2 3 i) (Equiv.swap 2 3 j)) :=
           geodesic_insertion_negType hq1 hq _
             ⟨fun i => hm'.1 _, fun i j => hm'.2.1 _ _, fun i j => hm'.2.2.1 _ _,
               fun i j k => hm'.2.2.2 _ _ _⟩
             (fun x y z w => hp' _ _ _ _)
-            (by simp [hd', Equiv.swap_apply_def]; exact hP')
-            (by simp [hd', Equiv.swap_apply_def]; exact hQ')
+            (by positivity)
+            (by positivity)
             (by simp [hd', Equiv.swap_apply_def])
         have hd'neg : HasNegType q d' := by
           convert hasNegType_reindex (Equiv.swap 2 3)⁻¹ hG using 1
