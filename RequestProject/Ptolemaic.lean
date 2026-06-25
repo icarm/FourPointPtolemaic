@@ -50,17 +50,18 @@ lemma psd3_of_minors (A B C u v w : ℝ)
       positivity;
     · cases lt_or_gt_of_ne hB' <;> nlinarith [ sq_nonneg ( B * y + w * z ), sq_nonneg ( C * z + w * y ) ];
   · -- Since $A > 0$, we can complete the square for the quadratic form.
+    have hApos : 0 < A := lt_of_le_of_ne hA (Ne.symm hA')
     have h_complete_square : A * (A * x ^ 2 + B * y ^ 2 + C * z ^ 2 + 2 * u * x * y + 2 * v * x * z + 2 * w * y * z) = (A * x + u * y + v * z) ^ 2 + (B * A - u ^ 2) * y ^ 2 + (C * A - v ^ 2) * z ^ 2 + 2 * (w * A - u * v) * y * z := by
       ring;
     have h_complete_square : (B * A - u ^ 2) * y ^ 2 + (C * A - v ^ 2) * z ^ 2 + 2 * (w * A - u * v) * y * z ≥ 0 := by
       have h_complete_square : (B * A - u ^ 2) * (C * A - v ^ 2) ≥ (w * A - u * v) ^ 2 := by
-        nlinarith [ mul_self_pos.mpr hA' ];
+        nlinarith [hApos];
       by_cases h_case : B * A - u ^ 2 = 0;
       · norm_num [ show w * A - u * v = 0 by nlinarith ] at * ; nlinarith [ mul_self_nonneg z ] ;
       · by_cases h_case : B * A - u ^ 2 > 0;
         · nlinarith [ sq_nonneg ( ( B * A - u ^ 2 ) * y + ( w * A - u * v ) * z ), mul_self_pos.2 ‹_› ];
         · exact False.elim <| h_case <| lt_of_le_of_ne ( by linarith ) <| Ne.symm ‹_›;
-    nlinarith [ mul_self_pos.mpr hA' ]
+    nlinarith [hApos]
 
 /-
 Elementary determinant form for star metrics: for `η₁₂, η₁₃, η₂₃ ∈ [0,1]`,
@@ -1136,21 +1137,13 @@ lemma isMetric4_update23_lo {d : Fin 4 → Fin 4 → ℝ}
           htri 1 2 3, htri 1 3 2, htri 2 1 3, htri 2 3 1, htri 3 1 2, htri 3 2 1,
           hnn 0 1, hnn 0 2, hnn 0 3, hnn 1 2, hnn 1 3, hnn 2 3]
 
-/-- Updating the `2`–`3` entry of a Ptolemaic metric to a value below the upper Ptolemy
-bound (`t * d01 ≤ d02*d13 + d03*d12`, with `t ≥ d23`) preserves Ptolemaicity.  Most of the `256`
-quadruples reduce to `hp` directly; only the few involving the `{2,3}` pair use the bound. -/
-lemma isPtolemaic4_update23 {d : Fin 4 → Fin 4 → ℝ} (hp : IsPtolemaic4 d)
+private lemma isPtolemaic4_update23_of_bounds {d : Fin 4 → Fin 4 → ℝ}
     (hsymm : ∀ i j, d i j = d j i) (hnn : ∀ i j, 0 ≤ d i j) (hd : ∀ i, d i i = 0)
-    (t : ℝ) (ht0 : 0 ≤ t) (ht : d 2 3 ≤ t)
-    (htP : t * d 0 1 ≤ d 0 2 * d 1 3 + d 0 3 * d 1 2) :
+    (t : ℝ) (ht0 : 0 ≤ t)
+    (hPup : t * d 0 1 ≤ d 0 2 * d 1 3 + d 0 3 * d 1 2)
+    (k2 : d 0 2 * d 1 3 ≤ d 0 1 * t + d 0 3 * d 1 2)
+    (k3 : d 0 3 * d 1 2 ≤ d 0 1 * t + d 0 2 * d 1 3) :
     IsPtolemaic4 (fun i j => if (i = 2 ∧ j = 3) ∨ (i = 3 ∧ j = 2) then t else d i j) := by
-  -- The three Ptolemy inequalities for the updated pair, in canonical form.
-  have k2 : d 0 2 * d 1 3 ≤ d 0 1 * t + d 0 3 * d 1 2 := by
-    have h := hp 0 2 1 3; rw [hsymm 2 1] at h
-    linarith [h, mul_le_mul_of_nonneg_left ht (hnn 0 1)]
-  have k3 : d 0 3 * d 1 2 ≤ d 0 1 * t + d 0 2 * d 1 3 := by
-    have h := hp 0 3 1 2; rw [hsymm 3 2, hsymm 3 1] at h
-    linarith [h, mul_le_mul_of_nonneg_left ht (hnn 0 1)]
   set du : Fin 4 → Fin 4 → ℝ :=
     fun i j => if (i = 2 ∧ j = 3) ∨ (i = 3 ∧ j = 2) then t else d i j
   have hdiag : ∀ i, du i i = 0 := by
@@ -1175,7 +1168,23 @@ lemma isPtolemaic4_update23 {d : Fin 4 → Fin 4 → ℝ} (hp : IsPtolemaic4 d)
     simp [du] at hxy hxz hxw hyz hyw hzw ⊢ <;> try contradiction
   all_goals
     try simp only [hsymm 1 0, hsymm 2 0, hsymm 2 1, hsymm 3 0, hsymm 3 1]
-    nlinarith [htP, k2, k3]
+    nlinarith [hPup, k2, k3]
+
+/-- Updating the `2`–`3` entry of a Ptolemaic metric to a value below the upper Ptolemy
+bound (`t * d01 ≤ d02*d13 + d03*d12`, with `t ≥ d23`) preserves Ptolemaicity. -/
+lemma isPtolemaic4_update23 {d : Fin 4 → Fin 4 → ℝ} (hp : IsPtolemaic4 d)
+    (hsymm : ∀ i j, d i j = d j i) (hnn : ∀ i j, 0 ≤ d i j) (hd : ∀ i, d i i = 0)
+    (t : ℝ) (ht0 : 0 ≤ t) (ht : d 2 3 ≤ t)
+    (htP : t * d 0 1 ≤ d 0 2 * d 1 3 + d 0 3 * d 1 2) :
+    IsPtolemaic4 (fun i j => if (i = 2 ∧ j = 3) ∨ (i = 3 ∧ j = 2) then t else d i j) := by
+  -- The three Ptolemy inequalities for the updated pair, in canonical form.
+  have k2 : d 0 2 * d 1 3 ≤ d 0 1 * t + d 0 3 * d 1 2 := by
+    have h := hp 0 2 1 3; rw [hsymm 2 1] at h
+    linarith [h, mul_le_mul_of_nonneg_left ht (hnn 0 1)]
+  have k3 : d 0 3 * d 1 2 ≤ d 0 1 * t + d 0 2 * d 1 3 := by
+    have h := hp 0 3 1 2; rw [hsymm 3 2, hsymm 3 1] at h
+    linarith [h, mul_le_mul_of_nonneg_left ht (hnn 0 1)]
+  exact isPtolemaic4_update23_of_bounds hsymm hnn hd t ht0 htP k2 k3
 
 /-- **Geodesic-insertion face** (`lem:q5-radial`): the apex `3` lies on the geodesic
 between leaves `0` and `1` (`d 0 1 = d 0 3 + d 1 3`).  Since `schoenDet` is concave in
@@ -1555,20 +1564,13 @@ lemma isMetric4_update01 {d : Fin 4 → Fin 4 → ℝ}
         _ ≤ d i j + d j k := htri i j k
         _ ≤ du i j + du j k := add_le_add (hge i j) (hge j k)
 
-/-- Updating the `0`–`1` entry of a Ptolemaic metric to `v` (with `d01 ≤ v` and the
-Ptolemy upper bound `v·d23 ≤ d02·d13 + d03·d12`) preserves Ptolemaicity. -/
-lemma isPtolemaic4_update01 {d : Fin 4 → Fin 4 → ℝ} (hp : IsPtolemaic4 d)
+private lemma isPtolemaic4_update01_of_bounds {d : Fin 4 → Fin 4 → ℝ}
     (hsymm : ∀ i j, d i j = d j i) (hnn : ∀ i j, 0 ≤ d i j) (hd : ∀ i, d i i = 0)
-    (v : ℝ) (hv0 : 0 ≤ v) (hvge : d 0 1 ≤ v)
-    (hvP : v * d 2 3 ≤ d 0 2 * d 1 3 + d 0 3 * d 1 2) :
+    (v : ℝ) (hv0 : 0 ≤ v)
+    (hPup : v * d 2 3 ≤ d 0 2 * d 1 3 + d 0 3 * d 1 2)
+    (k2 : d 0 2 * d 1 3 ≤ v * d 2 3 + d 0 3 * d 1 2)
+    (k3 : d 0 3 * d 1 2 ≤ v * d 2 3 + d 0 2 * d 1 3) :
     IsPtolemaic4 (fun i j => if (i = 0 ∧ j = 1) ∨ (i = 1 ∧ j = 0) then v else d i j) := by
-  -- The three Ptolemy inequalities for the updated pair, in canonical form.
-  have k2 : d 0 2 * d 1 3 ≤ v * d 2 3 + d 0 3 * d 1 2 := by
-    have h := hp 0 2 1 3; rw [hsymm 2 1] at h
-    linarith [h, mul_le_mul_of_nonneg_right hvge (hnn 2 3)]
-  have k3 : d 0 3 * d 1 2 ≤ v * d 2 3 + d 0 2 * d 1 3 := by
-    have h := hp 0 3 1 2; rw [hsymm 3 2, hsymm 3 1] at h
-    linarith [h, mul_le_mul_of_nonneg_right hvge (hnn 2 3)]
   set du : Fin 4 → Fin 4 → ℝ :=
     fun i j => if (i = 0 ∧ j = 1) ∨ (i = 1 ∧ j = 0) then v else d i j
   have hdiag : ∀ i, du i i = 0 := by
@@ -1593,7 +1595,23 @@ lemma isPtolemaic4_update01 {d : Fin 4 → Fin 4 → ℝ} (hp : IsPtolemaic4 d)
     simp [du] at hxy hxz hxw hyz hyw hzw ⊢ <;> try contradiction
   all_goals
     try simp only [hsymm 2 0, hsymm 3 0, hsymm 2 1, hsymm 3 1, hsymm 3 2]
-    nlinarith [hvP, k2, k3]
+    nlinarith [hPup, k2, k3]
+
+/-- Updating the `0`–`1` entry of a Ptolemaic metric to `v` (with `d01 ≤ v` and the
+Ptolemy upper bound `v·d23 ≤ d02·d13 + d03·d12`) preserves Ptolemaicity. -/
+lemma isPtolemaic4_update01 {d : Fin 4 → Fin 4 → ℝ} (hp : IsPtolemaic4 d)
+    (hsymm : ∀ i j, d i j = d j i) (hnn : ∀ i j, 0 ≤ d i j) (hd : ∀ i, d i i = 0)
+    (v : ℝ) (hv0 : 0 ≤ v) (hvge : d 0 1 ≤ v)
+    (hvP : v * d 2 3 ≤ d 0 2 * d 1 3 + d 0 3 * d 1 2) :
+    IsPtolemaic4 (fun i j => if (i = 0 ∧ j = 1) ∨ (i = 1 ∧ j = 0) then v else d i j) := by
+  -- The three Ptolemy inequalities for the updated pair, in canonical form.
+  have k2 : d 0 2 * d 1 3 ≤ v * d 2 3 + d 0 3 * d 1 2 := by
+    have h := hp 0 2 1 3; rw [hsymm 2 1] at h
+    linarith [h, mul_le_mul_of_nonneg_right hvge (hnn 2 3)]
+  have k3 : d 0 3 * d 1 2 ≤ v * d 2 3 + d 0 2 * d 1 3 := by
+    have h := hp 0 3 1 2; rw [hsymm 3 2, hsymm 3 1] at h
+    linarith [h, mul_le_mul_of_nonneg_right hvge (hnn 2 3)]
+  exact isPtolemaic4_update01_of_bounds hsymm hnn hd v hv0 hvP k2 k3
 
 /-- Updating the `0`–`1` entry of a metric to a *smaller* value `v` (with the triangle
 bounds `|d02-d12| ≤ v ≤ d02+d12` and `|d03-d13| ≤ v ≤ d03+d13`) preserves metricity. -/
@@ -1637,31 +1655,7 @@ lemma isPtolemaic4_update01_lo {d : Fin 4 → Fin 4 → ℝ} (_hp : IsPtolemaic4
   -- The three Ptolemy inequalities for the updated pair, in canonical form.
   have k2 : d 0 2 * d 1 3 ≤ v * d 2 3 + d 0 3 * d 1 2 := by linarith
   have k3 : d 0 3 * d 1 2 ≤ v * d 2 3 + d 0 2 * d 1 3 := by linarith
-  set du : Fin 4 → Fin 4 → ℝ :=
-    fun i j => if (i = 0 ∧ j = 1) ∨ (i = 1 ∧ j = 0) then v else d i j
-  have hdiag : ∀ i, du i i = 0 := by
-    intro i; fin_cases i <;> simp [du, hd]
-  have hsymdu : ∀ i j, du i j = du j i := by
-    intro i j
-    by_cases h : (i = 0 ∧ j = 1) ∨ (i = 1 ∧ j = 0)
-    · simp only [du, if_pos h, if_pos (show (j = 0 ∧ i = 1) ∨ (j = 1 ∧ i = 0) by tauto)]
-    · simp only [du, if_neg h, if_neg (show ¬((j = 0 ∧ i = 1) ∨ (j = 1 ∧ i = 0)) by tauto)]
-      exact hsymm i j
-  have hnndu : ∀ i j, 0 ≤ du i j := by
-    intro i j
-    by_cases h : (i = 0 ∧ j = 1) ∨ (i = 1 ∧ j = 0)
-    · simp [du, h, hv0]
-    · simp [du, h, hnn i j]
-  intro x y z w
-  by_cases hdup : x = y ∨ x = z ∨ x = w ∨ y = z ∨ y = w ∨ z = w
-  · exact ptolemy_of_duplicate du hdiag hsymdu hnndu hdup
-  push_neg at hdup
-  obtain ⟨hxy, hxz, hxw, hyz, hyw, hzw⟩ := hdup
-  fin_cases x <;> fin_cases y <;> fin_cases z <;> fin_cases w <;>
-    simp [du] at hxy hxz hxw hyz hyw hzw ⊢ <;> try contradiction
-  all_goals
-    try simp only [hsymm 2 0, hsymm 3 0, hsymm 2 1, hsymm 3 1, hsymm 3 2]
-    nlinarith [hPup, k2, k3]
+  exact isPtolemaic4_update01_of_bounds hsymm hnn hd v hv0 hPup k2 k3
 
 /-- **The hard core: nonnegativity of the Schoenberg determinant.**
 For a four-point Ptolemaic metric and `1 ≤ q ≤ log₂ 3`, the determinant of the
