@@ -81,6 +81,15 @@ lemma three_rpow_logb : (3 : ℝ) ^ (Real.logb 3 2) = 2 := by
   rw [Real.rpow_logb] <;> norm_num
 
 /-
+The upper exponent bound used throughout the `q ≥ 1` half is below `2`.
+-/
+lemma logb23_lt_two : Real.logb 2 3 < 2 := by
+  rw [Real.logb_lt_iff_lt_rpow] <;> norm_num
+
+lemma le_two_of_le_logb23 {q : ℝ} (hq : q ≤ Real.logb 2 3) : q ≤ 2 :=
+  le_trans hq logb23_lt_two.le
+
+/-
 Numeric bounds: `1/2 < log₃ 2 < 2/3`.
 -/
 lemma logb32_bounds : 1 / 2 < Real.logb 3 2 ∧ Real.logb 3 2 < 2 / 3 := by
@@ -571,6 +580,16 @@ lemma det_nonneg_of_negType {q : ℝ} (hq0 : 0 < q) (d : Fin 4 → Fin 4 → ℝ
   unfold schoenDet
   ring
 
+/-- The Schoenberg determinant of any four points on a line is nonnegative. -/
+lemma line_schoenDet_nonneg {q : ℝ} (hq0 : 0 < q) (hq2 : q ≤ 2) (x : Fin 4 → ℝ) :
+    0 ≤ schoenDet (|x 0 - x 3| ^ q) (|x 1 - x 3| ^ q) (|x 2 - x 3| ^ q)
+        ((|x 0 - x 3| ^ q + |x 1 - x 3| ^ q - |x 0 - x 1| ^ q) / 2)
+        ((|x 0 - x 3| ^ q + |x 2 - x 3| ^ q - |x 0 - x 2| ^ q) / 2)
+        ((|x 1 - x 3| ^ q + |x 2 - x 3| ^ q - |x 1 - x 2| ^ q) / 2) := by
+  exact det_nonneg_of_negType hq0 (fun i j => |x i - x j|)
+    (fun i j => abs_sub_comm _ _) (fun i => by simp)
+    (line_negType hq0 hq2 _ x (fun _ _ => rfl))
+
 /-
 Negative type is invariant under relabelling the four points.
 -/
@@ -757,8 +776,7 @@ lemma attached_ray_negType {q : ℝ} (hq1 : 1 ≤ q) (hq : q ≤ Real.logb 2 3)
     (hU : d 1 3 = d 0 3 + d 0 1) (hV : d 2 3 = d 0 3 + d 0 2) :
     HasNegType q d := by
   have hq0 : (0 : ℝ) < q := by linarith
-  have hq2 : q ≤ 2 :=
-    le_trans hq (by rw [Real.logb_le_iff_le_rpow] <;> norm_num)
+  have hq2 : q ≤ 2 := le_two_of_le_logb23 hq
   have hnn := hm.2.2.1
   have h_det_nonneg : 0 ≤ schoenDet (d 2 3 ^ q) (d 1 3 ^ q) (d 0 3 ^ q) (((d 2 3 ^ q + d 1 3 ^ q - d 1 2 ^ q) / 2)) (((d 2 3 ^ q + d 0 3 ^ q - d 0 2 ^ q) / 2)) (((d 1 3 ^ q + d 0 3 ^ q - d 0 1 ^ q) / 2)) := by
     apply schoenDet_ge_of_endpoints
@@ -1123,8 +1141,7 @@ lemma ptolemy_apex_endpoint_det {q : ℝ} (hq1 : 1 ≤ q) (hq : q ≤ Real.logb 
         ((d 1 3 ^ q + d 2 3 ^ q - d 1 2 ^ q) / 2) := by
   obtain ⟨hd, hsymm, hnn, htri⟩ := hm
   have hq0 : (0 : ℝ) < q := by linarith
-  have hq2 : q ≤ 2 :=
-    le_trans hq (by linarith [show Real.logb 2 3 < 2 by rw [Real.logb_lt_iff_lt_rpow] <;> norm_num])
+  have hq2 : q ≤ 2 := le_two_of_le_logb23 hq
   have hd01 : 0 < d 0 1 := by rw [hgeo]; linarith
   -- The reindexed metric `E = d ∘ pm`, `pm = (0 2 1 3)`.
   set pm : Equiv.Perm (Fin 4) := Equiv.swap 0 3 * (Equiv.swap 0 1 * Equiv.swap 0 2) with hpm
@@ -1321,8 +1338,7 @@ lemma geodesic_insertion_det {q : ℝ} (hq1 : 1 ≤ q) (hq : q ≤ Real.logb 2 3
     (Real.rpow_le_rpow hLnn hLd hq0.le)
     (Real.rpow_le_rpow (hLnn.trans hLd) hdU hq0.le) ?_ ?_
   · -- lower endpoint `d 2 3 = L`: a triangle or Ptolemy bound is tight.
-    have hq2 : q ≤ 2 :=
-      le_trans hq (by linarith [show Real.logb 2 3 < 2 by rw [Real.logb_lt_iff_lt_rpow] <;> norm_num])
+    have hq2 : q ≤ 2 := le_two_of_le_logb23 hq
     rw [hLdef]
     rcases max_cases |d 0 3 - d 0 2| (max |d 1 3 - d 1 2| (|d 0 2 * d 1 3 - d 0 3 * d 1 2| / d 0 1))
       with ⟨hLeq, hLge⟩ | ⟨hLeq, hLlt⟩
@@ -1368,9 +1384,7 @@ lemma geodesic_insertion_det {q : ℝ} (hq1 : 1 ≤ q) (hq : q ≤ Real.logb 2 3
         have e23 : |x 2 - x 3| = d 0 3 - d 0 2 := by
           rw [hx2, hx3, abs_of_nonpos (by linarith)]
           ring
-        have key := det_nonneg_of_negType hq0 (fun i j => |x i - x j|)
-          (fun i j => abs_sub_comm _ _) (fun i => by simp)
-          (line_negType hq0 hq2 _ x (fun _ _ => rfl))
+        have key := line_schoenDet_nonneg hq0 hq2 x
         simp only [e01, e02, e03, e12, e13, e23] at key
         exact key
       · -- `d02 ≥ d03`: `3` between `0,2`; attached-ray (apex `0`, junction `3`, leaves `1,2`).
@@ -1450,9 +1464,7 @@ lemma geodesic_insertion_det {q : ℝ} (hq1 : 1 ≤ q) (hq : q ≤ Real.logb 2 3
           have e23 : |x 2 - x 3| = d 1 3 - d 1 2 := by
             rw [hx2, hx3, abs_of_nonneg (by linarith)]
             ring
-          have key := det_nonneg_of_negType hq0 (fun i j => |x i - x j|)
-            (fun i j => abs_sub_comm _ _) (fun i => by simp)
-            (line_negType hq0 hq2 _ x (fun _ _ => rfl))
+          have key := line_schoenDet_nonneg hq0 hq2 x
           simp only [e01, e02, e03, e12, e13, e23] at key
           exact key
         · -- `d12 ≥ d13`: `3` between `1,2`; attached-ray (apex `1`, junction `3`, leaves `0,2`).
@@ -1514,8 +1526,7 @@ lemma geodesic_insertion_det {q : ℝ} (hq1 : 1 ≤ q) (hq : q ≤ Real.logb 2 3
             mul_le_mul_of_nonneg_right hb hp03.le]
         linarith [max_lt hLlt hL2lt, hPle]
   · -- upper endpoint `d 2 3 = U`: a triangle or Ptolemy bound is tight.
-    have hq2 : q ≤ 2 :=
-      le_trans hq (by linarith [show Real.logb 2 3 < 2 by rw [Real.logb_lt_iff_lt_rpow] <;> norm_num])
+    have hq2 : q ≤ 2 := le_two_of_le_logb23 hq
     rw [hUdef]
     rcases min_cases (d 0 3 + d 0 2) (min (d 1 3 + d 1 2) ((d 0 2 * d 1 3 + d 0 3 * d 1 2) / d 0 1))
       with ⟨hUeq, hUle⟩ | ⟨hUeq, hUlt1⟩
@@ -1555,9 +1566,7 @@ lemma geodesic_insertion_det {q : ℝ} (hq1 : 1 ≤ q) (hq : q ≤ Real.logb 2 3
       have e23 : |x 2 - x 3| = d 0 3 + d 0 2 := by
         rw [hx2, hx3, abs_of_nonpos (by linarith [hnn 0 3, hnn 0 2])]
         ring
-      have key := det_nonneg_of_negType hq0 (fun i j => |x i - x j|)
-        (fun i j => abs_sub_comm _ _) (fun i => by simp)
-        (line_negType hq0 hq2 _ x (fun _ _ => rfl))
+      have key := line_schoenDet_nonneg hq0 hq2 x
       simp only [e01, e02, e03, e12, e13, e23] at key
       exact key
     · -- `U = min (d13+d12) (Ptolemy-hi)`
@@ -1599,9 +1608,7 @@ lemma geodesic_insertion_det {q : ℝ} (hq1 : 1 ≤ q) (hq : q ≤ Real.logb 2 3
         have e23 : |x 2 - x 3| = d 1 3 + d 1 2 := by
           rw [hx2, hx3, abs_of_nonpos (by linarith [hnn 1 3, hnn 1 2])]
           ring
-        have key := det_nonneg_of_negType hq0 (fun i j => |x i - x j|)
-          (fun i j => abs_sub_comm _ _) (fun i => by simp)
-          (line_negType hq0 hq2 _ x (fun _ _ => rfl))
+        have key := line_schoenDet_nonneg hq0 hq2 x
         simp only [e01, e02, e03, e12, e13, e23] at key
         exact key
       · -- `U = Ptolemy-hi`: Ptolemy equality ⇒ `ptolemy_apex_endpoint_det`.
@@ -1656,10 +1663,26 @@ lemma geodesic_insertion_negType {q : ℝ} (hq1 : 1 ≤ q) (hq : q ≤ Real.logb
     (hp03 : 0 < d 0 3) (hp13 : 0 < d 1 3) (hgeo : d 0 1 = d 0 3 + d 1 3) :
     HasNegType q d := by
   have hq0 : (0 : ℝ) < q := by linarith
-  have hq2 : q ≤ 2 :=
-    le_trans hq (by linarith [show Real.logb 2 3 < 2 by rw [Real.logb_lt_iff_lt_rpow] <;> norm_num])
+  have hq2 : q ≤ 2 := le_two_of_le_logb23 hq
   exact negType_of_schoenDet_nonneg hq0 hq2 d hm
     (geodesic_insertion_det hq1 hq d hm hp hp03 hp13 hgeo)
+
+/-- Geodesic insertion may be applied after relabelling the four points. -/
+lemma geodesic_insertion_negType_reindex {q : ℝ} (hq1 : 1 ≤ q)
+    (hq : q ≤ Real.logb 2 3) (d : Fin 4 → Fin 4 → ℝ) (hm : IsMetric4 d)
+    (hp : IsPtolemaic4 d) (σ : Equiv.Perm (Fin 4))
+    (hp03 : 0 < d (σ 0) (σ 3)) (hp13 : 0 < d (σ 1) (σ 3))
+    (hgeo : d (σ 0) (σ 1) = d (σ 0) (σ 3) + d (σ 1) (σ 3)) :
+    HasNegType q d := by
+  set E : Fin 4 → Fin 4 → ℝ := fun i j => d (σ i) (σ j)
+  have hE : HasNegType q E :=
+    geodesic_insertion_negType hq1 hq E
+      ⟨fun i => hm.1 _, fun i j => hm.2.1 _ _, fun i j => hm.2.2.1 _ _,
+        fun i j k => hm.2.2.2 _ _ _⟩
+      (fun x y z w => hp _ _ _ _) hp03 hp13 hgeo
+  convert hasNegType_reindex σ⁻¹ hE using 1
+  ext i j
+  simp [E]
 
 /-- Updating the `0`–`1` entry of a metric to a value `v` with `d01 ≤ v ≤ d02+d12` and
 `v ≤ d03+d13` preserves metricity. -/
@@ -1875,7 +1898,8 @@ lemma schoenberg_det_nonneg {q : ℝ} (hq1 : 1 ≤ q) (hq : q ≤ Real.logb 2 3)
   suffices h : 0 ≤ schoenDet (d 0 3 ^ q) (d 1 3 ^ q) (d 2 3 ^ q)
       ((d 0 3 ^ q + d 1 3 ^ q - d 0 1 ^ q) / 2)
       ((d 0 3 ^ q + d 2 3 ^ q - d 0 2 ^ q) / 2)
-      ((d 1 3 ^ q + d 2 3 ^ q - d 1 2 ^ q) / 2) by positivity
+      ((d 1 3 ^ q + d 2 3 ^ q - d 1 2 ^ q) / 2) by
+    simpa [schoenDet] using h
   -- Reduce the leaves-{0,1} entry by varying `d 0 1` over its feasible interval.
   -- The interval endpoints are the tightest of the triangle bounds (`{0,1,3}`,
   -- `{0,1,2}`) and the Ptolemy bound; at each endpoint a constraint is tight, giving
@@ -1945,31 +1969,19 @@ lemma schoenberg_det_nonneg {q : ℝ} (hq1 : 1 ≤ q) (hq : q ≤ Real.logb 2 3)
           have hd'neg : HasNegType q d' := by
             rcases lt_or_gt_of_ne hz with hcmp | hcmp
             · -- `d03 < d13`: reindex by `(0 3)`
-              have hG : HasNegType q (fun i j => d' (Equiv.swap 0 3 i) (Equiv.swap 0 3 j)) :=
-                geodesic_insertion_negType hq1 hq _
-                  ⟨fun i => hm'.1 _, fun i j => hm'.2.1 _ _, fun i j => hm'.2.2.1 _ _,
-                    fun i j k => hm'.2.2.2 _ _ _⟩
-                  (fun x y z w => hp' _ _ _ _)
-                  (by simp +decide [hd']; linarith [hA', hsymm 3 0])
-                  (by positivity)
-                  (by simp +decide [hd', Equiv.swap_apply_def]
-                      rw [abs_of_neg (by linarith : d 0 3 - d 1 3 < 0)]
-                      linarith [hsymm 3 0, hsymm 3 1])
-              convert hasNegType_reindex (Equiv.swap 0 3)⁻¹ hG using 1
-              exact funext fun i => funext fun j => by fin_cases i <;> fin_cases j <;> rfl
+              exact geodesic_insertion_negType_reindex hq1 hq d' hm' hp' (Equiv.swap 0 3)
+                (by simp +decide [hd']; linarith [hA', hsymm 3 0])
+                (by positivity)
+                (by simp +decide [hd', Equiv.swap_apply_def]
+                    rw [abs_of_neg (by linarith : d 0 3 - d 1 3 < 0)]
+                    linarith [hsymm 3 0, hsymm 3 1])
             · -- `d03 > d13`: reindex by `(1 3)`
-              have hG : HasNegType q (fun i j => d' (Equiv.swap 1 3 i) (Equiv.swap 1 3 j)) :=
-                geodesic_insertion_negType hq1 hq _
-                  ⟨fun i => hm'.1 _, fun i j => hm'.2.1 _ _, fun i j => hm'.2.2.1 _ _,
-                    fun i j k => hm'.2.2.2 _ _ _⟩
-                  (fun x y z w => hp' _ _ _ _)
-                  (by positivity)
-                  (by simp +decide [hd']; linarith [hB', hsymm 3 1])
-                  (by simp +decide [hd', Equiv.swap_apply_def]
-                      rw [abs_of_nonneg (by linarith : (0:ℝ) ≤ d 0 3 - d 1 3)]
-                      linarith [hsymm 3 1])
-              convert hasNegType_reindex (Equiv.swap 1 3)⁻¹ hG using 1
-              exact funext fun i => funext fun j => by fin_cases i <;> fin_cases j <;> rfl
+              exact geodesic_insertion_negType_reindex hq1 hq d' hm' hp' (Equiv.swap 1 3)
+                (by positivity)
+                (by simp +decide [hd']; linarith [hB', hsymm 3 1])
+                (by simp +decide [hd', Equiv.swap_apply_def]
+                    rw [abs_of_nonneg (by linarith : (0:ℝ) ≤ d 0 3 - d 1 3)]
+                    linarith [hsymm 3 1])
           have hdet := det_nonneg_of_negType hq0 d' hm'.2.1 hm'.1 hd'neg
           convert hdet using 2
       · rw [he2]
@@ -1997,33 +2009,21 @@ lemma schoenberg_det_nonneg {q : ℝ} (hq1 : 1 ≤ q) (hq : q ≤ Real.logb 2 3)
         have hd'neg : HasNegType q d' := by
           rcases lt_or_gt_of_ne hne with hcmp | hcmp
           · -- `d02 < d12`: reindex by `(0 2 3)`
-            have hG : HasNegType q
-                (fun i j => d' (Equiv.swap 0 3 (Equiv.swap 0 2 i)) (Equiv.swap 0 3 (Equiv.swap 0 2 j))) :=
-              geodesic_insertion_negType hq1 hq _
-                ⟨fun i => hm'.1 _, fun i j => hm'.2.1 _ _, fun i j => hm'.2.2.1 _ _,
-                  fun i j k => hm'.2.2.2 _ _ _⟩
-                (fun x y z w => hp' _ _ _ _)
-                (by simp +decide [hd', Equiv.swap_apply_def]; linarith [hP', hsymm 2 0])
-                (by positivity)
-                (by simp +decide [hd', Equiv.swap_apply_def]
-                    rw [abs_of_neg (by linarith : d 0 2 - d 1 2 < 0)]
-                    linarith [hsymm 2 0, hsymm 2 1])
-            convert hasNegType_reindex (Equiv.swap 0 3 * Equiv.swap 0 2)⁻¹ hG using 1
-            exact funext fun i => funext fun j => by fin_cases i <;> fin_cases j <;> rfl
+            exact geodesic_insertion_negType_reindex hq1 hq d' hm' hp'
+              (Equiv.swap 0 3 * Equiv.swap 0 2)
+              (by simp +decide [hd', Equiv.swap_apply_def]; linarith [hP', hsymm 2 0])
+              (by positivity)
+              (by simp +decide [hd', Equiv.swap_apply_def]
+                  rw [abs_of_neg (by linarith : d 0 2 - d 1 2 < 0)]
+                  linarith [hsymm 2 0, hsymm 2 1])
           · -- `d02 > d12`: reindex by `(1 2 3)`
-            have hG : HasNegType q
-                (fun i j => d' (Equiv.swap 1 3 (Equiv.swap 1 2 i)) (Equiv.swap 1 3 (Equiv.swap 1 2 j))) :=
-              geodesic_insertion_negType hq1 hq _
-                ⟨fun i => hm'.1 _, fun i j => hm'.2.1 _ _, fun i j => hm'.2.2.1 _ _,
-                  fun i j k => hm'.2.2.2 _ _ _⟩
-                (fun x y z w => hp' _ _ _ _)
-                (by positivity)
-                (by simp +decide [hd', Equiv.swap_apply_def]; linarith [hQ', hsymm 2 1])
-                (by simp +decide [hd', Equiv.swap_apply_def]
-                    rw [abs_of_nonneg (by linarith : (0:ℝ) ≤ d 0 2 - d 1 2)]
-                    linarith [hsymm 2 1])
-            convert hasNegType_reindex (Equiv.swap 1 3 * Equiv.swap 1 2)⁻¹ hG using 1
-            exact funext fun i => funext fun j => by fin_cases i <;> fin_cases j <;> rfl
+            exact geodesic_insertion_negType_reindex hq1 hq d' hm' hp'
+              (Equiv.swap 1 3 * Equiv.swap 1 2)
+              (by positivity)
+              (by simp +decide [hd', Equiv.swap_apply_def]; linarith [hQ', hsymm 2 1])
+              (by simp +decide [hd', Equiv.swap_apply_def]
+                  rw [abs_of_nonneg (by linarith : (0:ℝ) ≤ d 0 2 - d 1 2)]
+                  linarith [hsymm 2 1])
         have hdet := det_nonneg_of_negType hq0 d' hm'.2.1 hm'.1 hd'neg
         convert hdet using 2
     · rw [he]
@@ -2062,35 +2062,23 @@ lemma schoenberg_det_nonneg {q : ℝ} (hq1 : 1 ≤ q) (hq : q ≤ Real.logb 2 3)
       have hDneg : HasNegType q D := by
         rcases le_total (d 0 3 * d 1 2) (d 0 2 * d 1 3) with hsgn | hsgn
         · -- `d02·d13 ≥ d03·d12`: inverted `1'` between `0'`,`2'`; reindex by `(1 2 3)`
-          have hG : HasNegType q
-              (fun i j => D (Equiv.swap 1 3 (Equiv.swap 1 2 i)) (Equiv.swap 1 3 (Equiv.swap 1 2 j))) :=
-            geodesic_insertion_negType hq1 hq _
-              ⟨fun i => hDm.1 _, fun i j => hDm.2.1 _ _, fun i j => hDm.2.2.1 _ _,
-                fun i j k => hDm.2.2.2 _ _ _⟩
-              (fun x y z w => hDp _ _ _ _)
-              (by simp +decide [hD, hd', Equiv.swap_apply_def]; positivity)
-              (by simp +decide [hD, hd', Equiv.swap_apply_def, hsymm 2 1]; positivity)
-              (by simp +decide [hD, hd', Equiv.swap_apply_def, hv, hsymm 2 1]
-                  rw [abs_of_nonneg (by linarith : (0:ℝ) ≤ d 0 2 * d 1 3 - d 0 3 * d 1 2)]
-                  field_simp
-                  ring)
-          convert hasNegType_reindex (Equiv.swap 1 3 * Equiv.swap 1 2)⁻¹ hG using 1
-          exact funext fun i => funext fun j => by fin_cases i <;> fin_cases j <;> rfl
+          exact geodesic_insertion_negType_reindex hq1 hq D hDm hDp
+            (Equiv.swap 1 3 * Equiv.swap 1 2)
+            (by simp +decide [hD, hd', Equiv.swap_apply_def]; positivity)
+            (by simp +decide [hD, hd', Equiv.swap_apply_def, hsymm 2 1]; positivity)
+            (by simp +decide [hD, hd', Equiv.swap_apply_def, hv, hsymm 2 1]
+                rw [abs_of_nonneg (by linarith : (0:ℝ) ≤ d 0 2 * d 1 3 - d 0 3 * d 1 2)]
+                field_simp
+                ring)
         · -- `d03·d12 ≥ d02·d13`: inverted `0'` between `1'`,`2'`; reindex by `(0 2 3)`
-          have hG : HasNegType q
-              (fun i j => D (Equiv.swap 0 3 (Equiv.swap 0 2 i)) (Equiv.swap 0 3 (Equiv.swap 0 2 j))) :=
-            geodesic_insertion_negType hq1 hq _
-              ⟨fun i => hDm.1 _, fun i j => hDm.2.1 _ _, fun i j => hDm.2.2.1 _ _,
-                fun i j k => hDm.2.2.2 _ _ _⟩
-              (fun x y z w => hDp _ _ _ _)
-              (by simp +decide [hD, hd', Equiv.swap_apply_def, hsymm 2 0]; positivity)
-              (by simp +decide [hD, hd', Equiv.swap_apply_def]; positivity)
-              (by simp +decide [hD, hd', Equiv.swap_apply_def, hv, hsymm 2 1, hsymm 2 0]
-                  rw [abs_of_nonpos (by linarith : d 0 2 * d 1 3 - d 0 3 * d 1 2 ≤ 0)]
-                  field_simp
-                  ring)
-          convert hasNegType_reindex (Equiv.swap 0 3 * Equiv.swap 0 2)⁻¹ hG using 1
-          exact funext fun i => funext fun j => by fin_cases i <;> fin_cases j <;> rfl
+          exact geodesic_insertion_negType_reindex hq1 hq D hDm hDp
+            (Equiv.swap 0 3 * Equiv.swap 0 2)
+            (by simp +decide [hD, hd', Equiv.swap_apply_def, hsymm 2 0]; positivity)
+            (by simp +decide [hD, hd', Equiv.swap_apply_def]; positivity)
+            (by simp +decide [hD, hd', Equiv.swap_apply_def, hv, hsymm 2 1, hsymm 2 0]
+                rw [abs_of_nonpos (by linarith : d 0 2 * d 1 3 - d 0 3 * d 1 2 ≤ 0)]
+                field_simp
+                ring)
       have hfinal := apex3_det_of_inversion hq1 d' hm' hp' hpos0' hpos1' hpos2' hDneg
       convert hfinal using 2
   · -- endpoint `t2` (upper): the tightest upper bound is active.
@@ -2125,17 +2113,11 @@ lemma schoenberg_det_nonneg {q : ℝ} (hq1 : 1 ≤ q) (hq : q ≤ Real.logb 2 3)
           (le_of_lt hb2)
         have hp' : IsPtolemaic4 d' := isPtolemaic4_update01 hp hsymm hnn hd (d 0 2 + d 1 2)
           (by positivity) (by linarith [htri 0 2 1, hsymm 2 1]) hvP
-        have hG : HasNegType q (fun i j => d' (Equiv.swap 2 3 i) (Equiv.swap 2 3 j)) :=
-          geodesic_insertion_negType hq1 hq _
-            ⟨fun i => hm'.1 _, fun i j => hm'.2.1 _ _, fun i j => hm'.2.2.1 _ _,
-              fun i j k => hm'.2.2.2 _ _ _⟩
-            (fun x y z w => hp' _ _ _ _)
+        have hd'neg : HasNegType q d' :=
+          geodesic_insertion_negType_reindex hq1 hq d' hm' hp' (Equiv.swap 2 3)
             (by positivity)
             (by positivity)
             (by simp [hd', Equiv.swap_apply_def])
-        have hd'neg : HasNegType q d' := by
-          convert hasNegType_reindex (Equiv.swap 2 3)⁻¹ hG using 1
-          exact funext fun i => funext fun j => by fin_cases i <;> fin_cases j <;> rfl
         have hdet := det_nonneg_of_negType hq0 d' hm'.2.1 hm'.1 hd'neg
         convert hdet using 2
     · rw [he]
@@ -2163,17 +2145,11 @@ lemma schoenberg_det_nonneg {q : ℝ} (hq1 : 1 ≤ q) (hq : q ≤ Real.logb 2 3)
       have hDm : IsMetric4 D := inv_isMetric hm' hp' hpos0' hpos1' hpos2'
       have hDp : IsPtolemaic4 D := inv_isPtolemaic hm' hpos0' hpos1' hpos2'
       have hd'01 : d' 0 1 = (d 0 2 * d 1 3 + d 0 3 * d 1 2) / d 2 3 := by simp [hd']
-      have hG : HasNegType q (fun i j => D (Equiv.swap 2 3 i) (Equiv.swap 2 3 j)) :=
-        geodesic_insertion_negType hq1 hq _
-          ⟨fun i => hDm.1 _, fun i j => hDm.2.1 _ _, fun i j => hDm.2.2.1 _ _,
-            fun i j k => hDm.2.2.2 _ _ _⟩
-          (fun x y z w => hDp _ _ _ _)
+      have hDneg : HasNegType q D :=
+        geodesic_insertion_negType_reindex hq1 hq D hDm hDp (Equiv.swap 2 3)
           (by simp +decide [hD, hd', Equiv.swap_apply_def]; positivity)
           (by simp +decide [hD, hd', Equiv.swap_apply_def]; positivity)
           (by simp +decide [hD, hd', Equiv.swap_apply_def]; field_simp)
-      have hDneg : HasNegType q D := by
-        convert hasNegType_reindex (Equiv.swap 2 3)⁻¹ hG using 1
-        exact funext fun i => funext fun j => by fin_cases i <;> fin_cases j <;> rfl
       have hfinal := apex3_det_of_inversion hq1 d' hm' hp' hpos0' hpos1' hpos2' hDneg
       convert hfinal using 2
 
@@ -2184,8 +2160,7 @@ matrix.
 lemma negType_ge_one {q : ℝ} (hq1 : 1 ≤ q) (hq : q ≤ Real.logb 2 3)
     (d : Fin 4 → Fin 4 → ℝ) (hm : IsMetric4 d) (hp : IsPtolemaic4 d) :
     HasNegType q d := by
-  exact negType_of_schoenDet_nonneg (by linarith) (by
-    linarith [show Real.logb 2 3 < 2 by rw [Real.logb_lt_iff_lt_rpow] <;> norm_num])
+  exact negType_of_schoenDet_nonneg (by linarith) (le_two_of_le_logb23 hq)
     d hm (schoenberg_det_nonneg hq1 hq d hm hp)
 
 /-- Determinant decomposition when `g01` is the smallest Gromov product. -/

@@ -24,9 +24,11 @@ result `NegType.real_finite_negative_type`).
   (every four-point metric has `1`-negative type), and `metric4_qpos_gram`.
   `ExpKernel.lean` is entirely `sorry`-free.
 
-* The **only remaining `sorry`** in the project is `schoenberg_det_nonneg` (see
-  below).  Because `four_point_ptolemaic_negType` is assembled from it, the main
-  theorem still depends on this single `sorry`.
+* **`schoenberg_det_nonneg` and the main theorem are now fully proved.**  The
+  determinant assembly fixes the leaf lengths, reduces the remaining off-diagonal
+  entry to the endpoints of its feasible interval by concavity, and dispatches the
+  endpoint configurations through the line, attached-ray, geodesic-insertion, and
+  inversion lemmas.  The project is now `sorry`-free.
 
 ## Statement (faithful, in `RequestProject/Ptolemaic.lean`)
 
@@ -65,18 +67,14 @@ The complete supporting framework of the paper's proof:
   lemma (`lem:q5-radial`): `geodesic_ptolemy_endpoint_det` — the crux step,
   combining inversion (`schoenDet_congr`), the attached-ray lemma, and relabelling.
 
-## Remaining (currently `sorry`)
+## Completed determinant assembly
 
 - `schoenberg_det_nonneg`: the determinant case-analysis (the heart of the paper's
-  proof).  All mechanisms it needs are proved above; what remains is the
-  combinatorial assembly: fixing the leaf lengths and reducing each off-diagonal
-  entry to the endpoints of its feasible interval by concavity
-  (`schoenDet_ge_of_endpoints`), each endpoint being a geodesic-insertion
-  configuration handled by `attached_ray_negType` / `line_negType` /
-  `star_negType` / `geodesic_ptolemy_endpoint_det` (after relabelling), together
-  with the polytope/feasibility bookkeeping.  This is the variational
-  (negative-minimizer / active-constraint) argument of the paper and is the single
-  remaining `sorry` in the project.
+  proof) is complete.  The proof handles degenerate duplicate-point cases first,
+  then reduces the positive-distance case by concavity in the `0`-`1` entry over
+  its metric/Ptolemy feasible interval.  Triangle endpoints are discharged by line
+  or geodesic-insertion configurations, and Ptolemy endpoints are handled by
+  inversion followed by geodesic insertion.
 
-The main theorem `four_point_ptolemaic_negType` is assembled from this, so it
-currently depends on the one `sorry` above and is **not yet fully proved**.
+The main theorem `four_point_ptolemaic_negType` is assembled from the Blumenthal
+range (`0 < q ≤ 1`) and the completed `q ≥ 1` determinant argument.
