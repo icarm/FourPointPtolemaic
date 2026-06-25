@@ -709,9 +709,7 @@ lemma endpoint_star_det {q : ℝ} (hq1 : 1 ≤ q) (hq : q ≤ Real.logb 2 3)
   set dC : Fin 4 → Fin 4 → ℝ := fun i j => if i = j then 0 else (if i = 0 then y else if i = 1 then r else if i = 2 then z else 0) + (if j = 0 then y else if j = 1 then r else if j = 2 then z else 0)
   have h_center_negType : HasNegType q dC := by
     apply star_negType hq1 hq
-    · refine ⟨?_, ?_, ?_, ?_⟩
-      · intro i
-        fin_cases i <;> simp [dC]
+    · refine ⟨fun _ => if_pos rfl, ?_, ?_, ?_⟩
       · intro i j
         fin_cases i <;> fin_cases j <;> simp [dC, add_comm]
       · intro i j
@@ -730,8 +728,7 @@ lemma endpoint_star_det {q : ℝ} (hq1 : 1 ≤ q) (hq : q ≤ Real.logb 2 3)
     ring_nf
   · intro i j
     fin_cases i <;> fin_cases j <;> simp [dS, add_comm]
-  · intro i
-    fin_cases i <;> simp [dS]
+  · exact fun i => if_pos rfl
 
 /-
 The Schoenberg determinant of the **line** endpoint `h = |r - z|` of an
@@ -1105,10 +1102,10 @@ lemma geodesic_ptolemy_endpoint_det {q : ℝ} (hq1 : 1 ≤ q) (hq : q ≤ Real.l
         rw [hm.2.1 2 3, hm.2.1 2 1, hm.2.1 2 0, hm.2.1 1 3]
         rw [hgeo]
         ring_nf at hPtEq ⊢
-        nlinarith
+        exact Real.ext_cauchy (congrArg Real.cauchy hPtEq)
     convert hasNegType_reindex (Equiv.swap 0 2 * Equiv.swap 1 3)⁻¹ hdh_attached_ray using 1
     exact funext fun i => funext fun j => by fin_cases i <;> fin_cases j <;> rfl
-  exact apex3_det_of_inversion hq1 d hm hp hpos0 hpos1 hpos2 (by simpa [dh] using hdh_negType)
+  exact apex3_det_of_inversion hq1 d hm hp hpos0 hpos1 hpos2 hdh_negType
 
 /-- **Ptolemy-equality endpoint, apex-between labeling.** Here the apex `3` lies on the
 geodesic between leaves `0` and `1`, and the Ptolemy inequality for `d 2 3` holds with
@@ -1157,7 +1154,7 @@ lemma ptolemy_apex_endpoint_det {q : ℝ} (hq1 : 1 ≤ q) (hq : q ≤ Real.logb 
   have hnegd : HasNegType q d := by
     convert hasNegType_reindex pm⁻¹ hnegE using 1
     exact funext fun i => funext fun j => by rw [hE]; rw [hpm]; congr 1 <;> simp [Equiv.Perm.mul_apply]
-  convert det_nonneg_of_negType hq0 d (fun i j => hsymm _ _) (fun i => hd _) hnegd using 1
+  exact det_nonneg_of_negType hq0 d hsymm hd hnegd
 
 /-- Updating the `2`–`3` entry of a metric to a value `v` with `d23 ≤ v ≤ d20+d30` and
 `v ≤ d21+d31` preserves metricity. -/
@@ -2056,9 +2053,9 @@ lemma schoenberg_det_nonneg {q : ℝ} (hq1 : 1 ≤ q) (hq : q ≤ Real.logb 2 3)
         fun i j => if (i = 0 ∧ j = 1) ∨ (i = 1 ∧ j = 0) then v else d i j with hd'
       have hm' : IsMetric4 d' := isMetric4_update01_lo hsymm hnn hd htri v hvpos.le hu2 hu3 hl2 hl3
       have hp' : IsPtolemaic4 d' := isPtolemaic4_update01_lo hp hsymm hnn hd v hvpos.le hPup hPlo
-      have hpos0' : 0 < d' 0 3 := by simp [hd']; exact hA'
-      have hpos1' : 0 < d' 1 3 := by simp [hd']; exact hB'
-      have hpos2' : 0 < d' 2 3 := by simp [hd']; exact hC'
+      have hpos0' : 0 < d' 0 3 := by positivity
+      have hpos1' : 0 < d' 1 3 := by positivity
+      have hpos2' : 0 < d' 2 3 := by positivity
       set D : Fin 4 → Fin 4 → ℝ := fun i j =>
         if i = j then 0 else if i = 3 then 1 / d' j 3 else if j = 3 then 1 / d' i 3
           else d' i j / (d' i 3 * d' j 3) with hD
