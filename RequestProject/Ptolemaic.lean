@@ -2107,9 +2107,9 @@ lemma schoenberg_det_nonneg {q : ℝ} (hq1 : 1 ≤ q) (hq : q ≤ Real.logb 2 3)
         set d' : Fin 4 → Fin 4 → ℝ :=
           fun i j => if (i = 0 ∧ j = 1) ∨ (i = 1 ∧ j = 0) then d 0 3 + d 1 3 else d i j with hd'
         have hm' : IsMetric4 d' := isMetric4_update01 hsymm hnn hd htri (d 0 3 + d 1 3)
-          (by linarith [hnn 0 3, hnn 1 3]) (by linarith [htri 0 3 1, hsymm 3 1]) hb2 le_rfl
+          (by positivity) (by linarith [htri 0 3 1, hsymm 3 1]) hb2 le_rfl
         have hp' : IsPtolemaic4 d' := isPtolemaic4_update01 hp hsymm hnn hd (d 0 3 + d 1 3)
-          (by linarith [hnn 0 3, hnn 1 3]) (by linarith [htri 0 3 1, hsymm 3 1]) hvP
+          (add_nonneg (hnn 0 3) (hnn 1 3)) (by linarith [htri 0 3 1, hsymm 3 1]) hvP
         have hneg := geodesic_insertion_negType hq1 hq d' hm' hp'
           (by simp [hd']; exact hA') (by simp [hd']; exact hB') (by simp [hd'])
         have hdet := det_nonneg_of_negType hq0 d' hm'.2.1 hm'.1 hneg
