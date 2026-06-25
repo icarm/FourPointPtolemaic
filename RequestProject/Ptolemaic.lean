@@ -821,6 +821,22 @@ lemma attached_ray_negType {q : ℝ} (hq1 : 1 ≤ q) (hq : q ≤ Real.logb 2 3)
     positivity
   exact negType_of_schoenDet_nonneg hq0 hq2 d hm hdet
 
+/-- Attached-ray negative type may be applied after relabelling the four points. -/
+lemma attached_ray_negType_reindex {q : ℝ} (hq1 : 1 ≤ q) (hq : q ≤ Real.logb 2 3)
+    (d : Fin 4 → Fin 4 → ℝ) (hm : IsMetric4 d) (σ : Equiv.Perm (Fin 4))
+    (hU : d (σ 1) (σ 3) = d (σ 0) (σ 3) + d (σ 0) (σ 1))
+    (hV : d (σ 2) (σ 3) = d (σ 0) (σ 3) + d (σ 0) (σ 2)) :
+    HasNegType q d := by
+  set E : Fin 4 → Fin 4 → ℝ := fun i j => d (σ i) (σ j)
+  have hE : HasNegType q E :=
+    attached_ray_negType hq1 hq E
+      ⟨fun i => hm.1 _, fun i j => hm.2.1 _ _, fun i j => hm.2.2.1 _ _,
+        fun i j k => hm.2.2.2 _ _ _⟩
+      hU hV
+  convert hasNegType_reindex σ⁻¹ hE using 1
+  ext i j
+  simp [E]
+
 private lemma ptolemy_of_duplicate (u : Fin 4 → Fin 4 → ℝ)
     (hdiag : ∀ i, u i i = 0) (hsym : ∀ i j, u i j = u j i) (hnn : ∀ i j, 0 ≤ u i j)
     {x y z w : Fin 4}
@@ -1103,26 +1119,20 @@ lemma geodesic_ptolemy_endpoint_det {q : ℝ} (hq1 : 1 ≤ q) (hq : q ≤ Real.l
     else if j = 3 then 1 / d i 3
     else d i j / (d i 3 * d j 3)
   have hdh_metric : IsMetric4 dh := inv_isMetric hm hp hpos0 hpos1 hpos2
-  have hdh_negType : HasNegType q dh := by
-    have hdh_attached_ray :
-        HasNegType q
-          (fun i j => dh (Equiv.swap 0 2 (Equiv.swap 1 3 i))
-            (Equiv.swap 0 2 (Equiv.swap 1 3 j))) := by
-      apply attached_ray_negType hq1 hq
-      · exact ⟨fun i => hdh_metric.1 _, fun i j => hdh_metric.2.1 _ _,
-          fun i j => hdh_metric.2.2.1 _ _, fun i j k => hdh_metric.2.2.2 _ _ _⟩
-      · simp +decide [dh, Equiv.swap_apply_def]
+  have hdh_negType : HasNegType q dh :=
+    attached_ray_negType_reindex hq1 hq dh hdh_metric (Equiv.swap 0 2 * Equiv.swap 1 3)
+      (by
+        simp +decide [dh, Equiv.swap_apply_def]
         field_simp [hpos1.ne', hpos2.ne']
         rw [hm.2.1 2 3, hm.2.1 2 1, hm.2.1 1 3]
-        linarith [hgeo]
-      · simp +decide [dh, Equiv.swap_apply_def]
+        linarith [hgeo])
+      (by
+        simp +decide [dh, Equiv.swap_apply_def]
         field_simp [hpos0.ne', hpos1.ne', hpos2.ne']
         rw [hm.2.1 2 3, hm.2.1 2 1, hm.2.1 2 0, hm.2.1 1 3]
         rw [hgeo]
         ring_nf at hPtEq ⊢
-        exact Real.ext_cauchy (congrArg Real.cauchy hPtEq)
-    convert hasNegType_reindex (Equiv.swap 0 2 * Equiv.swap 1 3)⁻¹ hdh_attached_ray using 1
-    exact funext fun i => funext fun j => by fin_cases i <;> fin_cases j <;> rfl
+        exact Real.ext_cauchy (congrArg Real.cauchy hPtEq))
   exact apex3_det_of_inversion hq1 d hm hp hpos0 hpos1 hpos2 hdh_negType
 
 /-- **Ptolemy-equality endpoint, apex-between labeling.** Here the apex `3` lies on the
@@ -1406,17 +1416,12 @@ lemma geodesic_insertion_det {q : ℝ} (hq1 : 1 ≤ q) (hq : q ≤ Real.logb 2 3
             linarith [hgeo, htri 0 1 2]
           · rw [hsymm 2 0, hsymm 3 0, abs_of_nonneg (by linarith : 0 ≤ d 0 2 - d 0 3)]
           · rwa [hsymm 2 1, hsymm 3 1, abs_sub_comm]
-        have hneg : HasNegType q dA := by
-          have hAR : HasNegType q (fun i j => dA (Equiv.swap 0 3 i) (Equiv.swap 0 3 j)) := by
-            apply attached_ray_negType hq1 hq
-            · exact ⟨fun i => hmA.1 _, fun i j => hmA.2.1 _ _, fun i j => hmA.2.2.1 _ _,
-                fun i j k => hmA.2.2.2 _ _ _⟩
-            · simp +decide [hdA, Equiv.swap_apply_def]
-              linarith [hgeo, hsymm 1 0, hsymm 3 1, hsymm 3 0]
-            · simp +decide [hdA, Equiv.swap_apply_def]
-              linarith [hsymm 2 0, hsymm 3 0]
-          convert hasNegType_reindex (Equiv.swap 0 3)⁻¹ hAR using 1
-          exact funext fun i => funext fun j => by fin_cases i <;> fin_cases j <;> rfl
+        have hneg : HasNegType q dA :=
+          attached_ray_negType_reindex hq1 hq dA hmA (Equiv.swap 0 3)
+            (by simp +decide [hdA, Equiv.swap_apply_def]
+                linarith [hgeo, hsymm 1 0, hsymm 3 1, hsymm 3 0])
+            (by simp +decide [hdA, Equiv.swap_apply_def]
+                linarith [hsymm 2 0, hsymm 3 0])
         have hdet := det_nonneg_of_negType hq0 dA hmA.2.1 hmA.1 hneg
         convert hdet using 3
     · -- `L = max |d13-d12| (Ptolemy-lo)`
@@ -1489,18 +1494,12 @@ lemma geodesic_insertion_det {q : ℝ} (hq1 : 1 ≤ q) (hq : q ≤ Real.logb 2 3
               rw [← hLval]
               exact le_of_lt (by rw [hL2eq] at hLlt; exact hLlt)
             · rw [hsymm 2 1, hsymm 3 1, abs_of_nonneg (by linarith : 0 ≤ d 1 2 - d 1 3)]
-          have hneg : HasNegType q dA := by
-            have hAR : HasNegType q (fun i j => dA (Equiv.swap 0 1 (Equiv.swap 0 3 i))
-                (Equiv.swap 0 1 (Equiv.swap 0 3 j))) := by
-              apply attached_ray_negType hq1 hq
-              · exact ⟨fun i => hmA.1 _, fun i j => hmA.2.1 _ _, fun i j => hmA.2.2.1 _ _,
-                  fun i j k => hmA.2.2.2 _ _ _⟩
-              · simp +decide [hdA, Equiv.swap_apply_def]
-                linarith [hgeo, hsymm 1 0, hsymm 3 1, hsymm 3 0]
-              · simp +decide [hdA, Equiv.swap_apply_def]
-                linarith [hsymm 2 1, hsymm 3 1]
-            convert hasNegType_reindex (Equiv.swap 0 1 * Equiv.swap 0 3)⁻¹ hAR using 1
-            exact funext fun i => funext fun j => by fin_cases i <;> fin_cases j <;> rfl
+          have hneg : HasNegType q dA :=
+            attached_ray_negType_reindex hq1 hq dA hmA (Equiv.swap 0 1 * Equiv.swap 0 3)
+              (by simp +decide [hdA, Equiv.swap_apply_def]
+                  linarith [hgeo, hsymm 1 0, hsymm 3 1, hsymm 3 0])
+              (by simp +decide [hdA, Equiv.swap_apply_def]
+                  linarith [hsymm 2 1, hsymm 3 1])
           have hdet := det_nonneg_of_negType hq0 dA hmA.2.1 hmA.1 hneg
           convert hdet using 3
       · -- `L = Ptolemy-lo`: this branch is vacuous.  The Ptolemy lower bound never
