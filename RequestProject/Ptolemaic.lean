@@ -413,6 +413,36 @@ lemma star_inequality {q : ℝ} (hq1 : 1 ≤ q) (hq : q ≤ Real.logb 2 3)
     ring_nf
   · positivity
 
+private lemma star_pair_data {q x y : ℝ} (hq1 : 1 ≤ q) (hq : q ≤ Real.logb 2 3)
+    (hx : 0 ≤ x) (hy : 0 ≤ y) :
+    ∃ η S : ℝ,
+      0 ≤ η ∧ η ≤ 1 ∧ 0 ≤ S ∧
+      (x + y) ^ q = x ^ q + y ^ q + η * S ∧
+      S ^ 2 = x ^ q * y ^ q ∧
+      S = Real.sqrt (x ^ q * y ^ q) := by
+  refine ⟨((x + y) ^ q - x ^ q - y ^ q) / Real.sqrt (x ^ q * y ^ q),
+    Real.sqrt (x ^ q * y ^ q), ?_, ?_, Real.sqrt_nonneg _, ?_, ?_, rfl⟩
+  · refine div_nonneg ?_ (Real.sqrt_nonneg _)
+    have := @Real.add_rpow_le_rpow_add
+    linarith [this hx hy hq1]
+  · refine div_le_one_of_le₀ ?_ (Real.sqrt_nonneg _)
+    have := star_inequality hq1 hq x y hx hy
+    rw [Real.mul_rpow (by positivity) (by positivity)] at this
+    rw [rpow_mul_eq_sq_half x y q hx hy, Real.sqrt_sq (by positivity)]
+    linarith
+  · by_cases h : Real.sqrt (x ^ q * y ^ q) = 0
+    · have hprod : x ^ q * y ^ q = 0 := (Real.sqrt_eq_zero (by positivity)).mp h
+      rcases mul_eq_zero.mp hprod with hxpow | hypow
+      · have hx0 : x = 0 := ((Real.rpow_eq_zero_iff_of_nonneg hx).mp hxpow).1
+        rw [hx0]
+        simp [Real.zero_rpow (by linarith : q ≠ 0)]
+      · have hy0 : y = 0 := ((Real.rpow_eq_zero_iff_of_nonneg hy).mp hypow).1
+        rw [hy0]
+        simp [Real.zero_rpow (by linarith : q ≠ 0)]
+    · field_simp [h]
+      ring
+  · rw [Real.sq_sqrt (by positivity)]
+
 /-! ## Schoenberg reduction and the supporting metric lemmas -/
 
 /-
@@ -523,75 +553,17 @@ lemma star_negType {q : ℝ} (hq1 : 1 ≤ q) (hq : q ≤ Real.logb 2 3)
       exact hm.2.2.1 _ _
     have hρ2 : 0 ≤ ρ2 := by
       exact hm.2.2.1 _ _
-    -- Introduce η01, η02, η12 ∈ [0,1] and S01, S02, S12 ≥ 0 as in the provided solution.
-    obtain ⟨η01, η02, η12, S01, S02, S12,
-      hη01_nonneg, hη01_le_one, hη02_nonneg, hη02_le_one, hη12_nonneg, hη12_le_one,
-      hS01_nonneg, hS02_nonneg, hS12_nonneg,
-      hρ01, hρ02, hρ12, hS01_sq, hS02_sq, hS12_sq, hS_prod⟩ :
-      ∃ η01 η02 η12 S01 S02 S12 : ℝ,
-      0 ≤ η01 ∧ η01 ≤ 1 ∧ 0 ≤ η02 ∧ η02 ≤ 1 ∧ 0 ≤ η12 ∧ η12 ≤ 1 ∧
-      0 ≤ S01 ∧ 0 ≤ S02 ∧ 0 ≤ S12 ∧
-      (ρ0 + ρ1) ^ q = ρ0 ^ q + ρ1 ^ q + η01 * S01 ∧
-      (ρ0 + ρ2) ^ q = ρ0 ^ q + ρ2 ^ q + η02 * S02 ∧
-      (ρ1 + ρ2) ^ q = ρ1 ^ q + ρ2 ^ q + η12 * S12 ∧
-      S01 ^ 2 = ρ0 ^ q * ρ1 ^ q ∧
-      S02 ^ 2 = ρ0 ^ q * ρ2 ^ q ∧
-      S12 ^ 2 = ρ1 ^ q * ρ2 ^ q ∧
-      S01 * S02 * S12 = ρ0 ^ q * ρ1 ^ q * ρ2 ^ q := by
-        refine ⟨((ρ0 + ρ1) ^ q - ρ0 ^ q - ρ1 ^ q) / Real.sqrt (ρ0 ^ q * ρ1 ^ q), ((ρ0 + ρ2) ^ q - ρ0 ^ q - ρ2 ^ q) / Real.sqrt (ρ0 ^ q * ρ2 ^ q), ((ρ1 + ρ2) ^ q - ρ1 ^ q - ρ2 ^ q) / Real.sqrt (ρ1 ^ q * ρ2 ^ q), Real.sqrt (ρ0 ^ q * ρ1 ^ q), Real.sqrt (ρ0 ^ q * ρ2 ^ q), Real.sqrt (ρ1 ^ q * ρ2 ^ q), ?_, ?_, ?_, ?_, ?_⟩ <;> norm_num
-        · refine div_nonneg ?_ (Real.sqrt_nonneg _)
-          have := @Real.add_rpow_le_rpow_add
-          linarith [this hρ0 hρ1 hq1]
-        · refine div_le_one_of_le₀ ?_ (Real.sqrt_nonneg _)
-          have := star_inequality hq1 hq ρ0 ρ1 hρ0 hρ1
-          rw [Real.mul_rpow (by positivity) (by positivity)] at this
-          rw [rpow_mul_eq_sq_half ρ0 ρ1 q hρ0 hρ1, Real.sqrt_sq (by positivity)]
-          linarith
-        · refine div_nonneg ?_ (Real.sqrt_nonneg _)
-          have := @Real.add_rpow_le_rpow_add
-          linarith [this hρ0 hρ2 hq1]
-        · refine div_le_one_of_le₀ ?_ (Real.sqrt_nonneg _)
-          have := star_inequality hq1 hq ρ0 ρ2 hρ0 hρ2
-          rw [Real.mul_rpow (by positivity) (by positivity)] at this
-          rw [rpow_mul_eq_sq_half ρ0 ρ2 q hρ0 hρ2, Real.sqrt_sq (by positivity)]
-          linarith
-        · refine ⟨?_, ?_, ?_, ?_, ?_⟩
-          · refine div_nonneg ?_ (Real.sqrt_nonneg _)
-            have := @Real.add_rpow_le_rpow_add
-            linarith [this hρ1 hρ2 hq1]
-          · refine div_le_one_of_le₀ ?_ (Real.sqrt_nonneg _)
-            have := star_inequality hq1 hq ρ1 ρ2 hρ1 hρ2
-            rw [Real.mul_rpow (by positivity) (by positivity)] at this
-            rw [rpow_mul_eq_sq_half ρ1 ρ2 q hρ1 hρ2, Real.sqrt_sq (by positivity)]
-            linarith
-          · by_cases h : Real.sqrt (ρ0 ^ q * ρ1 ^ q) = 0 <;> simp_all +decide [sub_sub]
-            cases eq_or_ne ρ0 0 <;> cases eq_or_ne ρ1 0 <;> simp_all +decide [Real.rpow_nonneg]
-            · rw [Real.zero_rpow (by positivity)]
-            · rw [Real.zero_rpow (by positivity)]
-            · exact absurd (h.resolve_left (by positivity)) (by positivity)
-          · by_cases h : Real.sqrt (ρ0 ^ q * ρ2 ^ q) = 0 <;> simp_all +decide [sub_sub]
-            cases eq_or_ne ρ0 0 <;> cases eq_or_ne ρ2 0 <;> simp_all +decide [Real.rpow_nonneg]
-            · rw [Real.zero_rpow (by positivity)]
-            · rw [Real.zero_rpow (by positivity)]
-            · exact absurd (h.resolve_left (by positivity)) (by positivity)
-          · constructor
-            · by_cases h : Real.sqrt (ρ1 ^ q * ρ2 ^ q) = 0
-              · have hprod : ρ1 ^ q * ρ2 ^ q = 0 := by
-                  exact (Real.sqrt_eq_zero (by positivity)).mp h
-                rcases mul_eq_zero.mp hprod with hpow | hpow
-                · have hz : ρ1 = 0 := ((Real.rpow_eq_zero_iff_of_nonneg hρ1).mp hpow).1
-                  rw [hz]
-                  simp [Real.zero_rpow (by linarith : q ≠ 0)]
-                · have hz : ρ2 = 0 := ((Real.rpow_eq_zero_iff_of_nonneg hρ2).mp hpow).1
-                  rw [hz]
-                  simp [Real.zero_rpow (by linarith : q ≠ 0)]
-              · field_simp [h]
-                ring
-            · exact ⟨by rw [Real.sq_sqrt (by positivity)],
-                by rw [Real.sq_sqrt (by positivity)],
-                by rw [Real.sq_sqrt (by positivity)],
-                sqrt_pair_product (ρ0 ^ q) (ρ1 ^ q) (ρ2 ^ q)
-                  (Real.rpow_nonneg hρ0 _) (Real.rpow_nonneg hρ1 _) (Real.rpow_nonneg hρ2 _)⟩
+    -- Pairwise star data for the three leaf pairs.
+    obtain ⟨η01, S01, hη01_nonneg, hη01_le_one, hS01_nonneg,
+      hρ01, hS01_sq, hS01_eq⟩ := star_pair_data hq1 hq hρ0 hρ1
+    obtain ⟨η02, S02, hη02_nonneg, hη02_le_one, hS02_nonneg,
+      hρ02, hS02_sq, hS02_eq⟩ := star_pair_data hq1 hq hρ0 hρ2
+    obtain ⟨η12, S12, hη12_nonneg, hη12_le_one, hS12_nonneg,
+      hρ12, hS12_sq, hS12_eq⟩ := star_pair_data hq1 hq hρ1 hρ2
+    have hS_prod : S01 * S02 * S12 = ρ0 ^ q * ρ1 ^ q * ρ2 ^ q := by
+      rw [hS01_eq, hS02_eq, hS12_eq]
+      exact sqrt_pair_product (ρ0 ^ q) (ρ1 ^ q) (ρ2 ^ q)
+        (Real.rpow_nonneg hρ0 _) (Real.rpow_nonneg hρ1 _) (Real.rpow_nonneg hρ2 _)
     -- Apply psd3_of_minors with the given conditions.
     have h_psd : 0 ≤ ρ0 ^ q * ρ1 ^ q - (η01 * S01 / 2) ^ 2 ∧ 0 ≤ ρ0 ^ q * ρ2 ^ q - (η02 * S02 / 2) ^ 2 ∧ 0 ≤ ρ1 ^ q * ρ2 ^ q - (η12 * S12 / 2) ^ 2 ∧ 0 ≤ ρ0 ^ q * ρ1 ^ q * ρ2 ^ q * (1 - (η01 ^ 2 + η02 ^ 2 + η12 ^ 2 + η01 * η02 * η12) / 4) := by
       refine ⟨?_, ?_, ?_, ?_⟩
@@ -634,7 +606,10 @@ lemma schoenDet_ge_of_endpoints (A B C v w : ℝ) (hC : 0 ≤ C) (u u1 u2 : ℝ)
     (h1 : 0 ≤ schoenDet A B C u1 v w) (h2 : 0 ≤ schoenDet A B C u2 v w) :
     0 ≤ schoenDet A B C u v w := by
   by_cases hu : u1 = u2
-  · grind
+  · subst u2
+    have hu_eq : u = u1 := le_antisymm hu2 hu1
+    subst u
+    exact h1
   · unfold schoenDet at *
     cases lt_or_gt_of_ne hu <;> nlinarith [mul_le_mul_of_nonneg_left hu1 hC, mul_le_mul_of_nonneg_left hu2 hC, mul_le_mul_of_nonneg_left hu1 (sub_nonneg.mpr hu2), mul_le_mul_of_nonneg_left hu2 (sub_nonneg.mpr hu1)]
 
@@ -659,7 +634,7 @@ lemma det_nonneg_of_negType {q : ℝ} (hq0 : 0 < q) (d : Fin 4 → Fin 4 → ℝ
   have hM_posSemidef : ∀ x y z : ℝ, 0 ≤ A * x ^ 2 + B * y ^ 2 + C * z ^ 2 + 2 * u * x * y + 2 * v * x * z + 2 * w * y * z := by
     intro x y z
     specialize hneg (fun i => if i = 0 then x else if i = 1 then y else if i = 2 then z else -(x + y + z)) (by
-    simp +decide [Fin.sum_univ_four])
+      simp +decide [Fin.sum_univ_four])
     simp +decide [Fin.sum_univ_four] at hneg
     simp_all +decide [ne_of_gt hq0]
     grind
@@ -1087,46 +1062,14 @@ lemma inv_isMetric {d : Fin 4 → Fin 4 → ℝ} (hm : IsMetric4 d) (hp : IsPtol
     (h0 : 0 < d 0 3) (h1 : 0 < d 1 3) (h2 : 0 < d 2 3) :
     IsMetric4 (apexInv d) := by
   set dh : Fin 4 → Fin 4 → ℝ := apexInv d
-  have hpos : ∀ i : Fin 4, i ≠ 3 → 0 < d i 3 := by
-    intro i hi
-    fin_cases i <;> simp at hi
-    · exact h0
-    · exact h1
-    · exact h2
+  have hpos : ∀ i : Fin 4, i ≠ 3 → 0 < d i 3 := apexInv_base_pos h0 h1 h2
   have hsymm := hm.2.1
-  have hnn := hm.2.2.1
   have htri := hm.2.2.2
   have hsymdh : ∀ i j, dh i j = dh j i := by
-    intro i j
-    by_cases hij : i = j
-    · subst j
-      simp [dh, apexInv]
-    · have hji : j ≠ i := by exact Ne.symm hij
-      by_cases hi3 : i = 3
-      · subst i
-        have hj3 : j ≠ 3 := by exact hji
-        simp [dh, apexInv, hji, Ne.symm hj3]
-      · by_cases hj3 : j = 3
-        · subst j
-          simp [dh, apexInv, hij, Ne.symm hi3]
-        · simp [dh, apexInv, hij, hji, hi3, hj3, hsymm i j, mul_comm]
+    simpa [dh] using apexInv_symm hsymm
   have hnonneg : ∀ i j, 0 ≤ dh i j := by
-    intro i j
-    by_cases hij : i = j
-    · subst j
-      simp [dh, apexInv]
-    · by_cases hi3 : i = 3
-      · subst i
-        have hj3 : j ≠ 3 := by exact Ne.symm hij
-        have hjpos := hpos j hj3
-        simp [dh, apexInv, hij, hjpos.le]
-      · by_cases hj3 : j = 3
-        · subst j
-          have hipos := hpos i hi3
-          simp [dh, apexInv, hij, hipos.le]
-        · have hden : 0 ≤ d i 3 * d j 3 := mul_nonneg (hpos i hi3).le (hpos j hj3).le
-          simp [dh, apexInv, hij, hi3, hj3, div_nonneg (hnn i j) hden]
-  refine ⟨by intro i; simp [dh, apexInv], hsymdh, hnonneg, ?_⟩
+    simpa [dh] using apexInv_nonneg hm.2.2.1 hpos
+  refine ⟨by simpa [dh] using apexInv_diag d, hsymdh, hnonneg, ?_⟩
   intro i j k
   by_cases hik : i = k
   · subst k
