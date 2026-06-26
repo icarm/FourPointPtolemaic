@@ -100,8 +100,7 @@ private lemma half_eta_sq_le (η S T : ℝ) (hη0 : 0 ≤ η) (hη1 : η ≤ 1)
 /-
 `3 ^ (log₃ 2) = 2`.
 -/
-lemma three_rpow_logb : (3 : ℝ) ^ (Real.logb 3 2) = 2 := by
-  rw [Real.rpow_logb] <;> norm_num
+lemma three_rpow_logb : (3 : ℝ) ^ (Real.logb 3 2) = 2 := by norm_num
 
 /-
 The upper exponent bound used throughout the `q ≥ 1` half is below `2`.
