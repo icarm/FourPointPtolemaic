@@ -6,9 +6,6 @@ open scoped Classical
 
 open MeasureTheory Set
 
-set_option maxHeartbeats 8000000
-set_option maxRecDepth 4000
-
 namespace NegType
 
 /-!

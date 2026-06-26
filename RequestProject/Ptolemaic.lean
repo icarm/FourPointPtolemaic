@@ -5,9 +5,6 @@ import RequestProject.ExpKernel
 open scoped BigOperators
 open scoped Real
 
-set_option maxHeartbeats 8000000
-set_option maxRecDepth 4000
-
 namespace Ptolemaic
 
 /-!
@@ -92,6 +89,13 @@ private lemma rpow_mul_eq_sq_half (x y q : ℝ) (hx : 0 ≤ x) (hy : 0 ≤ y) :
   rw [mul_pow, ← Real.rpow_natCast, ← Real.rpow_mul hx,
     ← Real.rpow_natCast, ← Real.rpow_mul hy]
   ring_nf
+
+private lemma half_eta_sq_le (η S T : ℝ) (hη0 : 0 ≤ η) (hη1 : η ≤ 1)
+    (hS0 : 0 ≤ S) (hSsq : S ^ 2 = T) :
+    0 ≤ T - (η * S / 2) ^ 2 := by
+  have hηS0 : 0 ≤ η * S := mul_nonneg hη0 hS0
+  have hηS_le : η * S ≤ S := mul_le_of_le_one_left hS0 hη1
+  nlinarith
 
 /-
 `3 ^ (log₃ 2) = 2`.
@@ -480,8 +484,9 @@ lemma embed_real_negType {q : ℝ} (hq0 : 0 < q) (hq2 : q ≤ 2)
     refine Finset.sum_bij (fun i hi => ⟨x i.fst, x i.snd, i.fst, i.snd⟩) ?_ ?_ ?_ ?_ <;> aesop
   -- By NegType.real_finite_negative_type hq0 hq2 S w (Claim 1), the RHS ≤ 0, hence the LHS ≤ 0 by Claim 2.
   apply h_sum.symm ▸ NegType.real_finite_negative_type hq0 hq2 (Finset.image x Finset.univ) w (by
-  rw [← hc, Finset.sum_image']
-  aesop)
+    rw [← hc, Finset.sum_image' c]
+    intro i _
+    simp [w])
 
 /-- **Line metrics have negative type** (`lem:q5-line-metrics`).
 If the four-point metric `d` is realised on a line (`d i j = |x i - x j|`), then
@@ -519,7 +524,11 @@ lemma star_negType {q : ℝ} (hq1 : 1 ≤ q) (hq : q ≤ Real.logb 2 3)
     have hρ2 : 0 ≤ ρ2 := by
       exact hm.2.2.1 _ _
     -- Introduce η01, η02, η12 ∈ [0,1] and S01, S02, S12 ≥ 0 as in the provided solution.
-    obtain ⟨η01, η02, η12, hη01, hη02, hη12, hS01, hS02, hS12⟩ : ∃ η01 η02 η12 S01 S02 S12 : ℝ,
+    obtain ⟨η01, η02, η12, S01, S02, S12,
+      hη01_nonneg, hη01_le_one, hη02_nonneg, hη02_le_one, hη12_nonneg, hη12_le_one,
+      hS01_nonneg, hS02_nonneg, hS12_nonneg,
+      hρ01, hρ02, hρ12, hS01_sq, hS02_sq, hS12_sq, hS_prod⟩ :
+      ∃ η01 η02 η12 S01 S02 S12 : ℝ,
       0 ≤ η01 ∧ η01 ≤ 1 ∧ 0 ≤ η02 ∧ η02 ≤ 1 ∧ 0 ≤ η12 ∧ η12 ≤ 1 ∧
       0 ≤ S01 ∧ 0 ≤ S02 ∧ 0 ≤ S12 ∧
       (ρ0 + ρ1) ^ q = ρ0 ^ q + ρ1 ^ q + η01 * S01 ∧
@@ -584,22 +593,31 @@ lemma star_negType {q : ℝ} (hq1 : 1 ≤ q) (hq : q ≤ Real.logb 2 3)
                 sqrt_pair_product (ρ0 ^ q) (ρ1 ^ q) (ρ2 ^ q)
                   (Real.rpow_nonneg hρ0 _) (Real.rpow_nonneg hρ1 _) (Real.rpow_nonneg hρ2 _)⟩
     -- Apply psd3_of_minors with the given conditions.
-    have h_psd : 0 ≤ ρ0 ^ q * ρ1 ^ q - (η01 * hη01 / 2) ^ 2 ∧ 0 ≤ ρ0 ^ q * ρ2 ^ q - (η02 * hη02 / 2) ^ 2 ∧ 0 ≤ ρ1 ^ q * ρ2 ^ q - (η12 * hη12 / 2) ^ 2 ∧ 0 ≤ ρ0 ^ q * ρ1 ^ q * ρ2 ^ q * (1 - (η01 ^ 2 + η02 ^ 2 + η12 ^ 2 + η01 * η02 * η12) / 4) := by
+    have h_psd : 0 ≤ ρ0 ^ q * ρ1 ^ q - (η01 * S01 / 2) ^ 2 ∧ 0 ≤ ρ0 ^ q * ρ2 ^ q - (η02 * S02 / 2) ^ 2 ∧ 0 ≤ ρ1 ^ q * ρ2 ^ q - (η12 * S12 / 2) ^ 2 ∧ 0 ≤ ρ0 ^ q * ρ1 ^ q * ρ2 ^ q * (1 - (η01 ^ 2 + η02 ^ 2 + η12 ^ 2 + η01 * η02 * η12) / 4) := by
       refine ⟨?_, ?_, ?_, ?_⟩
-      · nlinarith [show 0 ≤ η01 * hη01 by exact mul_nonneg hS01 (by linarith), show η01 * hη01 ≤ 2 * hη01 by nlinarith]
-      · nlinarith [show 0 ≤ η02 * hη02 by exact mul_nonneg hS12.1 hS12.2.2.2.2.2.1, show η02 * hη02 ≤ 2 * hη02 by nlinarith]
-      · nlinarith [show 0 ≤ η12 * hη12 by exact mul_nonneg (by linarith) (by linarith), show η12 * hη12 ≤ 2 * hη12 by exact mul_le_mul_of_nonneg_right (by linarith) (by linarith)]
+      · exact half_eta_sq_le η01 S01 (ρ0 ^ q * ρ1 ^ q)
+          hη01_nonneg hη01_le_one hS01_nonneg hS01_sq
+      · exact half_eta_sq_le η02 S02 (ρ0 ^ q * ρ2 ^ q)
+          hη02_nonneg hη02_le_one hS02_nonneg hS02_sq
+      · exact half_eta_sq_le η12 S12 (ρ1 ^ q * ρ2 ^ q)
+          hη12_nonneg hη12_le_one hS12_nonneg hS12_sq
       · refine mul_nonneg (mul_nonneg (mul_nonneg (Real.rpow_nonneg hρ0 _) (Real.rpow_nonneg hρ1 _)) (Real.rpow_nonneg hρ2 _)) ?_
-        exact star_det_nonneg η01 η02 η12 hS01 hS02 hS12.1 hS12.2.1 hS12.2.2.1 hS12.2.2.2.1
+        exact star_det_nonneg η01 η02 η12 hη01_nonneg hη01_le_one
+          hη02_nonneg hη02_le_one hη12_nonneg hη12_le_one
     rw [h01, h02, h12]
-    rw [hS12.2.2.2.2.2.2.2.1, hS12.2.2.2.2.2.2.2.2.1, hS12.2.2.2.2.2.2.2.2.2.1]
-    convert psd3_of_minors (ρ0 ^ q) (ρ1 ^ q) (ρ2 ^ q) (- (η01 * hη01 / 2)) (- (η02 * hη02 / 2)) (- (η12 * hη12 / 2)) (by positivity) (by positivity) (by positivity) _ _ _ _ a0 a1 a2 using 1 <;> ring_nf
-    · nlinarith [h_psd.1]
-    · nlinarith [h_psd.2.1]
-    · nlinarith [h_psd.2.2.1]
+    rw [hρ01, hρ02, hρ12]
+    convert psd3_of_minors (ρ0 ^ q) (ρ1 ^ q) (ρ2 ^ q) (- (η01 * S01 / 2)) (- (η02 * S02 / 2)) (- (η12 * S12 / 2)) (by positivity) (by positivity) (by positivity) _ _ _ _ a0 a1 a2 using 1
+    · ring_nf
+    · simpa using h_psd.1
+    · simpa using h_psd.2.1
+    · simpa using h_psd.2.2.1
     · convert h_psd.2.2.2 using 1
       ring_nf
-      grind
+      rw [hS01_sq, hS02_sq, hS12_sq]
+      rw [show η01 * S01 * η02 * S02 * η12 * S12 =
+          η01 * η02 * η12 * (S01 * S02 * S12) by ring]
+      rw [hS_prod]
+      ring_nf
 
 /-- The Schoenberg determinant (based at `3`), as an explicit function of the
 six entries. -/
@@ -942,17 +960,133 @@ private lemma ptolemy_of_duplicate (u : Fin 4 → Fin 4 → ℝ)
     rw [hdiag]
     nlinarith [mul_nonneg (hnn x z) (hnn y z)]
 
-/-- The metric inverted at the apex `3` is again a metric (uses Ptolemaicity of `d` for
-the triangle inequality). -/
-lemma inv_isMetric {d : Fin 4 → Fin 4 → ℝ} (hm : IsMetric4 d) (hp : IsPtolemaic4 d)
-    (h0 : 0 < d 0 3) (h1 : 0 < d 1 3) (h2 : 0 < d 2 3) :
-    IsMetric4 (fun i j => if i = j then (0 : ℝ)
-      else if i = 3 then 1 / d j 3 else if j = 3 then 1 / d i 3 else d i j / (d i 3 * d j 3)) := by
-  set dh : Fin 4 → Fin 4 → ℝ := fun i j =>
+/-- Inversion of a four-point metric at the apex `3`. -/
+noncomputable def apexInv (d : Fin 4 → Fin 4 → ℝ) : Fin 4 → Fin 4 → ℝ :=
+  fun i j =>
     if i = j then 0
     else if i = 3 then 1 / d j 3
     else if j = 3 then 1 / d i 3
     else d i j / (d i 3 * d j 3)
+
+private lemma apexInv_base_pos {d : Fin 4 → Fin 4 → ℝ}
+    (h0 : 0 < d 0 3) (h1 : 0 < d 1 3) (h2 : 0 < d 2 3) :
+    ∀ i : Fin 4, i ≠ 3 → 0 < d i 3 := by
+  intro i hi
+  fin_cases i <;> simp at hi
+  · exact h0
+  · exact h1
+  · exact h2
+
+private lemma apexInv_diag (d : Fin 4 → Fin 4 → ℝ) :
+    ∀ i, apexInv d i i = 0 := by
+  intro i
+  simp [apexInv]
+
+private lemma apexInv_symm {d : Fin 4 → Fin 4 → ℝ} (hsymm : ∀ i j, d i j = d j i) :
+    ∀ i j, apexInv d i j = apexInv d j i := by
+  intro i j
+  by_cases hij : i = j
+  · subst j
+    simp [apexInv]
+  · have hji : j ≠ i := Ne.symm hij
+    by_cases hi3 : i = 3
+    · subst i
+      have hj3 : j ≠ 3 := hji
+      simp [apexInv, hji, Ne.symm hj3]
+    · by_cases hj3 : j = 3
+      · subst j
+        simp [apexInv, hij, Ne.symm hi3]
+      · simp [apexInv, hij, hji, hi3, hj3, hsymm i j, mul_comm]
+
+private lemma apexInv_nonneg {d : Fin 4 → Fin 4 → ℝ}
+    (hnn : ∀ i j, 0 ≤ d i j)
+    (hpos : ∀ i : Fin 4, i ≠ 3 → 0 < d i 3) :
+    ∀ i j, 0 ≤ apexInv d i j := by
+  intro i j
+  by_cases hij : i = j
+  · subst j
+    simp [apexInv]
+  · by_cases hi3 : i = 3
+    · subst i
+      have hj3 : j ≠ 3 := Ne.symm hij
+      have hjpos := hpos j hj3
+      simp [apexInv, hij, hjpos.le]
+    · by_cases hj3 : j = 3
+      · subst j
+        have hipos := hpos i hi3
+        simp [apexInv, hij, hipos.le]
+      · have hden : 0 ≤ d i 3 * d j 3 := mul_nonneg (hpos i hi3).le (hpos j hj3).le
+        simp [apexInv, hij, hi3, hj3, div_nonneg (hnn i j) hden]
+
+private lemma apexInv_ptolemy_x_apex {d : Fin 4 → Fin 4 → ℝ} (hm : IsMetric4 d)
+    (hpos : ∀ i : Fin 4, i ≠ 3 → 0 < d i 3)
+    {y z w : Fin 4} (hy3 : y ≠ 3) (hz3 : z ≠ 3) (hw3 : w ≠ 3)
+    (hyz : y ≠ z) (hyw : y ≠ w) (hzw : z ≠ w) :
+    apexInv d 3 y * apexInv d z w ≤
+      apexInv d 3 z * apexInv d y w + apexInv d 3 w * apexInv d y z := by
+  have hsymm := hm.2.1
+  have htri := hm.2.2.2
+  have hypos := hpos y hy3
+  have hzpos := hpos z hz3
+  have hwpos := hpos w hw3
+  simp [apexInv, hy3, hz3, hw3, Ne.symm hy3, Ne.symm hz3, Ne.symm hw3,
+    hyz, hyw, hzw]
+  field_simp [hypos.ne', hzpos.ne', hwpos.ne']
+  nlinarith [htri z y w, hsymm z y]
+
+private lemma apexInv_ptolemy_y_apex {d : Fin 4 → Fin 4 → ℝ} (hm : IsMetric4 d)
+    (hpos : ∀ i : Fin 4, i ≠ 3 → 0 < d i 3)
+    {x z w : Fin 4} (hx3 : x ≠ 3) (hz3 : z ≠ 3) (hw3 : w ≠ 3)
+    (hxz : x ≠ z) (hxw : x ≠ w) (hzw : z ≠ w) :
+    apexInv d x 3 * apexInv d z w ≤
+      apexInv d x z * apexInv d 3 w + apexInv d x w * apexInv d 3 z := by
+  have hsymm := hm.2.1
+  have htri := hm.2.2.2
+  have hxpos := hpos x hx3
+  have hzpos := hpos z hz3
+  have hwpos := hpos w hw3
+  simp [apexInv, hx3, hz3, hw3, Ne.symm hz3, Ne.symm hw3,
+    hxz, hxw, hzw]
+  field_simp [hxpos.ne', hzpos.ne', hwpos.ne']
+  nlinarith [htri z x w, hsymm z x]
+
+private lemma apexInv_ptolemy_z_apex {d : Fin 4 → Fin 4 → ℝ} (hm : IsMetric4 d)
+    (hpos : ∀ i : Fin 4, i ≠ 3 → 0 < d i 3)
+    {x y w : Fin 4} (hx3 : x ≠ 3) (hy3 : y ≠ 3) (hw3 : w ≠ 3)
+    (hxy : x ≠ y) (hxw : x ≠ w) (hyw : y ≠ w) :
+    apexInv d x y * apexInv d 3 w ≤
+      apexInv d x 3 * apexInv d y w + apexInv d x w * apexInv d y 3 := by
+  have hsymm := hm.2.1
+  have htri := hm.2.2.2
+  have hxpos := hpos x hx3
+  have hypos := hpos y hy3
+  have hwpos := hpos w hw3
+  simp [apexInv, hx3, hy3, hw3, Ne.symm hw3,
+    hxy, hxw, hyw]
+  field_simp [hxpos.ne', hypos.ne', hwpos.ne']
+  nlinarith [htri x w y, hsymm w y]
+
+private lemma apexInv_ptolemy_w_apex {d : Fin 4 → Fin 4 → ℝ} (hm : IsMetric4 d)
+    (hpos : ∀ i : Fin 4, i ≠ 3 → 0 < d i 3)
+    {x y z : Fin 4} (hx3 : x ≠ 3) (hy3 : y ≠ 3) (hz3 : z ≠ 3)
+    (hxy : x ≠ y) (hxz : x ≠ z) (hyz : y ≠ z) :
+    apexInv d x y * apexInv d z 3 ≤
+      apexInv d x z * apexInv d y 3 + apexInv d x 3 * apexInv d y z := by
+  have hsymm := hm.2.1
+  have htri := hm.2.2.2
+  have hxpos := hpos x hx3
+  have hypos := hpos y hy3
+  have hzpos := hpos z hz3
+  simp [apexInv, hx3, hy3, hz3, hxy, hxz, hyz]
+  field_simp [hxpos.ne', hypos.ne', hzpos.ne']
+  nlinarith [htri x z y, hsymm z y]
+
+/-- The metric inverted at the apex `3` is again a metric (uses Ptolemaicity of `d` for
+the triangle inequality). -/
+lemma inv_isMetric {d : Fin 4 → Fin 4 → ℝ} (hm : IsMetric4 d) (hp : IsPtolemaic4 d)
+    (h0 : 0 < d 0 3) (h1 : 0 < d 1 3) (h2 : 0 < d 2 3) :
+    IsMetric4 (apexInv d) := by
+  set dh : Fin 4 → Fin 4 → ℝ := apexInv d
   have hpos : ∀ i : Fin 4, i ≠ 3 → 0 < d i 3 := by
     intro i hi
     fin_cases i <;> simp at hi
@@ -966,50 +1100,50 @@ lemma inv_isMetric {d : Fin 4 → Fin 4 → ℝ} (hm : IsMetric4 d) (hp : IsPtol
     intro i j
     by_cases hij : i = j
     · subst j
-      simp [dh]
+      simp [dh, apexInv]
     · have hji : j ≠ i := by exact Ne.symm hij
       by_cases hi3 : i = 3
       · subst i
         have hj3 : j ≠ 3 := by exact hji
-        simp [dh, hji, Ne.symm hj3]
+        simp [dh, apexInv, hji, Ne.symm hj3]
       · by_cases hj3 : j = 3
         · subst j
-          simp [dh, hij, Ne.symm hi3]
-        · simp [dh, hij, hji, hi3, hj3, hsymm i j, mul_comm]
+          simp [dh, apexInv, hij, Ne.symm hi3]
+        · simp [dh, apexInv, hij, hji, hi3, hj3, hsymm i j, mul_comm]
   have hnonneg : ∀ i j, 0 ≤ dh i j := by
     intro i j
     by_cases hij : i = j
     · subst j
-      simp [dh]
+      simp [dh, apexInv]
     · by_cases hi3 : i = 3
       · subst i
         have hj3 : j ≠ 3 := by exact Ne.symm hij
         have hjpos := hpos j hj3
-        simp [dh, hij, hjpos.le]
+        simp [dh, apexInv, hij, hjpos.le]
       · by_cases hj3 : j = 3
         · subst j
           have hipos := hpos i hi3
-          simp [dh, hij, hipos.le]
+          simp [dh, apexInv, hij, hipos.le]
         · have hden : 0 ≤ d i 3 * d j 3 := mul_nonneg (hpos i hi3).le (hpos j hj3).le
-          simp [dh, hij, hi3, hj3, div_nonneg (hnn i j) hden]
-  refine ⟨by intro i; simp [dh], hsymdh, hnonneg, ?_⟩
+          simp [dh, apexInv, hij, hi3, hj3, div_nonneg (hnn i j) hden]
+  refine ⟨by intro i; simp [dh, apexInv], hsymdh, hnonneg, ?_⟩
   intro i j k
   by_cases hik : i = k
   · subst k
-    simpa [dh] using add_nonneg (hnonneg i j) (hnonneg j i)
+    simpa [dh, apexInv] using add_nonneg (hnonneg i j) (hnonneg j i)
   by_cases hij : i = j
   · subst j
-    simp [dh]
+    simp [dh, apexInv]
   by_cases hjk : j = k
   · subst k
-    simp [dh]
+    simp [dh, apexInv]
   by_cases hj3 : j = 3
   · subst j
     have hi3 : i ≠ 3 := by exact hij
     have hk3 : k ≠ 3 := by exact Ne.symm hjk
     have hipos := hpos i hi3
     have hkpos := hpos k hk3
-    simp [dh, hik, hi3, hk3, Ne.symm hk3]
+    simp [dh, apexInv, hik, hi3, hk3, Ne.symm hk3]
     field_simp [hipos.ne', hkpos.ne']
     nlinarith [htri i 3 k, hsymm 3 k]
   by_cases hi3 : i = 3
@@ -1018,14 +1152,14 @@ lemma inv_isMetric {d : Fin 4 → Fin 4 → ℝ} (hm : IsMetric4 d) (hp : IsPtol
     have hk3 : k ≠ 3 := by exact Ne.symm hik
     have hjpos := hpos j hj3'
     have hkpos := hpos k hk3
-    simp [dh, hik, hjk, hj3', hk3, Ne.symm hj3']
+    simp [dh, apexInv, hik, hjk, hj3', hk3, Ne.symm hj3']
     field_simp [hjpos.ne', hkpos.ne']
     nlinarith [htri j k 3]
   by_cases hk3 : k = 3
   · subst k
     have hipos := hpos i hi3
     have hjpos := hpos j hj3
-    simp [dh, hik, hij, hj3]
+    simp [dh, apexInv, hik, hij, hj3]
     field_simp [hipos.ne', hjpos.ne']
     nlinarith [htri j i 3, hsymm j i]
   have hipos := hpos i hi3
@@ -1033,7 +1167,7 @@ lemma inv_isMetric {d : Fin 4 → Fin 4 → ℝ} (hm : IsMetric4 d) (hp : IsPtol
   have hkpos := hpos k hk3
   have hpt := hp i k j 3
   rw [hsymm k j] at hpt
-  simp [dh, hik, hij, hjk, hi3, hj3, hk3]
+  simp [dh, apexInv, hik, hij, hjk, hi3, hj3, hk3]
   field_simp [hipos.ne', hjpos.ne', hkpos.ne']
   nlinarith [hpt]
 
@@ -1041,55 +1175,15 @@ lemma inv_isMetric {d : Fin 4 → Fin 4 → ℝ} (hm : IsMetric4 d) (hp : IsPtol
 to the triangle inequalities of `d`. -/
 lemma inv_isPtolemaic {d : Fin 4 → Fin 4 → ℝ} (hm : IsMetric4 d)
     (h0 : 0 < d 0 3) (h1 : 0 < d 1 3) (h2 : 0 < d 2 3) :
-    IsPtolemaic4 (fun i j => if i = j then (0 : ℝ)
-      else if i = 3 then 1 / d j 3 else if j = 3 then 1 / d i 3 else d i j / (d i 3 * d j 3)) := by
-  set dh : Fin 4 → Fin 4 → ℝ := fun i j =>
-    if i = j then 0
-    else if i = 3 then 1 / d j 3
-    else if j = 3 then 1 / d i 3
-    else d i j / (d i 3 * d j 3)
-  have hpos : ∀ i : Fin 4, i ≠ 3 → 0 < d i 3 := by
-    intro i hi
-    fin_cases i <;> simp at hi
-    · exact h0
-    · exact h1
-    · exact h2
-  have hsymm := hm.2.1
-  have hnn := hm.2.2.1
-  have htri := hm.2.2.2
+    IsPtolemaic4 (apexInv d) := by
+  set dh : Fin 4 → Fin 4 → ℝ := apexInv d
+  have hpos : ∀ i : Fin 4, i ≠ 3 → 0 < d i 3 := apexInv_base_pos h0 h1 h2
   have hdiag : ∀ i, dh i i = 0 := by
-    intro i
-    simp [dh]
+    simpa [dh] using apexInv_diag d
   have hsymdh : ∀ i j, dh i j = dh j i := by
-    intro i j
-    by_cases hij : i = j
-    · subst j
-      simp [dh]
-    · have hji : j ≠ i := by exact Ne.symm hij
-      by_cases hi3 : i = 3
-      · subst i
-        have hj3 : j ≠ 3 := by exact hji
-        simp [dh, hji, Ne.symm hj3]
-      · by_cases hj3 : j = 3
-        · subst j
-          simp [dh, hij, Ne.symm hi3]
-        · simp [dh, hij, hji, hi3, hj3, hsymm i j, mul_comm]
+    simpa [dh] using apexInv_symm hm.2.1
   have hnonneg : ∀ i j, 0 ≤ dh i j := by
-    intro i j
-    by_cases hij : i = j
-    · subst j
-      simp [dh]
-    · by_cases hi3 : i = 3
-      · subst i
-        have hj3 : j ≠ 3 := by exact Ne.symm hij
-        have hjpos := hpos j hj3
-        simp [dh, hij, hjpos.le]
-      · by_cases hj3 : j = 3
-        · subst j
-          have hipos := hpos i hi3
-          simp [dh, hij, hipos.le]
-        · have hden : 0 ≤ d i 3 * d j 3 := mul_nonneg (hpos i hi3).le (hpos j hj3).le
-          simp [dh, hij, hi3, hj3, div_nonneg (hnn i j) hden]
+    simpa [dh] using apexInv_nonneg hm.2.2.1 hpos
   intro x y z w
   by_cases hdup : x = y ∨ x = z ∨ x = w ∨ y = z ∨ y = w ∨ z = w
   · exact ptolemy_of_duplicate dh hdiag hsymdh hnonneg hdup
@@ -1097,48 +1191,20 @@ lemma inv_isPtolemaic {d : Fin 4 → Fin 4 → ℝ} (hm : IsMetric4 d)
   obtain ⟨hxy, hxz, hxw, hyz, hyw, hzw⟩ := hdup
   by_cases hx3 : x = 3
   · subst x
-    have hy3 : y ≠ 3 := by exact Ne.symm hxy
-    have hz3 : z ≠ 3 := by exact Ne.symm hxz
-    have hw3 : w ≠ 3 := by exact Ne.symm hxw
-    have hypos := hpos y hy3
-    have hzpos := hpos z hz3
-    have hwpos := hpos w hw3
-    simp [dh, hxy, hxz, hxw, hyz, hyw, hzw, hy3, hz3, hw3]
-    field_simp [hypos.ne', hzpos.ne', hwpos.ne']
-    nlinarith [htri z y w, hsymm z y]
+    simpa [dh] using apexInv_ptolemy_x_apex hm hpos
+      (Ne.symm hxy) (Ne.symm hxz) (Ne.symm hxw) hyz hyw hzw
   by_cases hy3 : y = 3
   · subst y
-    have hx3' : x ≠ 3 := hxy
-    have hz3 : z ≠ 3 := by exact Ne.symm hyz
-    have hw3 : w ≠ 3 := by exact Ne.symm hyw
-    have hxpos := hpos x hx3'
-    have hzpos := hpos z hz3
-    have hwpos := hpos w hw3
-    simp [dh, hxy, hxz, hxw, hyz, hyw, hzw, hz3, hw3]
-    field_simp [hxpos.ne', hzpos.ne', hwpos.ne']
-    nlinarith [htri z x w, hsymm z x]
+    simpa [dh] using apexInv_ptolemy_y_apex hm hpos
+      hxy (Ne.symm hyz) (Ne.symm hyw) hxz hxw hzw
   by_cases hz3 : z = 3
   · subst z
-    have hx3' : x ≠ 3 := hxz
-    have hy3' : y ≠ 3 := hyz
-    have hw3 : w ≠ 3 := by exact Ne.symm hzw
-    have hxpos := hpos x hx3'
-    have hypos := hpos y hy3'
-    have hwpos := hpos w hw3
-    simp [dh, hxy, hxz, hxw, hyz, hyw, hzw, hw3]
-    field_simp [hxpos.ne', hypos.ne', hwpos.ne']
-    nlinarith [htri x w y, hsymm w y]
+    simpa [dh] using apexInv_ptolemy_z_apex hm hpos
+      hxz hyz (Ne.symm hzw) hxy hxw hyw
   by_cases hw3 : w = 3
   · subst w
-    have hx3' : x ≠ 3 := hxw
-    have hy3' : y ≠ 3 := hyw
-    have hz3' : z ≠ 3 := hzw
-    have hxpos := hpos x hx3'
-    have hypos := hpos y hy3'
-    have hzpos := hpos z hz3'
-    simp [dh, hxy, hxz, hxw, hyz, hyw, hzw]
-    field_simp [hxpos.ne', hypos.ne', hzpos.ne']
-    nlinarith [htri x z y, hsymm z y]
+    simpa [dh] using apexInv_ptolemy_w_apex hm hpos
+      hxw hyw hzw hxy hxz hyz
   exfalso
   fin_cases x <;> fin_cases y <;> fin_cases z <;> fin_cases w <;> simp at *
 
@@ -1150,22 +1216,17 @@ extracted so that *any* proof of `HasNegType` for the inverted metric — e.g. v
 lemma apex3_det_of_inversion {q : ℝ} (hq1 : 1 ≤ q)
     (d : Fin 4 → Fin 4 → ℝ) (hm : IsMetric4 d) (hp : IsPtolemaic4 d)
     (hpos0 : 0 < d 0 3) (hpos1 : 0 < d 1 3) (hpos2 : 0 < d 2 3)
-    (hdhneg : HasNegType q (fun i j => if i = j then (0 : ℝ)
-      else if i = 3 then 1 / d j 3 else if j = 3 then 1 / d i 3 else d i j / (d i 3 * d j 3))) :
+    (hdhneg : HasNegType q (apexInv d)) :
     0 ≤ schoenDet (d 0 3 ^ q) (d 1 3 ^ q) (d 2 3 ^ q)
         ((d 0 3 ^ q + d 1 3 ^ q - d 0 1 ^ q) / 2)
         ((d 0 3 ^ q + d 2 3 ^ q - d 0 2 ^ q) / 2)
         ((d 1 3 ^ q + d 2 3 ^ q - d 1 2 ^ q) / 2) := by
   have hq0 : (0 : ℝ) < q := by linarith
-  set dh : Fin 4 → Fin 4 → ℝ := fun i j =>
-    if i = j then 0
-    else if i = 3 then 1 / d j 3
-    else if j = 3 then 1 / d i 3
-    else d i j / (d i 3 * d j 3)
+  set dh : Fin 4 → Fin 4 → ℝ := apexInv d
   have hdh_metric : IsMetric4 dh := inv_isMetric hm hp hpos0 hpos1 hpos2
   have h_det_eq : schoenDet (dh 0 3 ^ q) (dh 1 3 ^ q) (dh 2 3 ^ q) ((dh 0 3 ^ q + dh 1 3 ^ q - dh 0 1 ^ q) / 2) ((dh 0 3 ^ q + dh 2 3 ^ q - dh 0 2 ^ q) / 2) ((dh 1 3 ^ q + dh 2 3 ^ q - dh 1 2 ^ q) / 2) = (d 0 3 ^ (-q) * d 1 3 ^ (-q) * d 2 3 ^ (-q)) ^ 2 * schoenDet (d 0 3 ^ q) (d 1 3 ^ q) (d 2 3 ^ q) ((d 0 3 ^ q + d 1 3 ^ q - d 0 1 ^ q) / 2) ((d 0 3 ^ q + d 2 3 ^ q - d 0 2 ^ q) / 2) ((d 1 3 ^ q + d 2 3 ^ q - d 1 2 ^ q) / 2) := by
     convert schoenDet_congr (d 0 3 ^ (-q)) (d 1 3 ^ (-q)) (d 2 3 ^ (-q)) (d 0 3 ^ q) (d 1 3 ^ q) (d 2 3 ^ q) ((d 0 3 ^ q + d 1 3 ^ q - d 0 1 ^ q) / 2) ((d 0 3 ^ q + d 2 3 ^ q - d 0 2 ^ q) / 2) ((d 1 3 ^ q + d 2 3 ^ q - d 1 2 ^ q) / 2) using 1
-    simp +zetaDelta at *
+    simp +zetaDelta [apexInv]
     norm_num [Real.rpow_neg hpos0.le, Real.rpow_neg hpos1.le, Real.rpow_neg hpos2.le, Real.div_rpow (show 0 ≤ d 0 1 by exact hm.2.2.1 _ _) (show 0 ≤ d 0 3 * d 1 3 by positivity), Real.div_rpow (show 0 ≤ d 0 2 by exact hm.2.2.1 _ _) (show 0 ≤ d 0 3 * d 2 3 by positivity), Real.div_rpow (show 0 ≤ d 1 2 by exact hm.2.2.1 _ _) (show 0 ≤ d 1 3 * d 2 3 by positivity)]
     norm_num [Real.inv_rpow (le_of_lt hpos0), Real.inv_rpow (le_of_lt hpos1), Real.inv_rpow (le_of_lt hpos2), Real.mul_rpow (le_of_lt hpos0) (le_of_lt hpos1), Real.mul_rpow (le_of_lt hpos0) (le_of_lt hpos2), Real.mul_rpow (le_of_lt hpos1) (le_of_lt hpos2)]
     field_simp
@@ -1193,21 +1254,17 @@ lemma geodesic_ptolemy_endpoint_det {q : ℝ} (hq1 : 1 ≤ q) (hq : q ≤ Real.l
         ((d 0 3 ^ q + d 1 3 ^ q - d 0 1 ^ q) / 2)
         ((d 0 3 ^ q + d 2 3 ^ q - d 0 2 ^ q) / 2)
         ((d 1 3 ^ q + d 2 3 ^ q - d 1 2 ^ q) / 2) := by
-  set dh : Fin 4 → Fin 4 → ℝ := fun i j =>
-    if i = j then 0
-    else if i = 3 then 1 / d j 3
-    else if j = 3 then 1 / d i 3
-    else d i j / (d i 3 * d j 3)
+  set dh : Fin 4 → Fin 4 → ℝ := apexInv d
   have hdh_metric : IsMetric4 dh := inv_isMetric hm hp hpos0 hpos1 hpos2
   have hdh_negType : HasNegType q dh :=
     attached_ray_negType_reindex hq1 hq dh hdh_metric (Equiv.swap 0 2 * Equiv.swap 1 3)
       (by
-        simp +decide [dh, Equiv.swap_apply_def]
+        simp +decide [dh, apexInv, Equiv.swap_apply_def]
         field_simp [hpos1.ne', hpos2.ne']
         rw [hm.2.1 2 3, hm.2.1 2 1, hm.2.1 1 3]
         linarith [hgeo])
       (by
-        simp +decide [dh, Equiv.swap_apply_def]
+        simp +decide [dh, apexInv, Equiv.swap_apply_def]
         field_simp [hpos0.ne', hpos1.ne', hpos2.ne']
         rw [hm.2.1 2 3, hm.2.1 2 1, hm.2.1 2 0, hm.2.1 1 3]
         rw [hgeo]
@@ -2133,9 +2190,7 @@ lemma schoenberg_det_nonneg {q : ℝ} (hq1 : 1 ≤ q) (hq : q ≤ Real.logb 2 3)
       have hpos0' : 0 < d' 0 3 := by positivity
       have hpos1' : 0 < d' 1 3 := by positivity
       have hpos2' : 0 < d' 2 3 := by positivity
-      set D : Fin 4 → Fin 4 → ℝ := fun i j =>
-        if i = j then 0 else if i = 3 then 1 / d' j 3 else if j = 3 then 1 / d' i 3
-          else d' i j / (d' i 3 * d' j 3) with hD
+      set D : Fin 4 → Fin 4 → ℝ := apexInv d' with hD
       have hDm : IsMetric4 D := inv_isMetric hm' hp' hpos0' hpos1' hpos2'
       have hDp : IsPtolemaic4 D := inv_isPtolemaic hm' hpos0' hpos1' hpos2'
       have hDneg : HasNegType q D := by
@@ -2143,18 +2198,18 @@ lemma schoenberg_det_nonneg {q : ℝ} (hq1 : 1 ≤ q) (hq : q ≤ Real.logb 2 3)
         · -- `d02·d13 ≥ d03·d12`: inverted `1'` between `0'`,`2'`; reindex by `(1 2 3)`
           exact geodesic_insertion_negType_reindex hq1 hq D hDm hDp
             (Equiv.swap 1 3 * Equiv.swap 1 2)
-            (by simp +decide [hD, hd', Equiv.swap_apply_def]; positivity)
-            (by simp +decide [hD, hd', Equiv.swap_apply_def, hsymm 2 1]; positivity)
-            (by simp +decide [hD, hd', Equiv.swap_apply_def, hv, hsymm 2 1]
+            (by simp +decide [hD, apexInv, hd', Equiv.swap_apply_def]; positivity)
+            (by simp +decide [hD, apexInv, hd', Equiv.swap_apply_def, hsymm 2 1]; positivity)
+            (by simp +decide [hD, apexInv, hd', Equiv.swap_apply_def, hv, hsymm 2 1]
                 rw [abs_of_nonneg (by linarith : (0:ℝ) ≤ d 0 2 * d 1 3 - d 0 3 * d 1 2)]
                 field_simp
                 ring)
         · -- `d03·d12 ≥ d02·d13`: inverted `0'` between `1'`,`2'`; reindex by `(0 2 3)`
           exact geodesic_insertion_negType_reindex hq1 hq D hDm hDp
             (Equiv.swap 0 3 * Equiv.swap 0 2)
-            (by simp +decide [hD, hd', Equiv.swap_apply_def, hsymm 2 0]; positivity)
-            (by simp +decide [hD, hd', Equiv.swap_apply_def]; positivity)
-            (by simp +decide [hD, hd', Equiv.swap_apply_def, hv, hsymm 2 1, hsymm 2 0]
+            (by simp +decide [hD, apexInv, hd', Equiv.swap_apply_def, hsymm 2 0]; positivity)
+            (by simp +decide [hD, apexInv, hd', Equiv.swap_apply_def]; positivity)
+            (by simp +decide [hD, apexInv, hd', Equiv.swap_apply_def, hv, hsymm 2 1, hsymm 2 0]
                 rw [abs_of_nonpos (by linarith : d 0 2 * d 1 3 - d 0 3 * d 1 2 ≤ 0)]
                 field_simp
                 ring)
@@ -2218,17 +2273,15 @@ lemma schoenberg_det_nonneg {q : ℝ} (hq1 : 1 ≤ q) (hq : q ≤ Real.logb 2 3)
       have hpos0' : 0 < d' 0 3 := by simp [hd']; exact hA'
       have hpos1' : 0 < d' 1 3 := by simp [hd']; exact hB'
       have hpos2' : 0 < d' 2 3 := by simp [hd']; exact hC'
-      set D : Fin 4 → Fin 4 → ℝ := fun i j =>
-        if i = j then 0 else if i = 3 then 1 / d' j 3 else if j = 3 then 1 / d' i 3
-          else d' i j / (d' i 3 * d' j 3) with hD
+      set D : Fin 4 → Fin 4 → ℝ := apexInv d' with hD
       have hDm : IsMetric4 D := inv_isMetric hm' hp' hpos0' hpos1' hpos2'
       have hDp : IsPtolemaic4 D := inv_isPtolemaic hm' hpos0' hpos1' hpos2'
       have hd'01 : d' 0 1 = (d 0 2 * d 1 3 + d 0 3 * d 1 2) / d 2 3 := by simp [hd']
       have hDneg : HasNegType q D :=
         geodesic_insertion_negType_reindex hq1 hq D hDm hDp (Equiv.swap 2 3)
-          (by simp +decide [hD, hd', Equiv.swap_apply_def]; positivity)
-          (by simp +decide [hD, hd', Equiv.swap_apply_def]; positivity)
-          (by simp +decide [hD, hd', Equiv.swap_apply_def]; field_simp)
+          (by simp +decide [hD, apexInv, hd', Equiv.swap_apply_def]; positivity)
+          (by simp +decide [hD, apexInv, hd', Equiv.swap_apply_def]; positivity)
+          (by simp +decide [hD, apexInv, hd', Equiv.swap_apply_def]; field_simp)
       have hfinal := apex3_det_of_inversion hq1 d' hm' hp' hpos0' hpos1' hpos2' hDneg
       convert hfinal using 2 <;> simp [hd']
 
