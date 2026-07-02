@@ -1,5 +1,5 @@
 import Mathlib
-import FourPointPtolemaic.Main
+import FourPointPtolemaic.NegType
 import FourPointPtolemaic.ExpKernel
 
 open scoped BigOperators
