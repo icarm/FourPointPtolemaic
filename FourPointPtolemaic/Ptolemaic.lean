@@ -1,6 +1,6 @@
 import Mathlib
-import RequestProject.Main
-import RequestProject.ExpKernel
+import FourPointPtolemaic.Main
+import FourPointPtolemaic.ExpKernel
 
 open scoped BigOperators
 open scoped Real
