@@ -39,8 +39,7 @@ The constant kernel `1` is `QPos` (its quadratic form is `(∑ a)^2`).
 -/
 lemma qpos_one : QPos (fun _ _ : ι => (1 : ℝ)) := by
   intro a
-  simp;
-  simpa only [ ← Finset.mul_sum _ _ _, ← Finset.sum_mul ] using mul_self_nonneg _
+  simpa only [mul_one, ← Finset.mul_sum _ _ _, ← Finset.sum_mul ] using mul_self_nonneg _
 
 /-
 Bridge to `Matrix.PosSemidef`: a symmetric `QPos` kernel is positive semidefinite
@@ -48,10 +47,10 @@ as a matrix.
 -/
 lemma posSemidef_of_qpos {B : ι → ι → ℝ} (hsymm : ∀ i j, B i j = B j i)
     (hB : QPos B) : (Matrix.of (fun i j => B i j)).PosSemidef := by
-  constructor;
-  · ext i j; simp +decide [ hsymm ] ;
+  constructor
+  · ext i j; simp [hsymm]
   · intro x
-    simpa +decide [Finsupp.sum_fintype, mul_comm, mul_left_comm] using hB (fun i => x i)
+    simpa [Finsupp.sum_fintype, mul_comm, mul_left_comm] using hB (fun i => x i)
 
 open Matrix in
 open scoped MatrixOrder in
@@ -68,7 +67,7 @@ lemma QPos.mul [DecidableEq ι] {B C : ι → ι → ℝ}
     (_hBsymm : ∀ i j, B i j = B j i) (hB : QPos B)
     (hCsymm : ∀ i j, C i j = C j i) (hC : QPos C) :
     QPos (fun i j => B i j * C i j) := by
-  obtain ⟨ D, hD ⟩ := posSemidef_iff_eq_conjTranspose_mul_self.mp ( posSemidef_of_qpos hCsymm hC );
+  obtain ⟨D, hD⟩ := posSemidef_iff_eq_conjTranspose_mul_self.mp (posSemidef_of_qpos hCsymm hC)
   -- Substitute C i j = ∑ k, D k i * D k j into the quadratic form.
   intro a
   simp [hD] at *;
@@ -194,8 +193,8 @@ theorem qpos_downward [DecidableEq ι] {B d : ι → ι → ℝ}
       rw [ MeasureTheory.integral_finsetSum ];
       · simp +decide only [hrpow, mul_assoc, integral_const_mul, Finset.sum_div];
         exact Finset.sum_congr rfl fun _ _ => by ring;
-      · intro j _;
-        refine' MeasureTheory.Integrable.const_mul _ _;
+      · intro j _
+        refine' MeasureTheory.Integrable.const_mul _ _
         apply_rules [ Real.integrableOn_rpowIntegrand₀₁_Ioi ];
     · intro i _; apply_rules [ MeasureTheory.integrable_finsetSum, MeasureTheory.Integrable.const_mul ] ;
       intro j _;
@@ -216,9 +215,9 @@ theorem qpos_downward [DecidableEq ι] {B d : ι → ι → ℝ}
       simp +decide [ mul_sub, Finset.mul_sum _ _ _, mul_assoc, mul_left_comm ];
       simp +decide [ ← Finset.mul_sum _ _ _, ha ];
     exact h_integrand_nonpos_step.symm ▸ mul_nonpos_of_nonneg_of_nonpos ( Real.rpow_nonneg ht.le _ ) ( h_simplify.symm ▸ mul_nonpos_of_nonpos_of_nonneg ( neg_nonpos.mpr ht.le ) ( qpos_resolvent hsymm hB hrel hdnn ht a ) );
-  refine' hsum ▸ div_nonpos_of_nonpos_of_nonneg ( MeasureTheory.setIntegral_nonpos measurableSet_Ioi fun t ht => h_integrand_nonpos t ht ) ( MeasureTheory.setIntegral_nonneg measurableSet_Ioi fun t ht => _ );
-  refine' mul_nonneg _ _ <;> norm_num;
-  · exact Real.rpow_nonneg ht.out.le _;
-  · exact inv_anti₀ ht ( by linarith )
+  refine' hsum ▸ div_nonpos_of_nonpos_of_nonneg ( MeasureTheory.setIntegral_nonpos measurableSet_Ioi fun t ht => h_integrand_nonpos t ht ) ( MeasureTheory.setIntegral_nonneg measurableSet_Ioi fun t ht => _ )
+  refine' mul_nonneg _ _ <;> norm_num
+  · exact Real.rpow_nonneg ht.out.le _
+  · exact inv_anti₀ ht (by simp)
 
 end ExpKernel
