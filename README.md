@@ -1,1 +1,1 @@
-# Autoformalization of Four-point Ptolemaic Snowflake Theorem
+## Autoformalization of Four-point Ptolemaic Snowflake Theorem
