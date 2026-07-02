@@ -394,8 +394,7 @@ private lemma star_pair_data {q x y : ℝ} (hq1 : 1 ≤ q) (hq : q ≤ Real.logb
   refine ⟨((x + y) ^ q - x ^ q - y ^ q) / Real.sqrt (x ^ q * y ^ q),
     Real.sqrt (x ^ q * y ^ q), ?_, ?_, Real.sqrt_nonneg _, ?_, ?_, rfl⟩
   · refine div_nonneg ?_ (Real.sqrt_nonneg _)
-    have := @Real.add_rpow_le_rpow_add
-    linarith [this hx hy hq1]
+    linarith [Real.add_rpow_le_rpow_add hx hy hq1]
   · refine div_le_one_of_le₀ ?_ (Real.sqrt_nonneg _)
     have := star_inequality hq1 hq x y hx hy
     rw [Real.mul_rpow (by positivity) (by positivity)] at this
@@ -634,6 +633,19 @@ lemma line_schoenDet_nonneg {q : ℝ} (hq0 : 0 < q) (hq2 : q ≤ 2) (x : Fin 4 �
   exact det_nonneg_of_negType hq0 (fun i j => |x i - x j|)
     (fun i j => abs_sub_comm _ _) (fun i => by simp)
     (line_negType hq0 hq2 _ x (fun _ _ => rfl))
+
+/-- Coordinate form of `line_schoenDet_nonneg`: to bound a Schoenberg determinant it
+suffices to realise the six distances by four explicit coordinates on a line. -/
+private lemma line_det_of_coords {q : ℝ} (hq0 : 0 < q) (hq2 : q ≤ 2)
+    (x0 x1 x2 x3 : ℝ) {A B C p r s : ℝ}
+    (hA : |x0 - x3| = A) (hB : |x1 - x3| = B) (hC : |x2 - x3| = C)
+    (hp : |x0 - x1| = p) (hr : |x0 - x2| = r) (hs : |x1 - x2| = s) :
+    0 ≤ schoenDet (A ^ q) (B ^ q) (C ^ q)
+        ((A ^ q + B ^ q - p ^ q) / 2)
+        ((A ^ q + C ^ q - r ^ q) / 2)
+        ((B ^ q + C ^ q - s ^ q) / 2) := by
+  subst hA hB hC hp hr hs
+  simpa using line_schoenDet_nonneg hq0 hq2 ![x0, x1, x2, x3]
 
 /-
 Negative type is invariant under relabelling the four points.
@@ -1124,8 +1136,7 @@ lemma geodesic_ptolemy_endpoint_det {q : ℝ} (hq1 : 1 ≤ q) (hq : q ≤ Real.l
         field_simp [hpos0.ne', hpos1.ne', hpos2.ne']
         rw [hm.2.1 2 3, hm.2.1 2 1, hm.2.1 2 0, hm.2.1 1 3]
         rw [hgeo]
-        ring_nf at hPtEq ⊢
-        exact Real.ext_cauchy (congrArg Real.cauchy hPtEq))
+        linear_combination hPtEq)
   exact apex3_det_of_inversion hq1 d hm hp hpos0 hpos1 hpos2 hdh_negType
 
 /-- **Ptolemy-equality endpoint, apex-between labeling.** Here the apex `3` lies on the
@@ -1363,33 +1374,13 @@ lemma geodesic_insertion_det {q : ℝ} (hq1 : 1 ≤ q) (hq : q ≤ Real.logb 2 3
           have := le_of_mul_le_mul_left hmul hp03
           linarith
         rw [hd12, hgeo]
-        set x : Fin 4 → ℝ := fun i =>
-          if i = 0 then 0 else if i = 1 then d 0 3 + d 1 3 else if i = 2 then d 0 2 else d 0 3
-          with hxdef
-        have hx0 : x 0 = 0 := by simp [hxdef]
-        have hx1 : x 1 = d 0 3 + d 1 3 := by simp [hxdef]
-        have hx2 : x 2 = d 0 2 := by simp [hxdef]
-        have hx3 : x 3 = d 0 3 := by simp [hxdef]
-        have e01 : |x 0 - x 1| = d 0 3 + d 1 3 := by
-          rw [hx0, hx1, abs_of_nonpos (by linarith [hnn 0 3, hnn 1 3])]
-          ring
-        have e02 : |x 0 - x 2| = d 0 2 := by
-          rw [hx0, hx2, abs_of_nonpos (by linarith [hnn 0 2])]
-          ring
-        have e03 : |x 0 - x 3| = d 0 3 := by
-          rw [hx0, hx3, abs_of_nonpos (by linarith [hnn 0 3])]
-          ring
-        have e12 : |x 1 - x 2| = d 0 3 + d 1 3 - d 0 2 := by
-          rw [hx1, hx2, abs_of_nonneg (by linarith)]
-        have e13 : |x 1 - x 3| = d 1 3 := by
-          rw [hx1, hx3, abs_of_nonneg (by linarith [hnn 1 3])]
-          ring
-        have e23 : |x 2 - x 3| = d 0 3 - d 0 2 := by
-          rw [hx2, hx3, abs_of_nonpos (by linarith)]
-          ring
-        have key := line_schoenDet_nonneg hq0 hq2 x
-        simp only [e01, e02, e03, e12, e13, e23] at key
-        exact key
+        exact line_det_of_coords hq0 hq2 0 (d 0 3 + d 1 3) (d 0 2) (d 0 3)
+          ((abs_eq (hnn 0 3)).mpr (Or.inr (by ring)))
+          ((abs_eq (hnn 1 3)).mpr (Or.inl (by ring)))
+          ((abs_eq (by linarith)).mpr (Or.inr (by ring)))
+          ((abs_eq (by linarith [hnn 0 3, hnn 1 3])).mpr (Or.inr (by ring)))
+          ((abs_eq (hnn 0 2)).mpr (Or.inr (by ring)))
+          ((abs_eq (by linarith [hnn 1 3])).mpr (Or.inl (by ring)))
       · -- `d02 ≥ d03`: `3` between `0,2`; attached-ray (apex `0`, junction `3`, leaves `1,2`).
         have hLval : |d 0 3 - d 0 2| = d 0 2 - d 0 3 := by rw [abs_of_nonpos (by linarith)]; ring
         rw [hLval]
@@ -1437,34 +1428,13 @@ lemma geodesic_insertion_det {q : ℝ} (hq1 : 1 ≤ q) (hq : q ≤ Real.logb 2 3
             have := le_of_mul_le_mul_left hmul hp13
             linarith
           rw [hd02, hgeo]
-          set x : Fin 4 → ℝ := fun i =>
-            if i = 0 then 0 else if i = 1 then d 0 3 + d 1 3 else if i = 2 then d 0 3 + d 1 3 - d 1 2 else d 0 3
-            with hxdef
-          have hx0 : x 0 = 0 := by simp [hxdef]
-          have hx1 : x 1 = d 0 3 + d 1 3 := by simp [hxdef]
-          have hx2 : x 2 = d 0 3 + d 1 3 - d 1 2 := by simp [hxdef]
-          have hx3 : x 3 = d 0 3 := by simp [hxdef]
-          have e01 : |x 0 - x 1| = d 0 3 + d 1 3 := by
-            rw [hx0, hx1, abs_of_nonpos (by linarith [hnn 0 3, hnn 1 3])]
-            ring
-          have e02 : |x 0 - x 2| = d 0 3 + d 1 3 - d 1 2 := by
-            rw [hx0, hx2, abs_of_nonpos (by linarith [hnn 0 2])]
-            ring
-          have e03 : |x 0 - x 3| = d 0 3 := by
-            rw [hx0, hx3, abs_of_nonpos (by linarith [hnn 0 3])]
-            ring
-          have e12 : |x 1 - x 2| = d 1 2 := by
-            rw [hx1, hx2, abs_of_nonneg (by linarith [hnn 1 2])]
-            ring
-          have e13 : |x 1 - x 3| = d 1 3 := by
-            rw [hx1, hx3, abs_of_nonneg (by linarith [hnn 1 3])]
-            ring
-          have e23 : |x 2 - x 3| = d 1 3 - d 1 2 := by
-            rw [hx2, hx3, abs_of_nonneg (by linarith)]
-            ring
-          have key := line_schoenDet_nonneg hq0 hq2 x
-          simp only [e01, e02, e03, e12, e13, e23] at key
-          exact key
+          exact line_det_of_coords hq0 hq2 0 (d 0 3 + d 1 3) (d 0 3 + d 1 3 - d 1 2) (d 0 3)
+            ((abs_eq (hnn 0 3)).mpr (Or.inr (by ring)))
+            ((abs_eq (hnn 1 3)).mpr (Or.inl (by ring)))
+            ((abs_eq (by linarith)).mpr (Or.inl (by ring)))
+            ((abs_eq (by linarith [hnn 0 3, hnn 1 3])).mpr (Or.inr (by ring)))
+            ((abs_eq (by linarith [hnn 0 2])).mpr (Or.inr (by ring)))
+            ((abs_eq (hnn 1 2)).mpr (Or.inl (by ring)))
         · -- `d12 ≥ d13`: `3` between `1,2`; attached-ray (apex `1`, junction `3`, leaves `0,2`).
           have hLval : |d 1 3 - d 1 2| = d 1 2 - d 1 3 := by rw [abs_of_nonpos (by linarith)]; ring
           rw [hLval]
@@ -1533,34 +1503,13 @@ lemma geodesic_insertion_det {q : ℝ} (hq1 : 1 ≤ q) (hq : q ≤ Real.logb 2 3
         have := le_of_mul_le_mul_left hmul hp03
         linarith
       rw [hd12, hgeo]
-      set x : Fin 4 → ℝ := fun i =>
-        if i = 0 then 0 else if i = 1 then d 0 3 + d 1 3 else if i = 2 then -d 0 2 else d 0 3
-        with hxdef
-      have hx0 : x 0 = 0 := by simp [hxdef]
-      have hx1 : x 1 = d 0 3 + d 1 3 := by simp [hxdef]
-      have hx2 : x 2 = -d 0 2 := by simp [hxdef]
-      have hx3 : x 3 = d 0 3 := by simp [hxdef]
-      have e01 : |x 0 - x 1| = d 0 3 + d 1 3 := by
-        rw [hx0, hx1, abs_of_nonpos (by linarith [hnn 0 3, hnn 1 3])]
-        ring
-      have e02 : |x 0 - x 2| = d 0 2 := by
-        rw [hx0, hx2, abs_of_nonneg (by linarith [hnn 0 2])]
-        ring
-      have e03 : |x 0 - x 3| = d 0 3 := by
-        rw [hx0, hx3, abs_of_nonpos (by linarith [hnn 0 3])]
-        ring
-      have e12 : |x 1 - x 2| = d 0 3 + d 1 3 + d 0 2 := by
-        rw [hx1, hx2, abs_of_nonneg (by linarith [hnn 0 3, hnn 1 3, hnn 0 2])]
-        ring
-      have e13 : |x 1 - x 3| = d 1 3 := by
-        rw [hx1, hx3, abs_of_nonneg (by linarith [hnn 1 3])]
-        ring
-      have e23 : |x 2 - x 3| = d 0 3 + d 0 2 := by
-        rw [hx2, hx3, abs_of_nonpos (by linarith [hnn 0 3, hnn 0 2])]
-        ring
-      have key := line_schoenDet_nonneg hq0 hq2 x
-      simp only [e01, e02, e03, e12, e13, e23] at key
-      exact key
+      exact line_det_of_coords hq0 hq2 0 (d 0 3 + d 1 3) (-d 0 2) (d 0 3)
+        ((abs_eq (hnn 0 3)).mpr (Or.inr (by ring)))
+        ((abs_eq (hnn 1 3)).mpr (Or.inl (by ring)))
+        ((abs_eq (by linarith [hnn 0 3, hnn 0 2])).mpr (Or.inr (by ring)))
+        ((abs_eq (by linarith [hnn 0 3, hnn 1 3])).mpr (Or.inr (by ring)))
+        ((abs_eq (hnn 0 2)).mpr (Or.inl (by ring)))
+        ((abs_eq (by linarith [hnn 0 3, hnn 1 3, hnn 0 2])).mpr (Or.inl (by ring)))
     · -- `U = min (d13+d12) (Ptolemy-hi)`
       rw [hUeq]
       rcases min_cases (d 1 3 + d 1 2) ((d 0 2 * d 1 3 + d 0 3 * d 1 2) / d 0 1)
@@ -1575,34 +1524,13 @@ lemma geodesic_insertion_det {q : ℝ} (hq1 : 1 ≤ q) (hq : q ≤ Real.logb 2 3
           have := le_of_mul_le_mul_left hmul hp13
           linarith
         rw [hd02, hgeo]
-        set x : Fin 4 → ℝ := fun i =>
-          if i = 0 then d 1 2 + d 1 3 + d 0 3 else if i = 1 then d 1 2 else if i = 2 then 0 else d 1 2 + d 1 3
-          with hxdef
-        have hx0 : x 0 = d 1 2 + d 1 3 + d 0 3 := by simp [hxdef]
-        have hx1 : x 1 = d 1 2 := by simp [hxdef]
-        have hx2 : x 2 = 0 := by simp [hxdef]
-        have hx3 : x 3 = d 1 2 + d 1 3 := by simp [hxdef]
-        have e01 : |x 0 - x 1| = d 0 3 + d 1 3 := by
-          rw [hx0, hx1, abs_of_nonneg (by linarith [hnn 0 3, hnn 1 3])]
-          ring
-        have e02 : |x 0 - x 2| = d 0 3 + d 1 3 + d 1 2 := by
-          rw [hx0, hx2, abs_of_nonneg (by linarith [hnn 0 3, hnn 1 3, hnn 1 2])]
-          ring
-        have e03 : |x 0 - x 3| = d 0 3 := by
-          rw [hx0, hx3, abs_of_nonneg (by linarith [hnn 0 3])]
-          ring
-        have e12 : |x 1 - x 2| = d 1 2 := by
-          rw [hx1, hx2, abs_of_nonneg (by linarith [hnn 1 2])]
-          ring
-        have e13 : |x 1 - x 3| = d 1 3 := by
-          rw [hx1, hx3, abs_of_nonpos (by linarith [hnn 1 3])]
-          ring
-        have e23 : |x 2 - x 3| = d 1 3 + d 1 2 := by
-          rw [hx2, hx3, abs_of_nonpos (by linarith [hnn 1 3, hnn 1 2])]
-          ring
-        have key := line_schoenDet_nonneg hq0 hq2 x
-        simp only [e01, e02, e03, e12, e13, e23] at key
-        exact key
+        exact line_det_of_coords hq0 hq2 (d 1 2 + d 1 3 + d 0 3) (d 1 2) 0 (d 1 2 + d 1 3)
+          ((abs_eq (hnn 0 3)).mpr (Or.inl (by ring)))
+          ((abs_eq (hnn 1 3)).mpr (Or.inr (by ring)))
+          ((abs_eq (by linarith [hnn 1 3, hnn 1 2])).mpr (Or.inr (by ring)))
+          ((abs_eq (by linarith [hnn 0 3, hnn 1 3])).mpr (Or.inl (by ring)))
+          ((abs_eq (by linarith [hnn 0 3, hnn 1 3, hnn 1 2])).mpr (Or.inl (by ring)))
+          ((abs_eq (hnn 1 2)).mpr (Or.inl (by ring)))
       · -- `U = Ptolemy-hi`: Ptolemy equality ⇒ `ptolemy_apex_endpoint_det`.
         rw [hUeq2]
         rcases eq_or_lt_of_le (hnn 0 2) with hd02 | hd02
@@ -1802,42 +1730,42 @@ lemma schoenberg_det_nonneg {q : ℝ} (hq1 : 1 ≤ q) (hq : q ≤ Real.logb 2 3)
     have e02 : d 0 2 = d 2 3 :=
       le_antisymm (by linarith [htri 0 3 2, hsymm 3 2, hA]) (by linarith [htri 2 0 3, hsymm 2 0, hA])
     rw [hA, e01, e02, Real.zero_rpow hq0.ne']
-    nlinarith
+    exact le_of_eq (by ring)
   by_cases hB : d 1 3 = 0
   · have e01 : d 0 1 = d 0 3 :=
       le_antisymm (by linarith [htri 0 3 1, hsymm 3 1, hB]) (by linarith [htri 0 1 3, hB])
     have e12 : d 1 2 = d 2 3 :=
       le_antisymm (by linarith [htri 1 3 2, hsymm 3 2, hB]) (by linarith [htri 2 1 3, hsymm 2 1, hB])
     rw [hB, e01, e12, Real.zero_rpow hq0.ne']
-    nlinarith
+    exact le_of_eq (by ring)
   by_cases hC : d 2 3 = 0
   · have e02 : d 0 2 = d 0 3 :=
       le_antisymm (by linarith [htri 0 3 2, hsymm 3 2, hC]) (by linarith [htri 0 2 3, hC])
     have e12 : d 1 2 = d 1 3 :=
       le_antisymm (by linarith [htri 1 3 2, hsymm 3 2, hC]) (by linarith [htri 1 2 3, hC])
     rw [hC, e02, e12, Real.zero_rpow hq0.ne']
-    nlinarith
+    exact le_of_eq (by ring)
   by_cases hP : d 0 2 = 0
   · have e03 : d 2 3 = d 0 3 :=
       le_antisymm (by linarith [htri 2 0 3, hsymm 2 0, hP]) (by linarith [htri 0 2 3, hP])
     have e12 : d 1 2 = d 0 1 :=
       le_antisymm (by linarith [htri 1 0 2, hsymm 1 0, hP]) (by linarith [htri 0 2 1, hsymm 2 1, hP])
     rw [hP, e03, e12, Real.zero_rpow hq0.ne']
-    nlinarith
+    exact le_of_eq (by ring)
   by_cases hQ : d 1 2 = 0
   · have e13 : d 2 3 = d 1 3 :=
       le_antisymm (by linarith [htri 2 1 3, hsymm 2 1, hQ]) (by linarith [htri 1 2 3, hQ])
     have e02 : d 0 2 = d 0 1 :=
       le_antisymm (by linarith [htri 0 1 2, hQ]) (by linarith [htri 0 2 1, hsymm 2 1, hQ])
     rw [hQ, e13, e02, Real.zero_rpow hq0.ne']
-    nlinarith
+    exact le_of_eq (by ring)
   by_cases hR : d 0 1 = 0
   · have e13 : d 0 3 = d 1 3 :=
       le_antisymm (by linarith [htri 0 1 3, hR]) (by linarith [htri 1 0 3, hsymm 1 0, hR])
     have e02 : d 0 2 = d 1 2 :=
       le_antisymm (by linarith [htri 0 1 2, hR]) (by linarith [htri 1 0 2, hsymm 1 0, hR])
     rw [hR, e13, e02, Real.zero_rpow hq0.ne']
-    nlinarith
+    exact le_of_eq (by ring)
   -- Main case: all six pairwise distances are strictly positive.
   have hA' : 0 < d 0 3 := lt_of_le_of_ne (hnn 0 3) (Ne.symm hA)
   have hB' : 0 < d 1 3 := lt_of_le_of_ne (hnn 1 3) (Ne.symm hB)
