@@ -126,16 +126,11 @@ lemma qpos_resolvent {B d : ι → ι → ℝ}
     0 ≤ ∑ i, ∑ j, a i * a j * (1 / (t + d i j)) := by
   have htd : ∀ i j, 0 < t + d i j := fun i j => by linarith [hdnn i j]
   have hint : ∀ i j, IntegrableOn (fun s => a i * a j * Real.exp (-(t + d i j) * s))
-      (Set.Ioi 0) := by
-    intro i j
-    have : IntegrableOn (fun s => Real.exp (-(t + d i j) * s)) (Set.Ioi 0) := by
-      simpa [mul_comm] using exp_neg_integrableOn_Ioi 0 (htd i j)
-    exact this.integrable.const_mul _
+      (Set.Ioi 0) :=
+    fun i j => ((integrableOn_exp_mul_Ioi (neg_lt_zero.mpr (htd i j)) 0).integrable.const_mul _)
   have hval : ∀ i j, ∫ s in Set.Ioi 0, Real.exp (-(t + d i j) * s) = 1 / (t + d i j) := by
     intro i j
-    have h := integral_exp_neg_mul_rpow zero_lt_one (htd i j)
-    norm_num [Real.rpow_neg_one] at h ⊢
-    linarith
+    rw [integral_exp_mul_Ioi (neg_lt_zero.mpr (htd i j)), mul_zero, Real.exp_zero, neg_div_neg_eq]
   calc (0 : ℝ)
       ≤ ∫ s in Set.Ioi 0, ∑ i, ∑ j, a i * a j * Real.exp (-(t + d i j) * s) := by
         refine setIntegral_nonneg measurableSet_Ioi fun s hs => ?_
@@ -167,55 +162,41 @@ theorem qpos_downward {B d : ι → ι → ℝ}
     (hdnn : ∀ i j, 0 ≤ d i j) {p : ℝ} (hp : p ∈ Set.Ioo (0 : ℝ) 1)
     (a : ι → ℝ) (ha : ∑ i, a i = 0) :
     ∑ i, ∑ j, a i * a j * d i j ^ p ≤ 0 := by
+  -- Represent `d i j ^ p` as a normalized integral of resolvent kernels.
   have hrpow : ∀ i j, d i j ^ p
-      = (∫ t in Set.Ioi 0, Real.rpowIntegrand₀₁ p t (d i j))
-        / ∫ t in Set.Ioi 0, Real.rpowIntegrand₀₁ p t 1 := by
-    intro i j
-    rw [Real.rpow_eq_const_mul_integral hp (hdnn i j)]
-    ring
+      = (∫ t in Set.Ioi 0, Real.rpowIntegrand₀₁ p t 1)⁻¹
+        * ∫ t in Set.Ioi 0, Real.rpowIntegrand₀₁ p t (d i j) :=
+    fun i j => Real.rpow_eq_const_mul_integral hp (hdnn i j)
   have hint : ∀ i j, IntegrableOn (fun t => a i * a j * Real.rpowIntegrand₀₁ p t (d i j))
       (Set.Ioi 0) :=
     fun i j => (Real.integrableOn_rpowIntegrand₀₁_Ioi hp (hdnn i j)).integrable.const_mul _
   have hsum : ∑ i, ∑ j, a i * a j * d i j ^ p
-      = (∫ t in Set.Ioi 0, ∑ i, ∑ j, a i * a j * Real.rpowIntegrand₀₁ p t (d i j))
-        / ∫ t in Set.Ioi 0, Real.rpowIntegrand₀₁ p t 1 := by
+      = (∫ t in Set.Ioi 0, Real.rpowIntegrand₀₁ p t 1)⁻¹
+        * ∫ t in Set.Ioi 0, ∑ i, ∑ j, a i * a j * Real.rpowIntegrand₀₁ p t (d i j) := by
     rw [← sum_sum_integral_comm hint]
-    simp only [hrpow, integral_const_mul, Finset.sum_div]
+    simp only [hrpow, integral_const_mul, Finset.mul_sum]
     exact Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => by ring
+  have h0 : ∑ i, ∑ j, a i * a j = 0 := by
+    simp only [← Finset.sum_mul_sum, ha, zero_mul]
+  -- For `t > 0`, `rpowIntegrand₀₁ p t x = t ^ p * (t⁻¹ - (t + x)⁻¹)` by definition; since the
+  -- weights sum to zero, only the resolvent part survives, and `qpos_resolvent` gives its sign.
   have h_nonpos : ∀ t ∈ Set.Ioi (0 : ℝ),
       ∑ i, ∑ j, a i * a j * Real.rpowIntegrand₀₁ p t (d i j) ≤ 0 := by
     intro t ht
     replace ht : 0 < t := ht
-    -- Rewrite the integrand in terms of the resolvent kernel.
-    have hkernel : ∀ i j, Real.rpowIntegrand₀₁ p t (d i j)
-        = t ^ (p - 1) * (1 - t * (1 / (t + d i j))) := by
-      intro i j
-      have h0 : t + d i j ≠ 0 := by have := hdnn i j; positivity
-      rw [Real.rpowIntegrand₀₁_eq_pow_div hp ht.le (hdnn i j)]
-      field_simp
-      ring
-    -- Since the weights sum to zero, the constant term drops out.
-    have hzero : ∑ i, ∑ j, a i * a j * (1 - t * (1 / (t + d i j)))
-        = -t * ∑ i, ∑ j, a i * a j * (1 / (t + d i j)) := by
-      have h0 : ∑ i, ∑ j, a i * a j = 0 := by
-        simp only [← Finset.sum_mul_sum, ha, zero_mul]
-      calc ∑ i, ∑ j, a i * a j * (1 - t * (1 / (t + d i j)))
-          = ∑ i, ∑ j, (a i * a j - t * (a i * a j * (1 / (t + d i j)))) :=
-            Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => by ring
-        _ = ∑ i, ∑ j, a i * a j - t * ∑ i, ∑ j, a i * a j * (1 / (t + d i j)) := by
-            simp only [Finset.sum_sub_distrib, Finset.mul_sum]
-        _ = -t * ∑ i, ∑ j, a i * a j * (1 / (t + d i j)) := by rw [h0]; ring
-    have hfactor : ∑ i, ∑ j, a i * a j * Real.rpowIntegrand₀₁ p t (d i j)
-        = t ^ (p - 1) * ∑ i, ∑ j, a i * a j * (1 - t * (1 / (t + d i j))) := by
-      simp only [hkernel, Finset.mul_sum]
-      exact Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => by ring
-    rw [hfactor, hzero]
-    exact mul_nonpos_of_nonneg_of_nonpos (Real.rpow_nonneg ht.le _)
-      (mul_nonpos_of_nonpos_of_nonneg (neg_nonpos.mpr ht.le)
-        (qpos_resolvent hsymm hB hrel hdnn ht a))
+    calc ∑ i, ∑ j, a i * a j * Real.rpowIntegrand₀₁ p t (d i j)
+        = t ^ p * t⁻¹ * (∑ i, ∑ j, a i * a j)
+            - t ^ p * ∑ i, ∑ j, a i * a j * (1 / (t + d i j)) := by
+          simp only [Real.rpowIntegrand₀₁, Finset.mul_sum, ← Finset.sum_sub_distrib]
+          exact Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => by ring
+      _ = -(t ^ p * ∑ i, ∑ j, a i * a j * (1 / (t + d i j))) := by
+          rw [h0, mul_zero, zero_sub]
+      _ ≤ 0 := neg_nonpos.mpr (mul_nonneg (Real.rpow_nonneg ht.le _)
+          (qpos_resolvent hsymm hB hrel hdnn ht a))
   rw [hsum]
-  refine div_nonpos_of_nonpos_of_nonneg (setIntegral_nonpos measurableSet_Ioi h_nonpos)
-    (setIntegral_nonneg measurableSet_Ioi fun t ht => ?_)
-  exact Real.rpowIntegrand₀₁_nonneg hp.1 ht.out.le zero_le_one
+  exact mul_nonpos_of_nonneg_of_nonpos
+    (inv_nonneg.mpr (setIntegral_nonneg measurableSet_Ioi fun t ht =>
+      Real.rpowIntegrand₀₁_nonneg hp.1 ht.out.le zero_le_one))
+    (setIntegral_nonpos measurableSet_Ioi h_nonpos)
 
 end ExpKernel
